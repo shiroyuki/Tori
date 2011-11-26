@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tori, Web Framework for People with Deadline</title>
+    <link rel="stylesheet" type="text/css" href="http://shiroyuki.com/style/base.css"/>
+    <style type="text/css">
+        body {
+            font-size: 16px;
+            width: 720px;
+            min-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #666;
+            font-weight: 200;
+            letter-spacing: 1px;
+        }
+        h1 {
+            font-weight: 200;
+            color: #000;
+            font-size: 24px;
+            border-left: 5px solid #215498;
+            margin-left: -10px;
+            padding-left: 5px;
+        }
+        article {
+            -webkit-column-count: 2; 
+            -webkit-column-rule: 1px solid #eee;
+            -webkit-column-gap: 2em;
+        }
+        header {
+            color: #000;
+            border-bottom: 3px solid #ff9900;
+            font-size: 30px;
+            padding: 20px 0;
+        }
+        summary {
+            position: absolute;
+            left: 0;
+            right: 500px;
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        footer {
+            border-top: 3px solid #ddd;
+            padding: 0 0 20px 0;
+            margin: 40px 0 0 0;
+            font-size: 14px;
+        }
+        #container {
+            position: relative;
+        }
+        #container > section {
+            margin-left: 260px;
+        }
+        #footer-logo {
+            height: 20px;
+            float: right;
+        }
+    </style>
+</head>
+<body>
+    <header>Tori, Web Framework for People with Deadline</header>
+    <section id="container">
+        <summary>
+            <p>
+                The common problem of web frameworks is that even if the framework is
+                dead simple to use, deploying sometimes won't be as easy as developing.
+            </p>
+        </summary>
+        <section>
+            <h1>Introduction</h1>
+            <article>
+                <p>
+                    Tori was forked from one of four main modules of Yotsuba Project. Its
+                    objectives are:
+                </p>
+                <ul>
+                    <li>
+                        Simplify and minimize the setup and deploying process for tiny-to-large-scale
+                        web development.
+                    </li>
+                    <li>
+                        Based on top of Facebook's open-source Tornado Web Framework.
+                    </li>
+                    <li>
+                        Support the deployment as a standalone WSGI server, a WSGI
+                        application for Apache 2 (with <code>mod_wsgi</code>) and a Google
+                        App Engine application.
+                    </li>
+                </ul>
+            </article>
+        </section>
+    </section>
+    <footer>
+        <p>
+            <img src="http://shiroyuki.com/image/header-logo.png" id="footer-logo"/>
+            &copy; 2011 Juti Noppornpitak.<br/>
+            <small>This website is made on HTML5 technology.</small>
+        </p>
+    </footer>
+</body>
+</html>
