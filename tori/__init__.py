@@ -1,26 +1,55 @@
 import os
+import sys
+
 from tornado.ioloop import IOLoop
 from tornado.web import Application as WSGIApplication
 from tornado.web import StaticFileHandler
 
 class Application(object):
     def __init__(self, controller_routing_table, static_routing_table=[], **settings):
+        '''
+        WSGI Application
+        
+        :param: 
+        '''
+        
+        # Setting for the application.
         self.__settings = settings
-        self.__static_settings = dict(path=settings['static_path'])
+        
+        # Get the reference to the calling function
+        current_function = sys._getframe(1)
+        caller_function = current_function.f_code
+        reference_to_caller = caller_function.co_filename
+        
+        # Base path
+        self.__base_path = os.path.abspath(os.path.dirname(os.path.abspath(reference_to_caller)))
+        self.__base_path = 'static_path' in settings and settings['static_path'] or self.__base_path
+        
+        # Static settings for routing static content
+        self.__static_settings = dict(path=self.__base_path)
+        
+        # Master routing table
         self.__routing_table = []
+        
+        # Register the routes to controllers.
         for pattern, handler in controller_routing_table.iteritems():
-            self.__routing_table.append((pattern, handler))
+            __route = (pattern, handler)
+            self.__routing_table.append(__route)
+        
+        # Register the routes to static content.
         for pattern in static_routing_table:
-            self.__routing_table.append((pattern, StaticFileHandler, self.__static_settings))
+            __route = (pattern, StaticFileHandler, self.__static_settings)
+            self.__routing_table.append(__route)
+        
         self.__backend_app = WSGIApplication(self.__routing_table, **settings)
     
     def listen(self, port_number=8888):
-        print "Listening on port 8888."
         self.__backend_app.listen(port_number)
+        return self
     
     def start(self):
         try:
-            print "Service started."
+            print "Service started from %s." % self.__base_path
             IOLoop.instance().start()
         except KeyboardInterrupt:
             print "\rCleanly stopped."
