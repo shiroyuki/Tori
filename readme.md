@@ -1,12 +1,22 @@
 # Tori Framework
 
-| Version | Release Status | Note |
-| 2.0-DEV | **Unstable** | This version is for technology preview only. The documents on the framework will be fully provided upon the stable release. |
+<table>
+	<tr><th>Version</th><th>Release Status</th><th>Note</th></tr>
+	<tr>
+		<td>2.0-DEV</td>
+		<td>
+			**Unstable**
+		</td>
+		<td>
+			This version is for technology preview only. The documents on the framework will be fully provided upon the stable release.
+		</td>
+	</tr>
+</table>
 
 ## Dependencies
 
-| Python | 2.7.x |
-| Tornado | 2.x |
+- Python 2.7.x
+- Tornado 2.x
 
 ## How to use (by example)
 
