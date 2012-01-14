@@ -1,5 +1,10 @@
 # Tori Framework
 
+Tori is a light-weight full-stack framework based on Facebook's Tornado framework 2.x. It aims to
+
+1. Ease the setup process.
+2. Support both as regular WSGI application or Google App Engine.
+
 <table>
 	<tr><th>Version</th><th>Release Status</th><th>Note</th></tr>
 	<tr>
