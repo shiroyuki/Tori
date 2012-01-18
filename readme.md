@@ -36,8 +36,7 @@ Suppose we have the following file structure:
 			__init__.py
 			controller.py
 			view.html
-		tori/ # only for development
-			__init__.py
+		tori # symlink only for development
 
 where `app/controller.py` contains:
 
@@ -52,16 +51,18 @@ where `app/controller.py` contains:
 
 Now, we write a bootstrap `server.py`:
 
-	import tori
+	from tori.application import Application
 	from app import controller
 	controller_routing = {
-		r'/': MainHandler
+		r'/': controller.MainHandler
 	}
-	application = tori.Application(controller_routing)
+	application = Application(controller_routing)
 	application.listen(8000).start()
 
 Then, we can start the WSGI server by executing:
 
 	python server.py
+
+Now, you should be able to access http://127.0.0.1:8000.
 
 Please note that the current release only supports for the server mode.
