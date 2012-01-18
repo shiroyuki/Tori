@@ -1,5 +1,5 @@
 from jinja2 import Template
-from tori.decorator import singleton
+from tori.decorator.common import singleton
 
 class TemplateRepositoryNotExisted(Exception):
     '''
