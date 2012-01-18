@@ -1,4 +1,5 @@
 from jinja2 import Template
+from tori.decorator import singleton
 
 class TemplateRepositoryNotExisted(Exception):
     '''
@@ -56,6 +57,7 @@ class TemplateRepositoryManager(dict):
             raise TemplateRepositoryNotExisted, "Cannot get the repository."
         return self[name]
 
+@singleton
 class RenderingService(object):
     __repositories = TemplateRepository()
     __renderer = None
