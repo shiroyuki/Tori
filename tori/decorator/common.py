@@ -65,6 +65,8 @@ class TestSingletonClass(unittest.TestCase):
         self.assertIsInstance(PositiveTestWithoutInstanceAttr.instance(), PositiveTestWithoutInstanceAttr)
         PositiveTestWithoutInstanceAttr.instance().take_action()
         self.assertEqual(PositiveTestWithoutInstanceAttr.instance().get_number(), 1)
+        PositiveTestWithoutInstanceAttr.instance().take_action()
+        self.assertEqual(PositiveTestWithoutInstanceAttr.instance().get_number(), 2)
     
     def test_negative_with_null_instance_attr(self):
         ''' Test if the target class with null singleton attribute. '''
