@@ -62,9 +62,12 @@ class TestSingletonClass(unittest.TestCase):
             self.assertTrue(False, 'Singleton Class: Failed the initialization with known exception.')
         except:
             self.assertTrue(False, 'Singleton Class: Failed the initialization unexpectedly.')
+        # Test for the type.
         self.assertIsInstance(PositiveTestWithoutInstanceAttr.instance(), PositiveTestWithoutInstanceAttr)
+        # Test if it is working. (case #1)
         PositiveTestWithoutInstanceAttr.instance().take_action()
         self.assertEqual(PositiveTestWithoutInstanceAttr.instance().get_number(), 1)
+        # Test if it is working. (case #n)
         PositiveTestWithoutInstanceAttr.instance().take_action()
         self.assertEqual(PositiveTestWithoutInstanceAttr.instance().get_number(), 2)
     
@@ -95,6 +98,8 @@ class TestSingletonClass(unittest.TestCase):
             self.assertTrue(False, 'Singleton Class: Passed the initialization unexpectedly.')
         except SingletonInitializationException:
             self.assertTrue(True, 'Singleton Class: Failed the initialization with expected exception.')
+        except:
+            self.assertTrue(False, 'Singleton Class: Failed the initialization unexpectedly.')
             
 
 if __name__ == '__main__':
