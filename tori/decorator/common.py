@@ -25,6 +25,35 @@ def __make_a_singleton_class(class_reference, *args, **kwargs):
     class_reference.instance = instance
     return class_reference
 
+def singleton_with(*args, **kwargs):
+    '''
+    Decorator to make a class to be a singleton class with given parameters
+    for the constructor.
+
+    Example:
+    
+    .. code-block:: python
+        # Declaration
+        @singleton
+        class MyClass(ParentClass):
+            def __init__(self):
+                self.number = 0
+            def call(self):
+                self.number += 1
+                echo self.number
+
+        # Executing
+        for i in range(10):
+            MyClass.instance().call()
+
+    The end result is that the console will show the number from 1 to 10.
+    '''
+    # Only use the closure to handle the instatiation of the singleton of the instance.
+    def inner_decorator(class_reference):
+        return __make_a_singleton_class(class_reference, *args, **kwargs)
+    return inner_decorator
+    
+    
 def singleton(*args, **kwargs):
     '''
     Decorator to make a class to be a singleton class.
@@ -47,13 +76,11 @@ def singleton(*args, **kwargs):
 
     The end result is that the console will show the number from 1 to 10.
     '''
-    # Name of the attribute that store the singleton instance
-    singleton_attr_name = '_singleton_instance'
     # Get the first parameter.
     first_param = args[0]    
     # If the first parameter is really a reference to a class, then instantiate
     # the singleton instance.
-    if inspect.isclass(first_param) and isinstance(first_param, type):
+    if len(args) == 1 and inspect.isclass(first_param) and isinstance(first_param, type):
         class_reference = first_param
         return __make_a_singleton_class(class_reference)
     # Otherwise, use the closure to handle the parameter.
