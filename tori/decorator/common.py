@@ -6,6 +6,24 @@ class SingletonInitializationException(Exception):
     attribute `_singleton_instance` not a reference to its own class.
     '''
 
+def __make_a_singleton_class(class_reference, *args, **kwargs):
+    # Name of the attribute that store the singleton instance
+    singleton_attr_name = '_singleton_instance'
+    # The statice method to get the singleton instance of the reference class
+    @staticmethod
+    def instance():
+        ''' Get an instance. '''
+        return class_reference._singleton_instance
+    # Intercept if the class has already been a singleton class.
+    if singleton_attr_name in dir(class_reference):
+        raise SingletonInitializationException,\
+            'The attribute _singleton_instance is already assigned as instance of %s.'\
+            % type(class_reference._singleton_instance)
+    # Instantiate an instance for a singleton class.
+    class_reference._singleton_instance = class_reference(*args, **kwargs)
+    class_reference.instance = instance
+    return class_reference
+
 def singleton(*args, **kwargs):
     '''
     Decorator to make a class to be a singleton class.
@@ -36,35 +54,9 @@ def singleton(*args, **kwargs):
     # the singleton instance.
     if inspect.isclass(first_param):
         class_reference = first_param
-        # The statice method to get the singleton instance of the reference class
-        @staticmethod
-        def instance():
-            ''' Get an instance. '''
-            return class_reference._singleton_instance
-        # Intercept if the class has already been a singleton class.
-        if singleton_attr_name in dir(class_reference):
-            raise SingletonInitializationException,\
-                'The attribute _singleton_instance is already assigned as instance of %s.'\
-                % type(class_reference._singleton_instance)
-        # Instantiate an instance for a singleton class.
-        class_reference._singleton_instance = class_reference()
-        class_reference.instance = instance
-        return class_reference
+        return __make_a_singleton_class(class_reference)
     # Otherwise, use the closure to handle the parameter.
     def inner_decorator(class_reference):
-        # The statice method to get the singleton instance of the reference class
-        @staticmethod
-        def instance():
-            ''' Get an instance. '''
-            return class_reference._singleton_instance
-        # Intercept if the class has already been a singleton class.
-        if singleton_attr_name in dir(class_reference):
-            raise SingletonInitializationException,\
-                'The attribute _singleton_instance is already assigned as instance of %s.'\
-                % type(class_reference._singleton_instance)
-        # Instantiate an instance for a singleton class.
-        class_reference._singleton_instance = class_reference(*args, **kwargs)
-        class_reference.instance = instance
-        return class_reference
+        return __make_a_singleton_class(class_reference, *args, **kwargs)
     return inner_decorator
     
