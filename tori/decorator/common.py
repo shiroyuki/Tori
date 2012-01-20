@@ -1,4 +1,5 @@
 import inspect
+import sys
 
 class SingletonInitializationException(Exception):
     '''
@@ -49,10 +50,10 @@ def singleton(*args, **kwargs):
     # Name of the attribute that store the singleton instance
     singleton_attr_name = '_singleton_instance'
     # Get the first parameter.
-    first_param = args[0]
+    first_param = args[0]    
     # If the first parameter is really a reference to a class, then instantiate
     # the singleton instance.
-    if inspect.isclass(first_param):
+    if inspect.isclass(first_param) and isinstance(first_param, type):
         class_reference = first_param
         return __make_a_singleton_class(class_reference)
     # Otherwise, use the closure to handle the parameter.
