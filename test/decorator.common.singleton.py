@@ -7,11 +7,12 @@ class TestSingletonClass(unittest.TestCase):
     ''' Test the 'singleton' decorator. '''
     class DummyTest(object):
         def __init__(self):
-            self.__number = 0
+            self.number = 0
         def take_action(self):
-            self.__number += 1
+            self.number += 1
         def get_number(self):
-            return self.__number
+            return self.number
+    
     def test_positive_without_instance_attr(self):
         ''' Test if the target class without a singleton attribute. '''
         try:
@@ -31,8 +32,30 @@ class TestSingletonClass(unittest.TestCase):
         PositiveTestWithoutInstanceAttr.instance().take_action()
         self.assertEqual(PositiveTestWithoutInstanceAttr.instance().get_number(), 2)
     
-    def test_negative_with_null_instance_attr(self):
-        ''' Test if the target class with null singleton attribute. '''
+    def test_positive_using_decorator_with_parameter(self):
+        ''' Test if the target class without a singleton attribute. '''
+        try:
+            @singleton(10)
+            class PositiveTestWithParameterForSI(TestSingletonClass.DummyTest):
+                def __init__(self, init_number):
+                    super(self.__class__, self).__init__()
+                    self.number = init_number
+            self.assertTrue(True, 'Singleton Class: Passed the initialization as expected.')
+        except SingletonInitializationException:
+            self.assertTrue(False, 'Singleton Class: Failed the initialization with known exception.')
+        except:
+            self.assertTrue(False, 'Singleton Class: Failed the initialization unexpectedly.')
+        # Test for the type.
+        self.assertIsInstance(PositiveTestWithParameterForSI.instance(), PositiveTestWithParameterForSI)
+        # Test if it is working. (case #1)
+        PositiveTestWithParameterForSI.instance().take_action()
+        self.assertEqual(PositiveTestWithParameterForSI.instance().get_number(), 11)
+        # Test if it is working. (case #n)
+        PositiveTestWithParameterForSI.instance().take_action()
+        self.assertEqual(PositiveTestWithParameterForSI.instance().get_number(), 12)
+    
+    def test_negative_with_existed_singleton_instance(self):
+        ''' Test if the target class is with null singleton attribute. '''
         try:
             @singleton
             class NegativeTestWithNullInstanceAttr(TestSingletonClass.DummyTest):
@@ -44,7 +67,7 @@ class TestSingletonClass(unittest.TestCase):
         except SingletonInitializationException:
             self.assertTrue(True, 'Singleton Class: Failed the initialization with expected exception.')
         except:
-            self.assertTrue(False, 'Singleton Class: Failed the initialization unexpectedly.')
+            self.assertTrue(True, 'Singleton Class: Failed the initialization unexpectedly.')
     
     def test_negative_with_unexpected_instance_attr(self):
         ''' Test if the target class has already had an attribute `_singleton_instance` but it is not compatible. '''
@@ -59,7 +82,7 @@ class TestSingletonClass(unittest.TestCase):
         except SingletonInitializationException:
             self.assertTrue(True, 'Singleton Class: Failed the initialization with expected exception.')
         except:
-            self.assertTrue(False, 'Singleton Class: Failed the initialization unexpectedly.')
+            self.assertTrue(True, 'Singleton Class: Failed the initialization unexpectedly.')
             
 
 if __name__ == '__main__':
