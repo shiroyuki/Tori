@@ -29,22 +29,28 @@ def singleton_with(*args, **kwargs):
     '''
     Decorator to make a class to be a singleton class with given parameters
     for the constructor.
-
+    
+    Please note that this decorator always requires parameters. Not giving one
+    may result errors. Additionally, it is designed to solve the problem where
+    the first parameter is a class reference. For normal usage, please use
+    `@singleton` instead.
+    
     Example:
     
     .. code-block:: python
         # Declaration
-        @singleton
+        class MyAdapter(AdapterClass):
+            def broadcast(self):
+                print "Hello, world."
+        @singleton_with(MyAdapter)
         class MyClass(ParentClass):
-            def __init__(self):
-                self.number = 0
-            def call(self):
-                self.number += 1
-                echo self.number
+            def __init__(self, adapter):
+                self.adapter = adapter()
+            def take_action(self):
+                self.adapter.broadcast()
 
         # Executing
-        for i in range(10):
-            MyClass.instance().call()
+        MyClass.instance().take_action() # expecting the message on the console.
 
     The end result is that the console will show the number from 1 to 10.
     '''
@@ -56,23 +62,42 @@ def singleton_with(*args, **kwargs):
     
 def singleton(*args, **kwargs):
     '''
-    Decorator to make a class to be a singleton class.
+    Decorator to make a class to be a singleton class. This decorator is
+    designed to be able to take parameters for the construction of the
+    singleton instance.
+    
+    Please note that this decorator doesn't support the first parameter
+    as a class reference. If you are using that way, please try to use
+    `@singleton_with` instead.
 
     Example:
     
     .. code-block:: python
         # Declaration
         @singleton
-        class MyClass(ParentClass):
+        class MyFirstClass(ParentClass):
             def __init__(self):
                 self.number = 0
             def call(self):
                 self.number += 1
                 echo self.number
-
+        # Or
+        @singleton(20)
+        class MySecondClass(ParentClass):
+            def __init__(self, init_number):
+                self.number = init_number
+            def call(self):
+                self.number += 1
+                echo self.number
+        
         # Executing
         for i in range(10):
-            MyClass.instance().call()
+            MyFirstClass.instance().call()
+        # Expecting 1-10 to be printed on the console.
+        for i in range(10):
+            MySecondClass.instance().call()
+        # Expecting 11-20 to be printed on the console.
+        
 
     The end result is that the console will show the number from 1 to 10.
     '''

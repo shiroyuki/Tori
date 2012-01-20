@@ -111,7 +111,7 @@ class TestSingletonClass(unittest.TestCase):
             class SuperDummyClass(TestSingletonClass.DummyTest):
                 def __init__(self, dependency_injection):
                     super(self.__class__, self).__init__()
-                    self.dependency_injection = dependency_injection
+                    self.dependency_injection = dependency_injection()
             self.assertTrue(True, 'Singleton Class: Passed the initialization as expected.')
         except SingletonInitializationException:
             self.assertTrue(False, 'Singleton Class: Failed the initialization with known exception.')
@@ -124,7 +124,7 @@ class TestSingletonClass(unittest.TestCase):
         SuperDummyClass.instance().take_action()
         self.assertEqual(SuperDummyClass.instance().get_number(), 2)
         # Test if the dependency injection is working.
-        self.assertTrue(SuperDummyClass.instance().dependency_injection is SampleDependencyInjection)
+        self.assertIsInstance(SuperDummyClass.instance().dependency_injection, SampleDependencyInjection)
     
     def test_negative_with_existed_singleton_instance(self):
         ''' Test if the target class is with null singleton attribute. '''
@@ -151,11 +151,6 @@ class TestSingletonClass(unittest.TestCase):
             self.assertTrue(False, 'Singleton Class: Passed the initialization unexpectedly.')
         except SingletonInitializationException:
             self.assertTrue(True, 'Singleton Class: Failed the initialization with expected exception.')
-
-# import sys
-# @singleton
-# class A(object): pass
-# sys.exit()
 
 if __name__ == '__main__':
     unittest.main()
