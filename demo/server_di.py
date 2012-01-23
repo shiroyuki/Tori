@@ -1,5 +1,5 @@
 '''
-A sample application using SimpleApplication.
+A sample application using DIApplication.
 
 :author: Juti Noppornpitak <juti_n@yahoo.co.jp>
 '''

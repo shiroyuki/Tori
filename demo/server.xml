@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<application>
+    <routes>
+        <route pattern="/" controller="app.controller.main.MainController"/>
+    </routes>
+</application>
