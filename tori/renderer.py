@@ -14,7 +14,6 @@ class Renderer(object):
         template_sub_module_name = module_name_chunks[-1]
         
         # Set the storage of the templates.
-        print module_name, template_sub_module_name
         self.storage = Environment(loader=PackageLoader(module_name, template_sub_module_name))
     
     def render(self, template_path, **contexts):
@@ -31,7 +30,6 @@ class DefaultRenderer(Renderer):
         template_sub_module_name = module_name_chunks[-1]
         
         # Set the storage of the templates.
-        print module_name, template_sub_module_name
         self.storage = Environment(loader=PackageLoader(module_name, template_sub_module_name))
     
     def render(self, template_path, **contexts):

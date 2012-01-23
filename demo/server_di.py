@@ -6,12 +6,8 @@ A sample application using DIApplication.
 
 import bootstrap
 
-from tori.application   import SimpleApplication
+from tori.application   import DIApplication
 from tori.controller    import Controller
 
-from app.controller     import main
-
-application = SimpleApplication(
-    {u'/': main.MainController}
-)
-application.listen().start()
+application = DIApplication('server.xml')
+application.start()

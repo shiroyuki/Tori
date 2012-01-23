@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 from yotsuba.lib.kotoba import Kotoba
@@ -6,6 +7,8 @@ from yotsuba.lib.kotoba import Kotoba
 from tornado.ioloop     import IOLoop
 from tornado.web        import Application as WSGIApplication
 from tornado.web        import StaticFileHandler
+
+from tori.exception     import *
 
 class Application(object):
     def __init__(self, **settings):
@@ -15,12 +18,14 @@ class Application(object):
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
         '''
+        if not self._hierarchy_level:
+            self._hierarchy_level = 1
         
         # Setting for the application.
         self._settings = settings
         
         # Get the reference to the calling function
-        current_function = sys._getframe(2)
+        current_function = sys._getframe(self._hierarchy_level)
         caller_function = current_function.f_code
         reference_to_caller = caller_function.co_filename
         
@@ -74,6 +79,7 @@ class SimpleApplication(Application):
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
         '''
+        self._hierarchy_level = 2
         super(self.__class__, self).__init__(**settings)
         self._update_routes(
             self.__map_routing_table(
@@ -105,38 +111,54 @@ class DIApplication(Application):
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
         '''
+        self._hierarchy_level = 2
+        super(self.__class__, self).__init__(**settings)
+        self._config = Kotoba(os.path.join(self._base_path, configuration_location))
+        self._update_routes(self.__map_routing_table())
+        self._activate()
+        self.listen(int(self._config.get('server port').data()))
         
-        # Setting for the application.
-        self.__settings = settings
-        
-        # Get the reference to the calling function
-        current_function = sys._getframe(1)
-        caller_function = current_function.f_code
-        reference_to_caller = caller_function.co_filename
-        
-        # Base path
-        self.__base_path = os.path.abspath(os.path.dirname(os.path.abspath(reference_to_caller)))
-        self.__base_path = 'static_path' in settings and settings['static_path'] or self.__base_path
-        
-        # Static settings for routing static content
-        self.__static_settings = dict(path=self.__base_path)
-        
-        # Master routing table
-        self.__routing_table = []
-        self.__map_routing_table(configuration_location)
-        
-        self.__backend_app = WSGIApplication(self.__routing_table, **settings)
-        
-    def __map_routing_table(self, configuration_location):
-        selector = Kotoba(configuration_location)
+    def __map_routing_table(self):
+        routes                      = []
+        registered_routing_patterns = []
         
         # Register the routes to controllers.
-        for pattern, controller_name in controller_routing_table.iteritems():
-            controller = eval(controller_name)
-            __route = (pattern, controller)
-            self.__routing_table.append(__route)
+        for config in self._config.get('routes route'):
+            if not config.attrs.has_key('type'):
+                raise RoutingTypeNotFoundError
+            
+            routing_type = config.attrs['type']
+            
+            if not config.attrs.has_key('pattern'):
+                raise RoutingPatternNotFoundError
+            
+            routing_pattern = config.attrs['pattern']
+            
+            if routing_pattern in registered_routing_patterns:
+                raise DuplicatedRouteError
+            
+            registered_routing_patterns.append(routing_pattern)
+            
+            route = None
+            
+            if routing_type == 'controller':
+                controller_path = config.data()
+                access_path     = re.split('\.', controller_path)
+                module_name     = '.'.join(access_path[:-1])
+                controller_name = access_path[-1]
+                print "Registering %s" % controller_name
+                __import__(module_name)
+                #m = sys.modules.keys()
+                #m.sort()
+                #print "\n".join(m)
+                #print dir(sys.modules[module_name])
+                controller      = getattr(sys.modules[module_name], controller_name)
+                route = (routing_pattern, controller)
+                print route
+            
+            if not route:
+                raise UnknownRoutingTypeError, routing_type
+            
+            routes.append(route)
         
-        # Register the routes to static content.
-        #for pattern in static_routing_table:
-        #    __route = (pattern, StaticFileHandler, self.__static_settings)
-        #    self.__routing_table.append(__route)
+        return routes

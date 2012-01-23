@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <application>
+    <server>
+        <port>8000</port>
+    </server>
     <routes>
-        <route pattern="/" controller="app.controller.main.MainController"/>
+        <route type="controller" pattern="/">app.controller.main.MainController</route>
     </routes>
 </application>
