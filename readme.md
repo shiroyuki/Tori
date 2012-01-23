@@ -13,17 +13,40 @@ Tori is a light-weight full-stack framework based on Facebook's Tornado framewor
 			**Unstable**
 		</td>
 		<td>
-			This version is for technology preview only. The documents on the framework will be fully provided upon the stable release.
+            This is for technology preview only. The installation script and documents
+            on the framework will be fully provided upon the stable release.
 		</td>
 	</tr>
 </table>
 
+
 ## Dependencies
 
-- Python 2.7.x
-- `setuptools` for `easy_install`
-- Tornado 2.x (installed by using `sudo easy_install -U tornado`)
-- Yotsuba 3.1 (installed by using `sudo easy_install -U yotsuba`)
+First, this requires Python 2.7. It may work with the older version of Python but it isn't tested at this point.
+
+<table>
+	<tr><th>Package</th><th>Minimum version</th><th>Note</th></tr>
+	<tr>
+		<td>setuptools</td>
+		<td>the latest version</td>
+		<td>This is for `easy_install`.</td>
+	</tr>
+	<tr>
+		<td>jinja2</td>
+		<td>the latest version</td>
+		<td>The default template system.</td>
+	</tr>
+	<tr>
+		<td>Tornado Framework (tornado)</td>
+		<td>2.1</td>
+		<td>The base framework</td>
+	</tr>
+    <tr>
+		<td>Yotsuba (yotsuba)</td>
+		<td>3.1</td>
+		<td>XML parser for `tori.application.DIApplication`</td>
+	</tr>
+</table>
 
 ## How to use (by example)
 
@@ -44,10 +67,11 @@ Suppose we have the following file structure:
 
 where `app/controller.py` contains:
 
-	from tornado import web
+	from tori.controller            import Controller
+	from tori.decorator.controller  import renderer
 	
 	@renderer('app.views')
-	class MainController(web.RequestHandler):
+	class MainController(Controller):
 		def get(self):
 			self.render(
 				'index.html',
