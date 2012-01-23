@@ -51,7 +51,7 @@ class Application(object):
         This setting is however only used in a standalone mode.
         '''
         self._backend_app.listen(port_number)
-        print "Changed the listening port to %d." % port_number
+        print "Listen on port %d." % port_number
         return self
     
     def start(self):
@@ -146,15 +146,9 @@ class DIApplication(Application):
                 access_path     = re.split('\.', controller_path)
                 module_name     = '.'.join(access_path[:-1])
                 controller_name = access_path[-1]
-                print "Registering %s" % controller_name
-                __import__(module_name)
-                #m = sys.modules.keys()
-                #m.sort()
-                #print "\n".join(m)
-                #print dir(sys.modules[module_name])
+                __import__(module_name, fromlist=[controller_name])
                 controller      = getattr(sys.modules[module_name], controller_name)
                 route = (routing_pattern, controller)
-                print route
             
             if not route:
                 raise UnknownRoutingTypeError, routing_type

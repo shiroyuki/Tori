@@ -38,8 +38,8 @@ class DefaultRenderer(Renderer):
 
 @singleton
 class RendererService(object):
-    def __init__(self, renderer_class = Renderer):
-        self._repository = TemplateRepository(renderer_class)
+    def __init__(self, renderer_class=Renderer, repository_class=TemplateRepository):
+        self._repository = repository_class(renderer_class)
     
     def register(self, renderer):
         self._repository.set(renderer)

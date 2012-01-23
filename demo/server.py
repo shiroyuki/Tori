@@ -5,11 +5,8 @@ A sample application using SimpleApplication.
 '''
 
 import bootstrap
-
-from tori.application   import SimpleApplication
-from tori.controller    import Controller
-
-from app.controller     import main
+from   tori.application import SimpleApplication
+from   app.controller   import main
 
 application = SimpleApplication(
     {u'/': main.MainController}

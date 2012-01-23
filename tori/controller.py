@@ -10,15 +10,22 @@ class Controller(web.RequestHandler):
         if not self._rendering_engine:
             self._rendering_engine = DefaultRenderer
         
+        output = None
         try:
-            self.write(RendererService.instance().render(
-                self._rendering_source, template_name, **contexts
-            ))
+            output = RendererService.instance().render(
+                self._rendering_source,
+                template_name,
+                **contexts
+            )
         except RendererNotFoundError:
             # When the renderer is not found. It is possible that the renderer is not yet
             # instantiated. This block of the code will do the lazy loading.
             renderer = self._rendering_engine(self._rendering_source)
-            self.write(RendererService.instance().register(renderer).render(
-                self._rendering_source, template_name, **contexts
-            ))
+            RendererService.instance().register(renderer).render(
+                self._rendering_source,
+                template_name,
+                **contexts
+            )
+        
+        self.write(output)
             

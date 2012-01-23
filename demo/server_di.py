@@ -5,9 +5,7 @@ A sample application using DIApplication.
 '''
 
 import bootstrap
-
-from tori.application   import DIApplication
-from tori.controller    import Controller
+from   tori.application import DIApplication
 
 application = DIApplication('server.xml')
 application.start()

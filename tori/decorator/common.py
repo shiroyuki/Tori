@@ -1,11 +1,5 @@
 import inspect
-import sys
-
-class SingletonInitializationException(Exception):
-    '''
-    This exception is used when the target class contain a special
-    attribute `_singleton_instance` not a reference to its own class.
-    '''
+from   tori.exception import *
 
 def __make_a_singleton_class(class_reference, *args, **kwargs):
     # Name of the attribute that store the singleton instance

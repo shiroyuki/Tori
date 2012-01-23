@@ -1,4 +1,3 @@
-import bootstrap
 import unittest
 
 from tori.decorator.common import *
@@ -30,8 +29,8 @@ class TestSingletonClass(unittest.TestCase):
         SuperDummyClass.instance().take_action()
         self.assertEqual(SuperDummyClass.instance().get_number(), 2)
     
-    def test_positive_using_decorator_with_primitive_parameter(self):
-        ''' Test if the target class without a singleton attribute but using a decorator with primitive perimiter. '''
+    def test_positive_using_decorator_with_primitive_parameters(self):
+        ''' Test if the target class without a singleton attribute but using a decorator with primitive parameters. '''
         try:
             @singleton(10)
             class SuperDummyClass(TestSingletonClass.DummyTest):
@@ -50,8 +49,8 @@ class TestSingletonClass(unittest.TestCase):
         SuperDummyClass.instance().take_action()
         self.assertEqual(SuperDummyClass.instance().get_number(), 12)
     
-    def test_positive_using_decorator_with_parameter_for_dependency_injection(self):
-        ''' Test if the target class without a singleton attribute but using a decorator with DI-compatible instance-reference parameter. '''
+    def test_positive_for_normal_singleton_with_parameters(self):
+        ''' Positive test for @singleton with parameters provided for the constructor '''
         try:
             class SampleDependencyInjection(object): pass
             sample_di = SampleDependencyInjection()
@@ -74,15 +73,13 @@ class TestSingletonClass(unittest.TestCase):
         # Test if the dependency injection is working.
         self.assertIsInstance(SuperDummyClass.instance().dependency_injection, SampleDependencyInjection)
     
-    def test_positive_using_decorator_with_parameter_for_dependency_injection_with_class_reference_1(self):
-        '''
-        Test if the target class without a singleton attribute but using
-        a decorator with DI-compatible class-reference parameter.
+    def test_negative_for_normal_singleton_with_class_reference(self):
+        ''' Negative test for @singleton with class_reference provided for the constructor '''
         
-        Note that this test case shows the limitation of the decorator which
-        can't take a class reference as a parameter. Strongly recommend to
-        use @singleton_with as it is more powerful.
-        '''
+        # Note that this test case shows the limitation of the decorator which
+        # can't take a class reference as a parameter. Strongly recommend to
+        # use @singleton_with as it is more powerful.
+        
         try:
             class SampleDependencyInjection(object): pass
             @singleton(SampleDependencyInjection)
@@ -96,15 +93,13 @@ class TestSingletonClass(unittest.TestCase):
         except TypeError:
             self.assertTrue(True, 'Singleton Class: Failed the initialization with expected exception.')
     
-    def test_positive_using_decorator_with_parameter_for_dependency_injection_with_class_reference_2(self):
-        '''
-        Test if the target class without a singleton attribute but using
-        a decorator with DI-compatible class-reference parameter.
+    def test_positive_for_singleton_with(self):
+        ''' Positive test for @singleton_with(*args, **kwargs) '''
         
-        Note that this test case shows the limitation of the decorator which
-        can't take a class reference as a parameter. Strongly recommend to
-        use @singleton_with as it is more powerful.
-        '''
+        # Note that this test case shows the limitation of the decorator which
+        # can't take a class reference as a parameter. Strongly recommend to
+        # use @singleton_with as it is more powerful.
+        
         try:
             class SampleDependencyInjection(object): pass
             @singleton_with(SampleDependencyInjection)

@@ -1,3 +1,18 @@
+# Common / Object Dictionary
+class UnsupportObjectTypeError(Exception):
+    '''
+    Exception used when the unsupported object type is used in an inappropriate place.
+    
+    Please note that this is a general exception.
+    '''
+
+# Decorator / Common / Singleton Decorator
+class SingletonInitializationException(Exception):
+    '''
+    This exception is used when the target class contain a special
+    attribute `_singleton_instance` not a reference to its own class.
+    '''
+
 # Dependency-injectable Application
 class DuplicatedRouteError(Exception):
     '''
