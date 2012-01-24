@@ -155,6 +155,9 @@ class DIApplication(Application):
                            pattern="/about-shiroyuki"
                            permanent="False"
                     >http://shiroyuki.com</route>
+                    <!-- Example for proxy -->
+                    <route type="proxy" pattern="/api">http://shiroyuki.com/api</route>
+                    
                 </routes>
             </application>
         
@@ -220,6 +223,8 @@ class DIApplication(Application):
                         'permanent': is_permanent
                     }
                 )
+            elif routing_type == 'proxy':
+                raise FutureFeatureException
             
             if not route:
                 raise UnknownRoutingTypeError, routing_type
