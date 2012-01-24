@@ -2,10 +2,12 @@ import os
 import re
 import sys
 
+# Kotoba 2.x from Yotsuba 3.1 will be replaced by Kotoba 3.0 as soon as the official release is available.
 from yotsuba.lib.kotoba import Kotoba
 
 from tornado.ioloop     import IOLoop
 from tornado.web        import Application as WSGIApplication
+from tornado.web        import RedirectHandler
 from tornado.web        import StaticFileHandler
 
 from tori.exception     import *
@@ -37,10 +39,17 @@ class Application(object):
         self._routes = []
     
     def _update_routes(self, routes):
+        '''
+        Update the routes.
+        
+        `routes` is the list of routes. See Tornado documentation on `tornado.web.Application` for more detail.
+        '''
         self._routes = routes
     
     def _activate(self):
-        print 'Framework activated.'
+        '''
+        Activate the backend application.
+        '''
         self._backend_app = WSGIApplication(self._routes, **self._settings)
         
     def listen(self, port_number=8888):
@@ -78,17 +87,19 @@ class SimpleApplication(Application):
 
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
+        
+        This interface doesn't support redirection and proxy.
         '''
         self._hierarchy_level = 2
         super(self.__class__, self).__init__(**settings)
         self._update_routes(
-            self.__map_routing_table(
+            self._map_routing_table(
                 controller_routing_table, static_routing_table
             )
         )
         self._activate()
     
-    def __map_routing_table(self, controller_routing_table, static_routing_table):
+    def _map_routing_table(self, controller_routing_table, static_routing_table):
         routes = []
         
         # Register the routes to controllers.
@@ -114,11 +125,43 @@ class DIApplication(Application):
         self._hierarchy_level = 2
         super(self.__class__, self).__init__(**settings)
         self._config = Kotoba(os.path.join(self._base_path, configuration_location))
-        self._update_routes(self.__map_routing_table())
+        self._update_routes(self._map_routing_table())
         self._activate()
         self.listen(int(self._config.get('server port').data()))
         
-    def __map_routing_table(self):
+    def _map_routing_table(self):
+        '''
+        Map a routing table based on the configuration.
+        
+        Suppose the controller is `app.controller.MainController` the configuration is as followed:
+        
+            <application>
+                ... <!-- Assume that there are some configurations here -->
+                <routes>
+                    <!-- Example for controller -->
+                    <route type="controller" pattern="/">app.controller.MainController</route>
+                    <!--
+                        Example for static content
+                        
+                        Please note that the content of route of this type can be a relative
+                        path, a full path or blank. If it is blank, it will look into a folder
+                        called `static` living at the same location as the WSGI/server script.
+                        
+                        This should be only used for development only.
+                    -->
+                    <route type="controller" pattern="/resources/(.*)">resources</route>
+                    <!-- Example for redirection -->
+                    <route type="redirection"
+                           pattern="/about-shiroyuki"
+                           permanent="False"
+                    >http://shiroyuki.com</route>
+                </routes>
+            </application>
+        
+        This is a pseudo protected method, which is triggered automatically on instantiation and
+        should not be used directly as it takes no effect unless it is used with `_update_routes`.
+        and reactivate the application with `_activate`.
+        '''
         routes                      = []
         registered_routing_patterns = []
         
@@ -141,14 +184,42 @@ class DIApplication(Application):
             
             route = None
             
+            # Create a route by type.
             if routing_type == 'controller':
+                # Gather information
                 controller_path = config.data()
                 access_path     = re.split('\.', controller_path)
                 module_name     = '.'.join(access_path[:-1])
                 controller_name = access_path[-1]
+                
+                # Automatically import the controller (or handler).
                 __import__(module_name, fromlist=[controller_name])
+                
+                # Get the controller.
                 controller      = getattr(sys.modules[module_name], controller_name)
+                
+                # Create a route for a controller.
                 route = (routing_pattern, controller)
+            elif routing_type == 'static':
+                # Create a route for a static content / resource.
+                route = (routing_pattern, StaticFileHandler, self._static_routing_setting)
+            elif routing_type == 'redirection':
+                # Gather information
+                destination = config.data()
+                
+                if not config.attrs.has_key('permanent'):
+                    raise InvalidRedirectionDirectiveError, "Missing permanent parameter."
+                
+                is_permanent = bool(config.attrs['permanent'])
+                
+                # Create a route for a redirection directive.
+                route = (
+                    routing_pattern,
+                    RedirectHandler, {
+                        'url':       destination,
+                        'permanent': is_permanent
+                    }
+                )
             
             if not route:
                 raise UnknownRoutingTypeError, routing_type

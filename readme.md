@@ -1,9 +1,12 @@
 # Tori Framework
 
-Tori is a light-weight full-stack framework based on Facebook's Tornado framework 2.x. It aims to
+Tori is a light-weight framework based on Facebook's Tornado framework 2.x. It aims to
 
 1. Ease the setup process.
-2. Support both as regular WSGI application or Google App Engine.
+2. Make everything driven by configuration.
+3. Extendable, scalable and customizable.
+4. Free to design the structure of the application in the way everyone wants.
+5. Support both as regular WSGI application or Google App Engine.
 
 <table>
 	<tr><th>Version</th><th>Release Status</th><th>Note</th></tr>
@@ -19,6 +22,12 @@ Tori is a light-weight full-stack framework based on Facebook's Tornado framewor
 	</tr>
 </table>
 
+## Concepts
+
+Tori borrows:
+
+1. the concept of the dependency injection and the aspect-oriented programming from Spring Framework and Java Bean
+2. the concept of object alteration using annotations or decorators from Symfony 2 and Doctrine 2.
 
 ## Dependencies
 

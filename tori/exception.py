@@ -34,6 +34,10 @@ class UnknownRoutingTypeError(Exception):
     Exception used when the routing type is not unknown.
     '''
 
+class InvalidRedirectionDirectiveError(Exception):
+    '''
+    Exception used when the redirection directive is incomplete because some parameters aren't provided or incompatible.
+    '''
 
 # Controllers
 class RenderingSourceMissingError(Exception):
