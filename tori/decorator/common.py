@@ -1,7 +1,20 @@
 import inspect
 from   tori.exception import *
 
-def __make_a_singleton_class(class_reference, *args, **kwargs):
+def _make_a_singleton_class(class_reference, *args, **kwargs):
+    '''
+    Make the given class a singleton class.
+    
+    `class_reference` is a reference to a class type, not an instance of a class.
+    
+    `args` and `kwargs` are parameters used to instantiate a singleton instance.
+    
+    To use this, suppose we have a class called `DummyClass` and later instantiate
+    a variable `dummy_instnace` as an instance of class `DummyClass`. `class_reference`
+    will be `DummyClass`, not `dummy_instance`.
+    
+    Note that this method is not for direct use. Always use `@singleton` or `@singleton_with`.
+    '''
     # Name of the attribute that store the singleton instance
     singleton_attr_name = '_singleton_instance'
     # The statice method to get the singleton instance of the reference class
@@ -36,6 +49,7 @@ def singleton_with(*args, **kwargs):
         class MyAdapter(AdapterClass):
             def broadcast(self):
                 print "Hello, world."
+        
         @singleton_with(MyAdapter)
         class MyClass(ParentClass):
             def __init__(self, adapter):
@@ -50,7 +64,7 @@ def singleton_with(*args, **kwargs):
     '''
     # Only use the closure to handle the instatiation of the singleton of the instance.
     def inner_decorator(class_reference):
-        return __make_a_singleton_class(class_reference, *args, **kwargs)
+        return _make_a_singleton_class(class_reference, *args, **kwargs)
     return inner_decorator
     
     
@@ -101,9 +115,9 @@ def singleton(*args, **kwargs):
     # the singleton instance.
     if len(args) == 1 and inspect.isclass(first_param) and isinstance(first_param, type):
         class_reference = first_param
-        return __make_a_singleton_class(class_reference)
+        return _make_a_singleton_class(class_reference)
     # Otherwise, use the closure to handle the parameter.
     def inner_decorator(class_reference):
-        return __make_a_singleton_class(class_reference, *args, **kwargs)
+        return _make_a_singleton_class(class_reference, *args, **kwargs)
     return inner_decorator
     
