@@ -10,7 +10,9 @@ from tornado.web        import Application as WSGIApplication
 from tornado.web        import RedirectHandler
 from tornado.web        import StaticFileHandler
 
-from tori.exception     import *
+from tori.common           import get_class_reference as gcr
+from tori.decorator.common import _make_a_singleton_class as make_a_singleton_class
+from tori.exception        import *
 
 class Application(object):
     def __init__(self, **settings):
@@ -27,8 +29,8 @@ class Application(object):
         self._settings = settings
         
         # Get the reference to the calling function
-        current_function = sys._getframe(self._hierarchy_level)
-        caller_function = current_function.f_code
+        current_function    = sys._getframe(self._hierarchy_level)
+        caller_function     = current_function.f_code
         reference_to_caller = caller_function.co_filename
         
         # Base path
@@ -115,6 +117,8 @@ class SimpleApplication(Application):
         return routes
     
 class DIApplication(Application):
+    _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
+    
     def __init__(self, configuration_location, **settings):
         '''
         Interface to bootstrap a WSGI application with Tornado framework.
@@ -139,7 +143,7 @@ class DIApplication(Application):
                 ... <!-- Assume that there are some configurations here -->
                 <routes>
                     <!-- Example for controller -->
-                    <route type="controller" pattern="/">app.controller.MainController</route>
+                    <controller class="app.controller.MainController" pattern="/">
                     <!--
                         Example for static content
                         
@@ -149,15 +153,11 @@ class DIApplication(Application):
                         
                         This should be only used for development only.
                     -->
-                    <route type="controller" pattern="/resources/(.*)">resources</route>
+                    <resource location="resources" pattern="/resources/(.*)"/>
                     <!-- Example for redirection -->
-                    <route type="redirection"
-                           pattern="/about-shiroyuki"
-                           permanent="False"
-                    >http://shiroyuki.com</route>
+                    <redirection destination="http://shiroyuki.com" pattern="/about-shiroyuki" permanent="False"/>
                     <!-- Example for proxy -->
-                    <route type="proxy" pattern="/api">http://shiroyuki.com/api</route>
-                    
+                    <proxy type="http://shiroyuki.com/api" pattern="/api"/>
                 </routes>
             </application>
         
@@ -169,54 +169,70 @@ class DIApplication(Application):
         registered_routing_patterns = []
         
         # Register the routes to controllers.
-        for config in self._config.get('routes route'):
-            if not config.attrs.has_key('type'):
+        for route in self._config.get('routes > *'):
+            if route.name not in self._registered_routing_types:
                 raise RoutingTypeNotFoundError
             
-            routing_type = config.attrs['type']
+            routing_type = route.name
             
-            if not config.attrs.has_key('pattern'):
+            if not route.attrs.has_key('pattern'):
                 raise RoutingPatternNotFoundError
             
-            routing_pattern = config.attrs['pattern']
+            routing_pattern = route.attrs['pattern']
             
             if routing_pattern in registered_routing_patterns:
                 raise DuplicatedRouteError
             
             registered_routing_patterns.append(routing_pattern)
             
-            route = None
+            actual_route = None
             
             # Create a route by type.
             if routing_type == 'controller':
-                # Gather information
-                controller_path = config.data()
-                access_path     = re.split('\.', controller_path)
-                module_name     = '.'.join(access_path[:-1])
-                controller_name = access_path[-1]
-                
-                # Automatically import the controller (or handler).
-                __import__(module_name, fromlist=[controller_name])
+                if not route.attrs.has_key('class'):
+                    raise InvalidControllerDirectiveError, "Controller class is missing."
                 
                 # Get the controller.
-                controller      = getattr(sys.modules[module_name], controller_name)
+                controller   = gcr(route.attrs['class'])
                 
                 # Create a route for a controller.
-                route = (routing_pattern, controller)
-            elif routing_type == 'static':
+                actual_route = (
+                    routing_pattern, 
+                    controller
+                )
+            elif routing_type == 'resource':
                 # Create a route for a static content / resource.
-                route = (routing_pattern, StaticFileHandler, self._static_routing_setting)
+                #actual_route = (
+                #    routing_pattern,
+                #    StaticFileHandler,
+                #    self._static_routing_setting
+                #)
+                if not route.attrs.has_key('location'):
+                    raise InvalidControllerDirectiveError, "Resouce location is missing."
+                
+                resource_location = route.attrs['location']
+                resource_service  = gcr('tori.controller.ResourceService')
+                
+                if resource_location[0] != '/' and os.path.exists(os.path.join(self._base_path, resource_location)):
+                    resource_location = os.path.join(self._base_path, resource_location)
+                
+                resource_service.add_pattern(routing_pattern, resource_location)
+                
+                actual_route = (
+                    routing_pattern,
+                    resource_service
+                )
             elif routing_type == 'redirection':
                 # Gather information
-                destination = config.data()
+                destination = route.data()
                 
                 if not config.attrs.has_key('permanent'):
                     raise InvalidRedirectionDirectiveError, "Missing permanent parameter."
                 
-                is_permanent = bool(config.attrs['permanent'])
+                is_permanent = bool(route.attrs['permanent'])
                 
                 # Create a route for a redirection directive.
-                route = (
+                actual_route = (
                     routing_pattern,
                     RedirectHandler, {
                         'url':       destination,
@@ -226,9 +242,9 @@ class DIApplication(Application):
             elif routing_type == 'proxy':
                 raise FutureFeatureException
             
-            if not route:
+            if not actual_route:
                 raise UnknownRoutingTypeError, routing_type
             
-            routes.append(route)
+            routes.append(actual_route)
         
         return routes

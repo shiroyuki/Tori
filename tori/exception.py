@@ -25,6 +25,11 @@ class DuplicatedRouteError(Exception):
     Exception used when the routing pattern is already registered.
     '''
 
+class InvalidControllerDirectiveError(Exception):
+    '''
+    Exception used when the controller directive is incomplete due to missing parameter
+    '''
+
 class RoutingPatternNotFoundError(Exception):
     '''
     Exception used when the routing pattern is not specified in the configuration file.

@@ -4,7 +4,8 @@
         <port>8000</port>
     </server>
     <routes>
-        <route type="controller" pattern="/">app.controller.main.MainController</route>
+        <controller class="app.controller.main.MainController" pattern="/"/>
+        <resource location="resources" pattern="/resources(/.*)"/>
     </routes>
     <services>
         <renderer type="tori.renderer.DefaultRenderer" package="app.views">app.controller.main.MainController</renderer>
