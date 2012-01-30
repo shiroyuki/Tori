@@ -71,11 +71,15 @@ Suppose we have the following file structure:
 			controller.py
 			views/
 				index.html
+		resources/
+			readme.txt
+			city.jpg
 		server.py
 		server.xml
 
 where `app/controller.py` contains:
 
+```python
 	from tori.controller            import Controller
 	from tori.decorator.controller  import renderer
 	
@@ -87,23 +91,28 @@ where `app/controller.py` contains:
 				title="Testing Website",
 				uri=self.request.uri
 			)
+```
 
 Then, we write a configuration file `server.xml`:
 
+```xml
 	<?xml version="1.0" encoding="utf-8"?>
 	<application>
 	    <server>
 	        <port>8000</port>
 	    </server>
 	    <routes>
-	        <route type="controller" pattern="/">app.controller.main.MainController</route>
+	        <controller class="app.controller.main.MainController" pattern="/">
+	        <resource location="resources" pattern="/resources(/.*)"/>
 	    </routes>
 	</application>
+```
 
 where `<port/>` is the port number and `<route/>` is dealing with controller, static content (not supported yet) and redirection (not supported yet).
 
 Now, we write a bootstrap `server.py`:
 
+```python
 	import os
 	import sys
 	
@@ -117,6 +126,7 @@ Now, we write a bootstrap `server.py`:
 	
 	application = Application(server.xml)
 	application.start()
+```
 
 Then, we can start the WSGI server by executing:
 
