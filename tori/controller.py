@@ -55,38 +55,48 @@ class ResourceEntity(object):
         return self._content
 
 class ResourceService(web.RequestHandler):
-    _patterns = {}
-    _cache    = {}
+    _patterns        = {}
+    _cached_patterns = []
+    _cache_objects   = {}
     
     @staticmethod
-    def add_pattern(pattern, base_path):
+    def add_pattern(pattern, base_path, enabled_cache=False):
         ResourceService._patterns[pattern] = base_path
     
     def get(self, path):
-        base_path = None
-        real_path = None
-        resource  = None
+        base_path    = None
+        real_path    = None
+        resource     = None
+        used_pattern = None
+        request_uri  = self.request.uri
+        has_cache    = ResourceService._cache_objects.has_key(request_uri)
         
         # Remove the prefixed foreslashes.
         path = sub('^/+', '', path)
         
-        if ResourceService._cache.has_key(self.request.uri):
-            resource = ResourceService._cache(self.request.uri)
-        elif ResourceService._patterns.has_key(self.request.uri):
-            real_path = ResourceService._patterns[self.request.uri]
+        if has_cache:
+            resource = ResourceService._cache_objects[request_uri]
+        elif ResourceService._patterns.has_key(request_uri):
+            used_pattern = request_uri
+            real_path    = ResourceService._patterns[request_uri]
         else:
             for pattern in ResourceService._patterns:
-                if not match(pattern, self.request.uri):
+                if not match(pattern, request_uri):
                     continue
                 
-                real_path = p.abspath(p.join(
+                used_pattern = pattern
+                real_path    = p.abspath(p.join(
                     ResourceService._patterns[pattern],
                     path
                 ))
+                
                 break
         
         if not resource:
             resource = ResourceEntity(real_path)
+        
+        if not has_cache and used_pattern in ResourceService._cached_patterns:
+            ResourceService._cached_patterns[used_pattern] = resource
         
         resource_type = resource.type or 'text/plain'
         

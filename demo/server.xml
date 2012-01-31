@@ -5,7 +5,7 @@
     </server>
     <routes>
         <controller class="app.controller.main.MainController" pattern="/"/>
-        <resource location="resources" pattern="/resources(/.*)"/>
+        <resource location="resources" pattern="/resources(/.*)" cache="true"/>
     </routes>
     <services>
         <renderer type="tori.renderer.DefaultRenderer" package="app.views">app.controller.main.MainController</renderer>

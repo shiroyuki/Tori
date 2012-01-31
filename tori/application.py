@@ -202,21 +202,20 @@ class DIApplication(Application):
                 )
             elif routing_type == 'resource':
                 # Create a route for a static content / resource.
-                #actual_route = (
-                #    routing_pattern,
-                #    StaticFileHandler,
-                #    self._static_routing_setting
-                #)
                 if not route.attrs.has_key('location'):
                     raise InvalidControllerDirectiveError, "Resouce location is missing."
                 
+                # Gather information about location, caching flag and resource service.
+                resource_cache    = route.attrs.has_key('cache') and route.attrs['cache'] or False
                 resource_location = route.attrs['location']
                 resource_service  = gcr('tori.controller.ResourceService')
                 
+                # If the path of the resource is not an absolute path, treat the path as a relative path.
                 if resource_location[0] != '/' and os.path.exists(os.path.join(self._base_path, resource_location)):
                     resource_location = os.path.join(self._base_path, resource_location)
                 
-                resource_service.add_pattern(routing_pattern, resource_location)
+                # Register the pattern.
+                resource_service.add_pattern(routing_pattern, resource_location, resource_cache)
                 
                 actual_route = (
                     routing_pattern,
