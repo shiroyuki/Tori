@@ -2,7 +2,7 @@ import unittest
 
 from tori.decorator.common import *
 
-class TestSingletonClass(unittest.TestCase):
+class TestDecoratorCommonSingletonClass(unittest.TestCase):
     ''' Test the 'singleton' decorator. '''
     class DummyTest(object):
         def __init__(self):
@@ -16,7 +16,7 @@ class TestSingletonClass(unittest.TestCase):
         ''' Test if the target class without a singleton attribute. '''
         try:
             @singleton
-            class SuperDummyClass(TestSingletonClass.DummyTest): pass
+            class SuperDummyClass(TestDecoratorCommonSingletonClass.DummyTest): pass
             self.assertTrue(True, 'Singleton Class: Passed the initialization as expected.')
         except SingletonInitializationException:
             self.assertTrue(False, 'Singleton Class: Failed the initialization with known exception.')
@@ -33,7 +33,7 @@ class TestSingletonClass(unittest.TestCase):
         ''' Test if the target class without a singleton attribute but using a decorator with primitive parameters. '''
         try:
             @singleton(10)
-            class SuperDummyClass(TestSingletonClass.DummyTest):
+            class SuperDummyClass(TestDecoratorCommonSingletonClass.DummyTest):
                 def __init__(self, init_number):
                     super(self.__class__, self).__init__()
                     self.number = init_number
@@ -55,7 +55,7 @@ class TestSingletonClass(unittest.TestCase):
             class SampleDependencyInjection(object): pass
             sample_di = SampleDependencyInjection()
             @singleton(sample_di)
-            class SuperDummyClass(TestSingletonClass.DummyTest):
+            class SuperDummyClass(TestDecoratorCommonSingletonClass.DummyTest):
                 def __init__(self, dependency_injection):
                     super(self.__class__, self).__init__()
                     self.dependency_injection = dependency_injection
@@ -83,7 +83,7 @@ class TestSingletonClass(unittest.TestCase):
         try:
             class SampleDependencyInjection(object): pass
             @singleton(SampleDependencyInjection)
-            class SuperDummyClass(TestSingletonClass.DummyTest):
+            class SuperDummyClass(TestDecoratorCommonSingletonClass.DummyTest):
                 def __init__(self, dependency_injection):
                     super(self.__class__, self).__init__()
                     self.dependency_injection = dependency_injection
@@ -103,7 +103,7 @@ class TestSingletonClass(unittest.TestCase):
         try:
             class SampleDependencyInjection(object): pass
             @singleton_with(SampleDependencyInjection)
-            class SuperDummyClass(TestSingletonClass.DummyTest):
+            class SuperDummyClass(TestDecoratorCommonSingletonClass.DummyTest):
                 def __init__(self, dependency_injection):
                     super(self.__class__, self).__init__()
                     self.dependency_injection = dependency_injection()
@@ -125,7 +125,7 @@ class TestSingletonClass(unittest.TestCase):
         ''' Test if the target class is with null singleton attribute. '''
         try:
             @singleton
-            class SuperDummyClass(TestSingletonClass.DummyTest):
+            class SuperDummyClass(TestDecoratorCommonSingletonClass.DummyTest):
                 _singleton_instance = None
                 def __init__(self):
                     # Use `self.__class__` to call the parent class' constructor.
@@ -138,7 +138,7 @@ class TestSingletonClass(unittest.TestCase):
         ''' Test if the target class has already had an attribute `_singleton_instance` but it is not compatible. '''
         try:
             @singleton
-            class SuperDummyClass(TestSingletonClass.DummyTest):
+            class SuperDummyClass(TestDecoratorCommonSingletonClass.DummyTest):
                 _singleton_instance = {}
                 def __init__(self):
                     # Use `self.__class__` to call the parent class' constructor.
