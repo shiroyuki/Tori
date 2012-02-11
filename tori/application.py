@@ -127,8 +127,12 @@ class DIApplication(Application):
         please consult with Tornado documentation.
         '''
         self._hierarchy_level = 2
+        
         super(self.__class__, self).__init__(**settings)
-        self._config = Kotoba(os.path.join(self._base_path, configuration_location))
+        
+        self._config            = Kotoba(os.path.join(self._base_path, configuration_location))
+        self._registered_routes = []
+        
         self._update_routes(self._map_routing_table())
         self._activate()
         self.listen(int(self._config.get('server port').data()))
@@ -165,85 +169,93 @@ class DIApplication(Application):
         should not be used directly as it takes no effect unless it is used with `_update_routes`.
         and reactivate the application with `_activate`.
         '''
-        routes                      = []
-        registered_routing_patterns = []
+        routes = []
         
         # Register the routes to controllers.
         for route in self._config.get('routes > *'):
-            if route.name not in self._registered_routing_types:
-                raise RoutingTypeNotFoundError
-            
-            routing_type = route.name
-            
-            if not route.attrs.has_key('pattern'):
-                raise RoutingPatternNotFoundError
-            
-            routing_pattern = route.attrs['pattern']
-            
-            if routing_pattern in registered_routing_patterns:
-                raise DuplicatedRouteError
-            
-            registered_routing_patterns.append(routing_pattern)
-            
-            actual_route = None
-            
-            # Create a route by type.
-            if routing_type == 'controller':
-                if not route.attrs.has_key('class'):
-                    raise InvalidControllerDirectiveError, "Controller class is missing."
-                
-                # Get the controller.
-                controller   = gcr(route.attrs['class'])
-                
-                # Create a route for a controller.
-                actual_route = (
-                    routing_pattern, 
-                    controller
-                )
-            elif routing_type == 'resource':
-                # Create a route for a static content / resource.
-                if not route.attrs.has_key('location'):
-                    raise InvalidControllerDirectiveError, "Resouce location is missing."
-                
-                # Gather information about location, caching flag and resource service.
-                resource_cache    = route.attrs.has_key('cache') and route.attrs['cache'] or False
-                resource_location = route.attrs['location']
-                resource_service  = gcr('tori.controller.ResourceService')
-                
-                # If the path of the resource is not an absolute path, treat the path as a relative path.
-                if resource_location[0] != '/' and os.path.exists(os.path.join(self._base_path, resource_location)):
-                    resource_location = os.path.join(self._base_path, resource_location)
-                
-                # Register the pattern.
-                resource_service.add_pattern(routing_pattern, resource_location, resource_cache)
-                
-                actual_route = (
-                    routing_pattern,
-                    resource_service
-                )
-            elif routing_type == 'redirection':
-                # Gather information
-                destination = route.data()
-                
-                if not config.attrs.has_key('permanent'):
-                    raise InvalidRedirectionDirectiveError, "Missing permanent parameter."
-                
-                is_permanent = bool(route.attrs['permanent'])
-                
-                # Create a route for a redirection directive.
-                actual_route = (
-                    routing_pattern,
-                    RedirectHandler, {
-                        'url':       destination,
-                        'permanent': is_permanent
-                    }
-                )
-            elif routing_type == 'proxy':
-                raise FutureFeatureException
-            
-            if not actual_route:
-                raise UnknownRoutingTypeError, routing_type
-            
-            routes.append(actual_route)
+            self.__register_route(route)
+            routes.append(self.__analyze_route(route))
         
         return routes
+    
+    def __analyze_route(self, route):
+        actual_route    = None
+        routing_type    = self.__get_routing_type(route)
+        routing_pattern = self.__get_routing_pattern(route)
+            
+        # Create a route by type.
+        if routing_type == 'controller':
+            actual_route = self.__wire_controller(route)
+        elif routing_type == 'resource':
+            actual_route = self.__wire_resource(route)
+        elif routing_type == 'redirection':
+            actual_route = self.__issue_redirection(route)
+        elif routing_type == 'proxy':
+            raise FutureFeatureException
+            
+        if not actual_route:
+            raise UnknownRoutingTypeError, routing_type
+        
+        return actual_route
+        
+    def __wire_controller(self, route):
+        if not route.attrs.has_key('class'):
+            raise InvalidControllerDirectiveError, "Controller class is missing."
+                
+        # Create a route for a controller.
+        return (
+            self.__get_routing_pattern(route),
+            gcr(route.attrs['class'])
+        )
+        
+    def __wire_resource(self, route):
+        # Create a route for a static content / resource.
+        if not route.attrs.has_key('location'):
+            raise InvalidControllerDirectiveError, "Resouce location is missing."
+                
+        # Gather information about location, caching flag and resource service.
+        routing_pattern    = self.__get_routing_pattern(route)
+        actual_location    = route.attrs['location']
+        cache_enabled      = route.attrs.has_key('cache') and route.attrs['cache'] or False
+        secondary_location = os.path.join(self._base_path, actual_location)
+        resource_service   = gcr('tori.controller.ResourceService')
+                
+        # If the path of the resource is not an absolute path, treat the path as a relative path.
+        if actual_location[0] != '/' and os.path.exists(secondary_location):
+            actual_location = secondary_location
+                
+        # Map the routing pattern to the actual location.
+        resource_service.add_pattern(routing_pattern, actual_location, cache_enabled)
+                
+        return (routing_pattern, resource_service)
+        
+    def __issue_redirection(self, route):
+        return (
+            self.__get_routing_pattern(route),
+            RedirectHandler, {
+                'url':       route.data(),
+                'permanent': route.attrs.has_key('permanent') and bool(route.attrs['permanent']) or False
+            }
+        )
+        
+    def __get_routing_type(self, route):
+        if route.name not in self._registered_routing_types:
+            raise RoutingTypeNotFoundError
+        
+        return route.name
+        
+    def __get_routing_pattern(self, route):
+        if not route.attrs.has_key('pattern'):
+            raise RoutingPatternNotFoundError
+            
+        return route.attrs['pattern']
+        
+    def __register_route(self, route):
+        routing_pattern = self.__get_routing_pattern(route)
+        
+        if routing_pattern in self._registered_routes:
+            raise DuplicatedRouteError
+            
+        self._registered_routes.append(routing_pattern)
+            
+            
