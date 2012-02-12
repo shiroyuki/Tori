@@ -4,6 +4,12 @@ class FutureFeatureException(Exception):
     Exception used when the future feature is used where it is not properly implemented.
     '''
 
+# Common / Invalid input
+class InvalidInput(Exception):
+    '''
+    Exception used when the given input is invalid or incompatible to the requirement.
+    '''
+
 # Common / Object Dictionary
 class UnsupportObjectTypeError(Exception):
     '''

@@ -1,5 +1,9 @@
-import bootstrap
 import unittest
+import bootstrap
+
+from tori.common import console
+
+console.disable_logging()
 
 suite = unittest.TestLoader().discover(
     bootstrap.testing_base_path,

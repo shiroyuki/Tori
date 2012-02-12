@@ -1,23 +1,25 @@
+# Standard libraries
 import os
 import re
 import sys
 
+# Third-party libraries
 # Kotoba 2.x from Yotsuba 3.1 will be replaced by Kotoba 3.0 as soon as the official release is available.
 from yotsuba.lib.kotoba import Kotoba
-
 from tornado.ioloop     import IOLoop
 from tornado.web        import Application as WSGIApplication
 from tornado.web        import RedirectHandler
-from tornado.web        import StaticFileHandler
 
-from tori.common           import get_class_reference as gcr
-from tori.decorator.common import _make_a_singleton_class as make_a_singleton_class
-from tori.exception        import *
+# Internal libraries
+from tori.common        import console
+from tori.exception     import *
+from tori.navigation    import *
 
 class Application(object):
     def __init__(self, **settings):
         '''
-        Interface to bootstrap a WSGI application with Tornado framework.
+        Interface to bootstrap a WSGI application with Tornado framework. This is the basic
+        application class which do nothing. Please don't use this directly.
         
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
@@ -61,8 +63,9 @@ class Application(object):
         `port_number` is an integer to indicate which port the application should be listen to.
         This setting is however only used in a standalone mode.
         '''
-        self._backend_app.listen(port_number)
-        print "Listen on port %d." % port_number
+        self._listening_port = port_number
+        console.log("Listen on port %d." % self._listening_port)
+        
         return self
     
     def start(self):
@@ -70,52 +73,16 @@ class Application(object):
         Start a server/service.
         '''
         try:
-            print "Service start listening from %s." % self._base_path
+            self._backend_app.listen(self._listening_port)
+            
+            console.log("Service start listening from %s." % self._base_path)
             IOLoop.instance().start()
         except KeyboardInterrupt:
-            print "\rCleanly stopped."
-
-class SimpleApplication(Application):
-    def __init__(self, controller_routing_table, static_routing_table=[], **settings):
-        '''
-        Interface to bootstrap a WSGI application with Tornado framework.
-        
-        `controller_routing_table` is a routing table for controllers, proxy or redirection.
-        The current implementation is based on Tornado's routing. The future release will be
-        based on a configuration file (preferably as an XML or YAML file).
-
-        `static_routing_table` is a routing table for static content. The future release
-        will enforce the routing from the configuration file.
-
-        `settings` is a dictionary of extra settings to Tornado engine. For more information,
-        please consult with Tornado documentation.
-        
-        This interface doesn't support redirection and proxy.
-        '''
-        self._hierarchy_level = 2
-        super(self.__class__, self).__init__(**settings)
-        self._update_routes(
-            self._map_routing_table(
-                controller_routing_table, static_routing_table
-            )
-        )
-        self._activate()
+            console.log("\rCleanly stopped.")
     
-    def _map_routing_table(self, controller_routing_table, static_routing_table):
-        routes = []
-        
-        # Register the routes to controllers.
-        for pattern, handler in controller_routing_table.iteritems():
-            route = (pattern, handler)
-            routes.append(route)
-        
-        # Register the routes to static content.
-        for pattern in static_routing_table:
-            route = (pattern, StaticFileHandler, self._static_routing_setting)
-            routes.append(route)
-        
-        return routes
-    
+    def get_listening_port(self):
+        return self._listening_port
+
 class DIApplication(Application):
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
     
@@ -130,13 +97,21 @@ class DIApplication(Application):
         
         super(self.__class__, self).__init__(**settings)
         
-        self._config            = Kotoba(os.path.join(self._base_path, configuration_location))
-        self._registered_routes = []
+        self._config     = Kotoba(os.path.join(self._base_path, configuration_location))
+        self._routingMap = RoutingMap()
         
-        self._update_routes(self._map_routing_table())
+        # Exclusive procedure
+        self._map_routing_table()
+        
+        # Normal procedure
+        self._update_routes(self._routingMap.export())
         self._activate()
         self.listen(int(self._config.get('server port').data()))
-        
+    
+    def get_route(self, routing_pattern):
+        ''' Get the route. '''
+        return self._routingMap.get(routing_pattern)
+    
     def _map_routing_table(self):
         '''
         Map a routing table based on the configuration.
@@ -169,27 +144,24 @@ class DIApplication(Application):
         should not be used directly as it takes no effect unless it is used with `_update_routes`.
         and reactivate the application with `_activate`.
         '''
-        routes = []
-        
         # Register the routes to controllers.
         for route in self._config.get('routes > *'):
-            self.__register_route(route)
-            routes.append(self.__analyze_route(route))
-        
-        return routes
+            self._routingMap.register(
+                self.__analyze_route(route)
+            )
     
     def __analyze_route(self, route):
         actual_route    = None
-        routing_type    = self.__get_routing_type(route)
-        routing_pattern = self.__get_routing_pattern(route)
+        routing_type    = Route.get_type(route)
+        routing_pattern = Route.get_pattern(route)
             
         # Create a route by type.
         if routing_type == 'controller':
-            actual_route = self.__wire_controller(route)
+            actual_route = DynamicRoute(route)
         elif routing_type == 'resource':
-            actual_route = self.__wire_resource(route)
+            actual_route = StaticRoute(route, self._base_path)
         elif routing_type == 'redirection':
-            actual_route = self.__issue_redirection(route)
+            actual_route = RelayRoute(route)
         elif routing_type == 'proxy':
             raise FutureFeatureException
             
@@ -197,61 +169,9 @@ class DIApplication(Application):
             raise UnknownRoutingTypeError, routing_type
         
         return actual_route
-        
-    def __wire_controller(self, route):
-        if not route.attrs.has_key('class'):
-            raise InvalidControllerDirectiveError, "Controller class is missing."
-                
-        # Create a route for a controller.
-        return (
-            self.__get_routing_pattern(route),
-            gcr(route.attrs['class'])
-        )
-        
-    def __wire_resource(self, route):
-        # Create a route for a static content / resource.
-        if not route.attrs.has_key('location'):
-            raise InvalidControllerDirectiveError, "Resouce location is missing."
-                
-        # Gather information about location, caching flag and resource service.
-        routing_pattern    = self.__get_routing_pattern(route)
-        actual_location    = route.attrs['location']
-        cache_enabled      = route.attrs.has_key('cache') and route.attrs['cache'] or False
-        secondary_location = os.path.join(self._base_path, actual_location)
-        resource_service   = gcr('tori.controller.ResourceService')
-                
-        # If the path of the resource is not an absolute path, treat the path as a relative path.
-        if actual_location[0] != '/' and os.path.exists(secondary_location):
-            actual_location = secondary_location
-                
-        # Map the routing pattern to the actual location.
-        resource_service.add_pattern(routing_pattern, actual_location, cache_enabled)
-                
-        return (routing_pattern, resource_service)
-        
-    def __issue_redirection(self, route):
-        return (
-            self.__get_routing_pattern(route),
-            RedirectHandler, {
-                'url':       route.data(),
-                'permanent': route.attrs.has_key('permanent') and bool(route.attrs['permanent']) or False
-            }
-        )
-        
-    def __get_routing_type(self, route):
-        if route.name not in self._registered_routing_types:
-            raise RoutingTypeNotFoundError
-        
-        return route.name
-        
-    def __get_routing_pattern(self, route):
-        if not route.attrs.has_key('pattern'):
-            raise RoutingPatternNotFoundError
-            
-        return route.attrs['pattern']
-        
+    
     def __register_route(self, route):
-        routing_pattern = self.__get_routing_pattern(route)
+        routing_pattern = Route.get_pattern(route)
         
         if routing_pattern in self._registered_routes:
             raise DuplicatedRouteError

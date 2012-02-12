@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <application>
     <server>
-        <port>8000</port>
+        <port>1234</port>
     </server>
     <routes>
-        <controller class="app.controller.main.MainController" pattern="/"/>
+        <controller class="dummy.dependency_injectable_controllers.PlainController" pattern="/plain"/>
+        <controller class="dummy.dependency_injectable_controllers.ControllerWithRenderer" pattern="/ctrl-with-renderer"/>
         <resource location="resources" pattern="/resources(/.*)" cache="true"/>
         <redirection destination="http://shiroyuki.com" pattern="/about-shiroyuki"/>
     </routes>
