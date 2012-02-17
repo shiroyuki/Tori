@@ -68,6 +68,11 @@ class UnsupportedRendererError(Exception):
     Exception thrown when the unsupported renderer is being registered.
     '''
 
+class RendererSetupError(Exception):
+    '''
+    Exception thrown when there exists errors during setting up the template.
+    '''
+
 class RendererNotFoundError(Exception):
     '''
     Exception thrown when the unknown template repository is used.

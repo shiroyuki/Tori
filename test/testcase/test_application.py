@@ -37,6 +37,8 @@ class TestDependencyInjectableApplicationClass(unittest.TestCase):
             self.assertTrue(False, 'Unexpectedly know the unregistered pattern.')
         except RoutingPatternNotFoundError:
             pass
-
-if __name__ == '__main__':
-    unittest.main()
+    
+    def test_mandatory_dependencies(self):
+        ''' Test for mandatory dependencies required by Tori.DIApplication '''
+        self.assertEqual(self.app._hierarchy_level, 2)
+        self.assertIsInstance(self.app._routingMap, RoutingMap)
