@@ -16,6 +16,7 @@ class Controller(web.RequestHandler):
             self._rendering_engine = DefaultRenderer
         
         output = None
+        
         try:
             output = RendererService.instance().render(
                 self._rendering_source,
@@ -64,6 +65,8 @@ class ResourceService(web.RequestHandler):
         ResourceService._patterns[pattern] = base_path
     
     def get(self, path):
+        # Note: Refactor this method.
+        
         base_path    = None
         real_path    = None
         resource     = None

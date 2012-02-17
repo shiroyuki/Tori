@@ -7,8 +7,8 @@
         <controller class="demo.app.controller.main.MainController" pattern="/"/>
         <resource location="resources" pattern="/resources(/.*)" cache="true"/>
         <redirection destination="http://shiroyuki.com" pattern="/about-shiroyuki"/>
+        <!-- Todo: Implement configuration inclusion. -->
+        <!-- <include package="tori.developer.profiler" prefix="/developer/profiler"/> -->
     </routes>
-    <services>
-        <renderer type="tori.renderer.DefaultRenderer" package="demo.app.views">demo.app.controller.main.MainController</renderer>
-    </services>
+    <services/>
 </application>
