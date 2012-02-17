@@ -2,7 +2,7 @@ from tori.controller           import Controller
 from tori.decorator.controller import renderer
 from tori.exception            import *
 
-@renderer('app.views')
+@renderer('demo.app.views')
 class MainController(Controller):
     def get(self):
         try:

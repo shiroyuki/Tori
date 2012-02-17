@@ -4,11 +4,11 @@
         <port>8000</port>
     </server>
     <routes>
-        <controller class="app.controller.main.MainController" pattern="/"/>
+        <controller class="demo.app.controller.main.MainController" pattern="/"/>
         <resource location="resources" pattern="/resources(/.*)" cache="true"/>
         <redirection destination="http://shiroyuki.com" pattern="/about-shiroyuki"/>
     </routes>
     <services>
-        <renderer type="tori.renderer.DefaultRenderer" package="app.views">app.controller.main.MainController</renderer>
+        <renderer type="tori.renderer.DefaultRenderer" package="demo.app.views">demo.app.controller.main.MainController</renderer>
     </services>
 </application>
