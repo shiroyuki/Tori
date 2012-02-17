@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+<head>
+    <title>{{ location }}</title>
+</head>
+<body>
+    <dl>
+        {% for module_name in modules %}
+        <dt>{{ module_name }}</dt>
+        {% endfor %}
+    </dl>
+</body>
+</html>

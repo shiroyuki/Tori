@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+    <routes>
+        <controller class="tori.developer.app.controller.main.MainController" pattern="/"/>
+    </routes>
+    <services/>
+</package>
