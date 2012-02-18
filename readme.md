@@ -59,97 +59,22 @@ First, this requires Python 2.7. It may work with the older version of Python bu
 
 ## How to use (by example)
 
-_Note: Tori only simplifies the process for configuration, setup and initialization._
-
-First, check out or clone the code. Then, make sure that `tori` (from `tori`, `doc` and `demo`) is in the path that Python can reach.
-
-Suppose we have the following file structure:
-
-	project/
-		app/
-			__init__.py
-			controller.py
-			views/
-				index.html
-		resources/
-			readme.txt
-			city.jpg
-		server.py
-		server.xml
-
-where `app/controller.py` contains:
-
-```python
-	from tori.controller            import Controller
-	from tori.decorator.controller  import renderer
-	
-	@renderer('app.views')
-	class MainController(Controller):
-		def get(self):
-			self.render(
-				'index.html',
-				title="Testing Website",
-				uri=self.request.uri
-			)
-```
-
-Then, we write a configuration file `server.xml`:
-
-```xml
-	<?xml version="1.0" encoding="utf-8"?>
-	<application>
-	    <server>
-	        <port>8000</port>
-	    </server>
-	    <routes>
-	        <controller class="app.controller.main.MainController" pattern="/">
-	        <resource location="resources" pattern="/resources(/.*)"/>
-	    </routes>
-	</application>
-```
-
-where `<port/>` is the port number and `<route/>` is dealing with controller, static content (not supported yet) and redirection (not supported yet).
-
-Now, we write a bootstrap `server.py`:
-
-```python
-	import os
-	import sys
-	
-	app_path = os.path.abspath(os.path.join(os.path.dirname(
-		os.path.abspath(__file__)), '..'
-	))
-	
-	sys.path.append(app_path)
-	
-	from tori.application import DIApplication
-	
-	application = Application(server.xml)
-	application.start()
-```
-
-Then, we can start the WSGI server by executing:
-
-	python server.py
-
-Now, you should be able to access http://127.0.0.1:8000.
-
-Please note that the current release only supports for the server mode.
+This section is now moved to [the official documentation](https://github.com/shiroyuki/Tori/tree/master/docs/build/html/getting_started.html).
 
 ## Status
 
 ### Complete:
 
 - tori.decorator.common.singleton
-tori.decorator.common.singleton_with
+- tori.decorator.common.singleton_with
+- tori.application
+- tori.renderer
+- tori.template
+- tori.controller (not testible)
 
 ### Scheduled for unit testing:
 
 - tori.decorator.controller.renderer
-- tori.application
-- tori.controller
-- tori.renderer
-- tori.template
 
 ### Scheduled for field testing
 
@@ -158,3 +83,5 @@ tori.decorator.common.singleton_with
 ### Incomplete
 
 - tori.service
+- tori.developer.profiler
+- tori.developer.monitor

@@ -1,0 +1,180 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Routing &mdash; Tori 2.0-DEV documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.0-DEV',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Tori 2.0-DEV documentation" href="../index.html" />
+    <link rel="up" title="Configuration" href="index.html" />
+    <link rel="next" title="Navigation Module" href="../navigation.html" />
+    <link rel="prev" title="Configuration" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../navigation.html" title="Navigation Module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Configuration"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Tori 2.0-DEV documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Configuration</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="routing">
+<h1>Routing<a class="headerlink" href="#routing" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Juti Noppornpitak</td>
+</tr>
+</tbody>
+</table>
+<p>The routes is prioritized by the order in the routing list.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="14%" />
+<col width="86%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Directive</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>controller</td>
+<td>A routing directive for dynamic content handled by a controller.</td>
+</tr>
+<tr class="row-odd"><td>resource</td>
+<td>A routing directive for static content/resource.</td>
+</tr>
+<tr class="row-even"><td>redirection</td>
+<td>A routing directive for relaying requests with redirection.</td>
+</tr>
+<tr class="row-odd"><td>proxy</td>
+<td>A routing directive for proxying requests.</td>
+</tr>
+</tbody>
+</table>
+<p>In general, the attribute <tt class="docutils literal"><span class="pre">pattern</span></tt> of any routing directives is to indicate the routing pattern where the directive intercepts,
+process and respond to any requests to the pattern. Each routing pattern is unique from each other.</p>
+<p>For a routing directive <tt class="docutils literal"><span class="pre">controller</span></tt>, the attribute <tt class="docutils literal"><span class="pre">class</span></tt> is a class reference to a particular controller where the
+controller must be on the system path (for Python).</p>
+<p>For a routing directive <tt class="docutils literal"><span class="pre">redirection</span></tt>, the attribute <tt class="docutils literal"><span class="pre">destination</span></tt> is a string indicating the destination of the redirection,
+and the attribute <tt class="docutils literal"><span class="pre">permanent</span></tt> is a boolean indicating whether the redirection is permanent.</p>
+<p>For a routing directive <tt class="docutils literal"><span class="pre">resource</span></tt>, the attribute <tt class="docutils literal"><span class="pre">location</span></tt> is either:</p>
+<ul class="simple">
+<li>an absolute or relative path to static resource,</li>
+<li>a module name containing static resource.</li>
+</ul>
+<p>the attribute <tt class="docutils literal"><span class="pre">cache</span></tt> is a boolean to indicate whether the resource should be cache.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The current implementation of <tt class="docutils literal"><span class="pre">resource</span></tt> only handles directory.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The directive <tt class="docutils literal"><span class="pre">proxy</span></tt> is not supported at this moment.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Directive <tt class="docutils literal"><span class="pre">resource</span></tt> should only be used on the development environment. A traditional web server like Apache, Lighttpd or
+NginX is recommended for deploying static content.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Configuration</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../navigation.html"
+                        title="next chapter">Navigation Module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/configuration/routing.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../navigation.html" title="Navigation Module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Configuration"
+             >previous</a> |</li>
+        <li><a href="../index.html">Tori 2.0-DEV documentation</a> &raquo;</li>
+          <li><a href="index.html" >Configuration</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Juti Noppornpitak.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
