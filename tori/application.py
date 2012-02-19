@@ -16,19 +16,22 @@ from tori.exception     import *
 from tori.navigation    import *
 
 class Application(object):
-    def __init__(self, **settings):
-        '''
-        Interface to bootstrap a WSGI application with Tornado framework. This is the basic
-        application class which do nothing. Please don't use this directly.
+    '''
+    Interface to bootstrap a WSGI application with Tornado framework. This is the basic
+    application class which do nothing. Please don't use this directly.
         
-        `settings` is a dictionary of extra settings to Tornado engine. For more information,
-        please consult with Tornado documentation.
-        '''
+    `settings` is a dictionary of extra settings to Tornado engine. For more information,
+    please consult with Tornado documentation.
+    '''
+    
+    def __init__(self, **settings):
         if not self._hierarchy_level:
             self._hierarchy_level = 1
         
+        self._number_of_activation = 0
         # Setting for the application.
-        self._settings = settings
+        self._settings          = settings
+        self._settings['debug'] = False
         
         # Get the reference to the calling function
         current_function    = sys._getframe(self._hierarchy_level)
@@ -97,8 +100,9 @@ class DIApplication(Application):
         
         super(self.__class__, self).__init__(**settings)
         
-        self._config     = Kotoba(os.path.join(self._base_path, configuration_location))
-        self._routingMap = RoutingMap()
+        self._config            = Kotoba(os.path.join(self._base_path, configuration_location))
+        self._routingMap        = RoutingMap()
+        self._settings['debug'] = self._config.get('server debug').data()
         
         # Exclusive procedure
         self._map_routing_table()

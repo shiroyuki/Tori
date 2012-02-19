@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <application>
     <server>
+        <debug>true</debug>
         <port>8000</port>
     </server>
     <routes>

@@ -4,11 +4,20 @@ from re             import match, sub
 from StringIO       import StringIO
 
 from tornado        import web
-from tori.renderer  import DefaultRenderer, RendererService
+from tori.renderer  import DefaultRenderer, RenderingService
 from tori.exception import *
 
 class Controller(web.RequestHandler):
+    # def write_error(status_code, **kwargs):
+    #         if status_code == 500:
+    #             self.write('Server Error')
+    #         self.write('What the fuck')
+    #         self.flush()
+    #
+    
     def render(self, template_name, **contexts):
+        ''' Render the template with the given contexts. '''
+        
         if not self._rendering_source:
             raise RenderingSourceMissingError, 'The source of template is not identified. This method is disabled.'
         
@@ -18,7 +27,7 @@ class Controller(web.RequestHandler):
         output = None
         
         try:
-            output = RendererService.instance().render(
+            output = RenderingService.instance().render(
                 self._rendering_source,
                 template_name,
                 **contexts
@@ -27,11 +36,14 @@ class Controller(web.RequestHandler):
             # When the renderer is not found. It is possible that the renderer is not yet
             # instantiated. This block of the code will do the lazy loading.
             renderer = self._rendering_engine(self._rendering_source)
-            RendererService.instance().register(renderer).render(
+            output = RenderingService.instance().register(renderer).render(
                 self._rendering_source,
                 template_name,
                 **contexts
             )
+        
+        if not output:
+            raise UnexpectedComputationError, 'Detected the render'
         
         self.write(output)
 

@@ -56,7 +56,7 @@ class DefaultRenderer(Renderer):
         return template.render(**contexts)
 
 @singleton
-class RendererService(object):
+class RenderingService(object):
     def __init__(self, renderer_class=Renderer, repository_class=TemplateRepository):
         self._repository = repository_class(renderer_class)
     

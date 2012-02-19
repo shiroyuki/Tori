@@ -1,3 +1,7 @@
+# Common / Unexpected Computation
+class UnexpectedComputationError(Exception):
+    ''' Exception used when the code runs mistakenly unexpectedly. '''
+
 # Common / Future exception
 class FutureFeatureException(Exception):
     '''
