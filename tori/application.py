@@ -11,7 +11,7 @@ from tornado.web        import Application as WSGIApplication
 from tornado.web        import RedirectHandler
 
 # Internal libraries
-from tori.common        import console
+from tori.common        import Console
 from tori.exception     import *
 from tori.navigation    import *
 
@@ -28,7 +28,6 @@ class Application(object):
         if not self._hierarchy_level:
             self._hierarchy_level = 1
         
-        self._number_of_activation = 0
         # Setting for the application.
         self._settings          = settings
         self._settings['debug'] = False
@@ -67,7 +66,7 @@ class Application(object):
         This setting is however only used in a standalone mode.
         '''
         self._listening_port = port_number
-        console.log("Listen on port %d." % self._listening_port)
+        Console.log("Listen on port %d." % self._listening_port)
         
         return self
     
@@ -78,10 +77,10 @@ class Application(object):
         try:
             self._backend_app.listen(self._listening_port)
             
-            console.log("Service start listening from %s." % self._base_path)
+            Console.log("Service start listening from %s." % self._base_path)
             IOLoop.instance().start()
         except KeyboardInterrupt:
-            console.log("\rCleanly stopped.")
+            Console.log("\rCleanly stopped.")
     
     def get_listening_port(self):
         return self._listening_port

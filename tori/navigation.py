@@ -18,7 +18,7 @@ from tornado.web import RedirectHandler
 
 # Internal libraries
 from tori.common    import get_class_reference as gcr
-from tori.common    import console
+from tori.common    import Console
 from tori.exception import *
 
 class RoutingMap(object):
@@ -163,7 +163,7 @@ class StaticRoute(Route):
         try:
             self.service().add_pattern(self.pattern(), self.location(), self.cache_enabled())
         except Exception, e:
-            console.warn('Cannot register the pattern for static resource because:\n-- %s.' % e.message)
+            Console.warn('Cannot register the pattern for static resource because:\n-- %s.' % e.message)
     
     def location(self):
         ''' Get the location of the static resource/content. '''

@@ -1,3 +1,8 @@
+'''
+:Author: Juti Noppornpitak
+
+This package contains decorators for enhancing controllers.
+'''
 from tori.exception import *
 
 def disable_access(action):
@@ -34,6 +39,11 @@ def _assign_renderer(class_reference, *args, **kwargs):
     return class_reference
 
 def renderer(*args, **kwargs):
+    '''
+    Set up the renderer of a controller (``class_reference``).
+    
+    See :class:`tori.renderer.Renderer` for more information.
+    '''
     def inner_decorator(class_reference):
         if len(args) == 0:
             raise InvalidInput

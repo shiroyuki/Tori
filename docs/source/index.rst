@@ -22,12 +22,12 @@ Contents:
    
    getting_started
    configuration/index
-   *
+   api/index
 
-Indices and tables
-==================
+Indices and modules
+===================
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
+.. * :ref:`search`
 

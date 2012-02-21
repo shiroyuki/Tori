@@ -29,7 +29,7 @@ route       The routing settings for the application. See :doc:`routing`.
 See also
 --------
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :glob:
    
    *

@@ -1,22 +1,9 @@
 import unittest
 import bootstrap
 
-from tori.common import console
+from tori.common import Console
 
-console.disable_logging()
-
-##### DEBUGGING CODE: BEGIN #####
-import sys, os
-modules = sys.modules.keys()
-modules.sort()
-#print ', '.join(modules)
-for k, v in sys.modules.iteritems():
-    if 'tori' not in k or not v: continue
-    print k, v
-    print dir(v)
-    print os.path.dirname(v.__file__)
-    #break
-##### DEBUGGING CODE: END #######
+Console.disable_logging()
 
 suite = unittest.TestLoader().discover(
     bootstrap.testing_base_path,

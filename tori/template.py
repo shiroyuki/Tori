@@ -1,3 +1,10 @@
+'''
+:Author: Juti Noppornpitaks
+:Purpose: Internal Use Only
+
+The template repository used by Rendering Service (:class:`tori.renderer.RenderingService`).
+'''
+
 from tori.exception import *
 
 class TemplateRepository(dict):
