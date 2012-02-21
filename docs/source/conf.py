@@ -310,7 +310,7 @@ class Mock(object):
 
 MOCK_MODULES = [
     'jinja2',
-    'jinja2.sandbox'
+    'jinja2.sandbox',
     'jinja2.Environment',
     'jinja2.FileSystemLoader',
     'jinja2.PackageLoader',
