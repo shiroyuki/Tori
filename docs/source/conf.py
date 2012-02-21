@@ -292,7 +292,6 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 
 # [readthedocs.org]
 # Mocking objects
-
 class Mock(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -310,10 +309,13 @@ class Mock(object):
             return Mock()
 
 MOCK_MODULES = [
+    'jinja2',
     'jinja2.Environment',
     'jinja2.FileSystemLoader',
-    'jinja2.PackageLoader'
-    'tornado.ioloop.IOLoop'
+    'jinja2.PackageLoader',
+    'tornado.ioloop',
+    'tornado.ioloop.IOLoop',
+    'tornado.web',
     'tornado.web.Application',
     'tornado.web.HTTPError',
     'tornado.web.RedirectHandler',
@@ -321,5 +323,7 @@ MOCK_MODULES = [
     'yotsuba.lib.kotoba.Kotoba'
 ]
 
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = Mock()
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if on_rtd:
+    for mod_name in MOCK_MODULES:
+        sys.modules[mod_name] = Mock()
