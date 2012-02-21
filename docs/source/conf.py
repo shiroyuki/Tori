@@ -309,11 +309,6 @@ class Mock(object):
             return Mock()
 
 MOCK_MODULES = [
-    'jinja2',
-    'jinja2.sandbox',
-    'jinja2.Environment',
-    'jinja2.FileSystemLoader',
-    'jinja2.PackageLoader',
     'tornado.ioloop',
     'tornado.ioloop.IOLoop',
     'tornado.web',
