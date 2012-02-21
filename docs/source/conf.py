@@ -309,6 +309,7 @@ class Mock(object):
             return Mock()
 
 MOCK_MODULES = [
+    'tornado',
     'tornado.ioloop',
     'tornado.ioloop.IOLoop',
     'tornado.web',
