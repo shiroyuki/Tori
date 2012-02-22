@@ -1,7 +1,12 @@
 #from os.path import basename, dirname, join
 #from glob    import glob
 
+from tori.service import ServiceLocator
+
 __version__ = '2.0a'
+
+settings = {}
+services = ServiceLocator()
 
 # __all__     = []
 # 

@@ -4,16 +4,17 @@
 This package contains an abstract controller (based on :class:`tornado.web.RequestHandler`) and built-in controllers.
 '''
 
-from os             import path as p
-from mimetypes      import guess_type as get_type
-from re             import match, sub
-from StringIO       import StringIO
+from os        import path as p
+from mimetypes import guess_type as get_type
+from re        import match, sub
+from StringIO  import StringIO
 
-from tornado        import web
-from tori.renderer  import DefaultRenderer, RenderingService
-from tori.exception import *
+from tornado.web            import RequestHandler
+from tori                   import services as ToriService
+from tori.renderer          import DefaultRenderer
+from tori.exception         import *
 
-class Controller(web.RequestHandler):
+class Controller(RequestHandler):
     '''
     The abstract controller for Tori framework which replaces Jinja2 as a template engine instead.
     '''
@@ -28,19 +29,21 @@ class Controller(web.RequestHandler):
         '''
         Render the template with the given contexts.
         
-        See :meth:`Renderer.render` for more information.
+        See :meth:`tori.renderer.Renderer.render` for more information.
         '''
         
+        # If the rendering source isn't set, break the code.
         if not self._rendering_source:
             raise RenderingSourceMissingError, 'The source of template is not identified. This method is disabled.'
         
+        # If the rendering engine is not specified, use the default one.
         if not self._rendering_engine:
             self._rendering_engine = DefaultRenderer
         
         output = None
         
         try:
-            output = RenderingService.instance().render(
+            output = ToriService.get('renderer').render(
                 self._rendering_source,
                 template_name,
                 **contexts
@@ -49,7 +52,7 @@ class Controller(web.RequestHandler):
             # When the renderer is not found. It is possible that the renderer is not yet
             # instantiated. This block of the code will do the lazy loading.
             renderer = self._rendering_engine(self._rendering_source)
-            output   = RenderingService.instance().register(renderer).render(
+            output   = ToriService.get('renderer').register(renderer).render(
                 self._rendering_source,
                 template_name,
                 **contexts
@@ -89,7 +92,7 @@ class ResourceEntity(object):
         
         return self._content
 
-class ResourceService(web.RequestHandler):
+class ResourceService(RequestHandler):
     ''' Resource service is to serve a static resource via HTTP/S protocal. '''
     
     _patterns        = {}

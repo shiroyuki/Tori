@@ -81,3 +81,9 @@ class RendererNotFoundError(Exception):
     '''
     Exception thrown when the unknown template repository is used.
     '''
+
+# Services
+class UnknownServiceError(Exception):
+    '''
+    Exception thrown when the requested service is unknown or not found.
+    '''

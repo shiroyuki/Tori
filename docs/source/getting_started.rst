@@ -74,6 +74,3 @@ Now, to run the server, you can simply just execute::
     python server.py
 
 You should see it running.
-
-.. warning::
-    Currently, every first request to each controller responding with HTTP 500. This behaviour is expected for now.

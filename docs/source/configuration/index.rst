@@ -26,6 +26,26 @@ route       The routing settings for the application. See :doc:`routing`.
     Like a prototype in **Yotsuba** project, :class:`yotsuba.kotoba.Kotoba` is still used for parsing the XML. This will be replaced
     with the selector from **Kotoba** project.
 
+Undocumented Configuration
+--------------------------
+
+The following is an example of supported configuration which is still undocumented.
+
+.. code-block:: xml
+
+    <application>
+        <!-- ... -->
+        <services>
+            <service id="db" class="tori.service.rdb.EntityService">
+                <param name="url">sqlite:///:memory:</param>
+                <param name="entity_type" type="class">core.model.Log</param>
+            </service>
+        </services>
+        <!-- ... -->
+    </application>
+
+This sample shows how to set an entity service for the entity class ``core.model.Log``.
+
 See also
 --------
 .. toctree::

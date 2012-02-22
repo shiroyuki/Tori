@@ -11,9 +11,11 @@ from tornado.web        import Application as WSGIApplication
 from tornado.web        import RedirectHandler
 
 # Internal libraries
-from tori.common        import Console
+from tori               import settings as ToriSettings, services as ToriService
+from tori.common        import Console, Loader
 from tori.exception     import *
 from tori.navigation    import *
+from tori.service       import ServiceEntity
 
 class Application(object):
     '''
@@ -56,6 +58,11 @@ class Application(object):
         '''
         Activate the backend application.
         '''
+        
+        # Update the global settings.
+        ToriSettings.update(self._settings)
+        
+        # Instantiate the backend application.
         self._backend_app = WSGIApplication(self._routes, **self._settings)
         
     def listen(self, port_number=8888):
@@ -66,6 +73,7 @@ class Application(object):
         This setting is however only used in a standalone mode.
         '''
         self._listening_port = port_number
+        
         Console.log("Listen on port %d." % self._listening_port)
         
         return self
@@ -87,6 +95,9 @@ class Application(object):
 
 class DIApplication(Application):
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
+    _default_services         = [
+        ('renderer', 'tori.service.rendering.RenderingService', [], {})
+    ]
     
     def __init__(self, configuration_location, **settings):
         '''
@@ -104,12 +115,73 @@ class DIApplication(Application):
         self._settings['debug'] = self._config.get('server debug').data()
         
         # Exclusive procedure
+        self._register_services()
         self._map_routing_table()
         
         # Normal procedure
         self._update_routes(self._routingMap.export())
         self._activate()
         self.listen(int(self._config.get('server port').data()))
+    
+    def _register_services(self):
+        ''' Register services. '''
+        
+        # Register additional services first.
+        for serviceXml in self._config.get('services > service'):
+            service_id   = serviceXml.attrs['id']
+            package_path = serviceXml.attrs['class']
+            kwargs       = {}
+            
+            for param in serviceXml.get('param'):
+                if not param.attrs.has_key('name') or not param.attrs['name']:
+                    raise InvalidInput, 'What is the name of the parameter?'
+                
+                param_name = param.attrs['name']
+                param_data = param.data()
+                param_type = param.attrs.has_key('type') and param.attrs['type'] or None
+                
+                # Automatically convert data type.
+                if param_type == 'class':
+                    param_data = Loader(param_data).package()
+                
+                kwargs[param_name] = param_data
+            
+            self.__set_service_entity(service_id, package_path, **kwargs)
+        
+        # Register any missing necessary services with default configuration.
+        for id, package_path, args, kwargs in self._default_services:
+            self.__set_service_entity(id, package_path, *args, **kwargs)
+    
+    def __get_service_entity(self, id, package_path, *args, **kwargs):
+        '''
+        Make and return a service entity.
+        
+        *id* is the ID of a new service entity.
+        
+        *package_path* is the package path.
+        
+        *args* and *kwargs* are parameters used to instantiate the service.
+        '''
+        loader = Loader(package_path)
+        entity = ServiceEntity(id, loader, *args, **kwargs)
+        
+        return entity
+    
+    def __set_service_entity(self, id, package_path, *args, **kwargs):
+        '''
+        Set the given service entity.
+        
+        *id* is the ID of a new service entity.
+        
+        *package_path* is the package path.
+        
+        *args* and *kwargs* are parameters used to instantiate the service.
+        '''
+        
+        if ToriService.has(id):
+            return
+        
+        ToriService.set(id, self.__get_service_entity(id, package_path, *args, **kwargs))
     
     def get_route(self, routing_pattern):
         ''' Get the route. '''
@@ -147,6 +219,7 @@ class DIApplication(Application):
         should not be used directly as it takes no effect unless it is used with `_update_routes`.
         and reactivate the application with `_activate`.
         '''
+        
         # Register the routes to controllers.
         for route in self._config.get('routes > *'):
             self._routingMap.register(
@@ -156,8 +229,7 @@ class DIApplication(Application):
     def __analyze_route(self, route):
         actual_route    = None
         routing_type    = Route.get_type(route)
-        routing_pattern = Route.get_pattern(route)
-            
+        
         # Create a route by type.
         if routing_type == 'controller':
             actual_route = DynamicRoute(route)
@@ -166,7 +238,7 @@ class DIApplication(Application):
         elif routing_type == 'redirection':
             actual_route = RelayRoute(route)
         elif routing_type == 'proxy':
-            raise FutureFeatureException
+            raise FutureFeatureException, 'Routing a proxy is yet supported at the moment.'
             
         if not actual_route:
             raise UnknownRoutingTypeError, routing_type
