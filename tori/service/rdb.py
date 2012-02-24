@@ -21,10 +21,11 @@ class RelationalDatabaseService(object):
     *url* is a URL to the database, possibly including location, credential and name.
     '''
     def __init__(self, url):    
-        self._engine   = None
-        self._url      = url
-        self._session  = None
+        self._engine    = None
+        self._url       = url
         self._reflected = False
+        self._session_class   = None
+        self._primary_session = None
     
     def engine(self):
         '''
@@ -38,12 +39,11 @@ class RelationalDatabaseService(object):
         
         return self._engine
     
-    def session(self):
+    def session(self, use_primary=True):
         '''
         Get a SQLAlchemy session.
         
-        .. note::
-            With the service, it is not recommended to directly use this method.
+        *anonymous*
         '''
         engine = self.engine()
         
@@ -52,16 +52,24 @@ class RelationalDatabaseService(object):
             
             BaseEntity.metadata.create_all(engine)
         
-        if not self._session:
-            self._session = sessionmaker(bind=engine)
+        if not self._session_class:
+            self._session_class = sessionmaker(bind=engine)
         
-        return self._session()
+        if use_primary and not self._primary_session:
+            self._primary_session = self._session_class()
+        
+        return self._primary_session or self._session_class()
     
     def commit(self):
-        ''' Manually commit the changes. '''
-        self.session().commit()
+        ''' Manually commit the changes from open_session. '''
+        
+        primary_session = self.session()
+        
+        if primary_session.new or primary_session.dirty or primary_session.deleted:
+            primary_session.commit()
+            primary_session.flush()
     
-    def post(self, entity, auto_commit=True):
+    def post(self, entity, commit_now=True):
         '''
         Post an given entity as a new entity.
         
@@ -72,16 +80,25 @@ class RelationalDatabaseService(object):
         if not isinstance(entity, BaseEntity):
             raise InvalidInput, 'Expecting an entity based on BaseEntity or a declarative base entity.'
         
-        db = self.session()
+        session = self.session(False)
         
-        db.add(entity)
+        session.add(entity)
         
-        if auto_commit:
-            db.commit()
+        if commit_now:
+            session.commit()
+            session.flush()
+            session.close()
+            return;
     
     def _get_all(self, entity_type):
         ''' Get all entities of type *entity_type*. '''
-        return self.session().query(entity_type).all()
+        
+        session = self.session(False)
+        items   = session.query(entity_type).all()
+        
+        session.close()
+        
+        return items
 
 class EntityService(RelationalDatabaseService):
     def __init__(self, url, entity_type):

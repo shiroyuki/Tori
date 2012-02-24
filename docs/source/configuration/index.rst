@@ -36,10 +36,24 @@ The following is an example of supported configuration which is still undocument
     <application>
         <!-- ... -->
         <services>
+            <!--
+                There are two services: finder and renderer, which are both default
+                services and it is not possible to override these services. Any
+                attempts will be ignored.
+            -->
+            
+            <!-- Example of injecting a class. -->
             <service id="db" class="tori.service.rdb.EntityService">
                 <param name="url">sqlite:///:memory:</param>
                 <param name="entity_type" type="class">core.model.Log</param>
             </service>
+            
+            <!-- Example of injecting a service. -->
+            <service id="markdown-doc" class="app.note.service.MDDocumentService">
+                <param name="finder" type="service">finder</param>
+                <param name="location">/Users/jnopporn/Documents</param>
+            </service>
+            
         </services>
         <!-- ... -->
     </application>

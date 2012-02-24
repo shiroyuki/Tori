@@ -96,6 +96,7 @@ class Application(object):
 class DIApplication(Application):
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
     _default_services         = [
+        ('finder', 'tori.common.Finder', [], {}),
         ('renderer', 'tori.service.rendering.RenderingService', [], {})
     ]
     
@@ -126,6 +127,10 @@ class DIApplication(Application):
     def _register_services(self):
         ''' Register services. '''
         
+        # Register any missing necessary services with default configuration.
+        for id, package_path, args, kwargs in self._default_services:
+            self.__set_service_entity(id, package_path, *args, **kwargs)
+        
         # Register additional services first.
         for serviceXml in self._config.get('services > service'):
             service_id   = serviceXml.attrs['id']
@@ -141,16 +146,14 @@ class DIApplication(Application):
                 param_type = param.attrs.has_key('type') and param.attrs['type'] or None
                 
                 # Automatically convert data type.
-                if param_type == 'class':
+                if param_type == 'service':
+                    param_data = ToriService.get(param_data)
+                elif param_type == 'class':
                     param_data = Loader(param_data).package()
                 
                 kwargs[param_name] = param_data
             
             self.__set_service_entity(service_id, package_path, **kwargs)
-        
-        # Register any missing necessary services with default configuration.
-        for id, package_path, args, kwargs in self._default_services:
-            self.__set_service_entity(id, package_path, *args, **kwargs)
     
     def __get_service_entity(self, id, package_path, *args, **kwargs):
         '''
@@ -194,7 +197,7 @@ class DIApplication(Application):
         Suppose the controller is `app.controller.MainController` the configuration is as followed:
         
             <application>
-                ... <!-- Assume that there are some configurations here -->
+                <!-- ... -->
                 <routes>
                     <!-- Example for controller -->
                     <controller class="app.controller.MainController" pattern="/">
@@ -213,6 +216,7 @@ class DIApplication(Application):
                     <!-- Example for proxy -->
                     <proxy type="http://shiroyuki.com/api" pattern="/api"/>
                 </routes>
+                <!-- ... -->
             </application>
         
         This is a pseudo protected method, which is triggered automatically on instantiation and
