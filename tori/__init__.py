@@ -1,12 +1,13 @@
 #from os.path import basename, dirname, join
 #from glob    import glob
 
-from tori.service import ServiceLocator
+from imagination.locator import Locator
+#from tori.service import ServiceLocator
 
 __version__ = '2.0a'
 
 settings = {}
-services = ServiceLocator()
+services = Locator()
 
 # __all__     = []
 # 

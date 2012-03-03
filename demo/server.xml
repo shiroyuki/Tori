@@ -11,5 +11,5 @@
         <!-- Todo: Implement configuration inclusion. -->
         <!-- <include package="tori.developer.profiler" prefix="/developer/profiler"/> -->
     </routes>
-    <services/>
+    <service/>
 </application>

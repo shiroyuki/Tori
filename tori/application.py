@@ -5,6 +5,8 @@ import sys
 
 # Third-party libraries
 # Kotoba 2.x from Yotsuba 3.1 will be replaced by Kotoba 3.0 as soon as the official release is available.
+from imagination.entity import Entity as ImaginationEntity
+from imagination.loader import Loader as ImaginationLoader
 from yotsuba.lib.kotoba import Kotoba
 from tornado.ioloop     import IOLoop
 from tornado.web        import Application as WSGIApplication
@@ -131,31 +133,13 @@ class DIApplication(Application):
         for id, package_path, args, kwargs in self._default_services:
             self.__set_service_entity(id, package_path, *args, **kwargs)
         
-        # Register additional services first.
-        for serviceXml in self._config.get('services > service'):
-            service_id   = serviceXml.attrs['id']
-            package_path = serviceXml.attrs['class']
-            kwargs       = {}
-            
-            for param in serviceXml.get('param'):
-                if not param.attrs.has_key('name') or not param.attrs['name']:
-                    raise InvalidInput, 'What is the name of the parameter?'
-                
-                param_name = param.attrs['name']
-                param_data = param.data()
-                param_type = param.attrs.has_key('type') and param.attrs['type'] or None
-                
-                # Automatically convert data type.
-                if param_type == 'service':
-                    param_data = ToriService.get(param_data)
-                elif param_type == 'class':
-                    param_data = Loader(param_data).package()
-                
-                kwargs[param_name] = param_data
-            
-            self.__set_service_entity(service_id, package_path, **kwargs)
+        service_block   = self._config.get('service')
+        
+        if service_block:
+            config_filepath = os.path.join(self._base_path, service_block.data())
+            ToriService.load_xml(os.path.join(self._base_path, service_block.data()))
     
-    def __get_service_entity(self, id, package_path, *args, **kwargs):
+    def __make_service_entity(self, id, package_path, *args, **kwargs):
         '''
         Make and return a service entity.
         
@@ -165,8 +149,8 @@ class DIApplication(Application):
         
         *args* and *kwargs* are parameters used to instantiate the service.
         '''
-        loader = Loader(package_path)
-        entity = ServiceEntity(id, loader, *args, **kwargs)
+        loader = ImaginationLoader(package_path)
+        entity = ImaginationEntity(id, loader, *args, **kwargs)
         
         return entity
     
@@ -180,11 +164,8 @@ class DIApplication(Application):
         
         *args* and *kwargs* are parameters used to instantiate the service.
         '''
-        
-        if ToriService.has(id):
-            return
-        
-        ToriService.set(id, self.__get_service_entity(id, package_path, *args, **kwargs))
+                
+        ToriService.set(id, self.__make_service_entity(id, package_path, *args, **kwargs))
     
     def get_route(self, routing_pattern):
         ''' Get the route. '''
