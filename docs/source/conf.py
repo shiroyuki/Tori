@@ -13,7 +13,17 @@
 
 import sys, os
 
-sys.path.append(os.path.dirname(__file__) + '/../..')
+extra_paths = [
+    '../../',
+    '../../../Imagination'
+]
+
+base_path = os.path.dirname(__file__)
+
+for extra_path in extra_paths:
+    new_included_path = os.path.abspath(os.path.join(os.path.dirname(__file__), extra_path))
+    print new_included_path
+    sys.path.append(new_included_path)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -317,7 +327,10 @@ MOCK_MODULES = [
     'tornado.web.HTTPError',
     'tornado.web.RedirectHandler',
     'tornado.web.RequestHandler',
-    'yotsuba.lib.kotoba.Kotoba'
+    'yotsuba.lib.kotoba.Kotoba',
+    'imagination.locator',
+    'imagination.loader',
+    'imagination.entity'
 ]
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'

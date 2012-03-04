@@ -5,19 +5,21 @@ import sys
 
 # Third-party libraries
 # Kotoba 2.x from Yotsuba 3.1 will be replaced by Kotoba 3.0 as soon as the official release is available.
-from imagination.entity import Entity as ImaginationEntity
-from imagination.loader import Loader as ImaginationLoader
-from yotsuba.lib.kotoba import Kotoba
-from tornado.ioloop     import IOLoop
-from tornado.web        import Application as WSGIApplication
-from tornado.web        import RedirectHandler
+from imagination.entity  import Entity  as ImaginationEntity
+from imagination.loader  import Loader  as ImaginationLoader
+from imagination.locator import Locator as ImaginationLocator
+from yotsuba.lib.kotoba  import Kotoba
+from tornado.ioloop      import IOLoop
+from tornado.web         import Application as WSGIApplication
+from tornado.web         import RedirectHandler
+
+settings = {}
+services = ImaginationLocator()
 
 # Internal libraries
-from tori               import settings as ToriSettings, services as ToriService
-from tori.common        import Console, Loader
+from tori.common        import Console
 from tori.exception     import *
 from tori.navigation    import *
-from tori.service       import ServiceEntity
 
 class Application(object):
     '''
@@ -62,7 +64,7 @@ class Application(object):
         '''
         
         # Update the global settings.
-        ToriSettings.update(self._settings)
+        settings.update(self._settings)
         
         # Instantiate the backend application.
         self._backend_app = WSGIApplication(self._routes, **self._settings)
@@ -133,11 +135,13 @@ class DIApplication(Application):
         for id, package_path, args, kwargs in self._default_services:
             self.__set_service_entity(id, package_path, *args, **kwargs)
         
-        service_block   = self._config.get('service')
+        service_block = self._config.get('service')
         
-        if service_block:
-            config_filepath = os.path.join(self._base_path, service_block.data())
-            ToriService.load_xml(os.path.join(self._base_path, service_block.data()))
+        service_config_path = service_block and service_block.data() or None
+        
+        if service_config_path:
+            config_filepath = os.path.join(self._base_path, service_config_path)
+            services.load_xml(config_filepath)
     
     def __make_service_entity(self, id, package_path, *args, **kwargs):
         '''
@@ -165,7 +169,7 @@ class DIApplication(Application):
         *args* and *kwargs* are parameters used to instantiate the service.
         '''
                 
-        ToriService.set(id, self.__make_service_entity(id, package_path, *args, **kwargs))
+        services.set(id, self.__make_service_entity(id, package_path, *args, **kwargs))
     
     def get_route(self, routing_pattern):
         ''' Get the route. '''

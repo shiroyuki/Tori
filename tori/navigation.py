@@ -14,10 +14,10 @@ Additionally, the parameter *route* for any methods mentioned on this page is an
 from os          import path
 
 # Third-party libraries
-from tornado.web import RedirectHandler
+from imagination.loader import Loader
+from tornado.web        import RedirectHandler
 
 # Internal libraries
-from tori.common    import get_class_reference as gcr
 from tori.common    import Console
 from tori.exception import *
 
@@ -67,7 +67,11 @@ class RoutingMap(object):
         return self._final_sequence
 
 class Route(object):
-    ''' The abstract class representing a routing directive. '''
+    '''
+    The abstract class representing a routing directive.
+    
+    :param route: an instance of :class:`yotsuba.lib.kotoba.DOMElement` representing the route.
+    '''
     
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
     
@@ -102,7 +106,7 @@ class Route(object):
            backend application, and used for testing.
         '''
         if not self._class and self.source().attrs.has_key('class'):
-            self._class = gcr(self.source().attrs['class'])
+            self._class = Loader(self.source().attrs['class']).package()
         
         return self._class
     
@@ -144,10 +148,9 @@ class DynamicRoute(Route):
 class StaticRoute(Route):
     '''
     Static routing directive based on :class:`Route` handled by a resource controller
-        
-    *base_path* is a string indicating the base path for the static resource.
-    '''
     
+    :param base_path: is a string indicating the base path for the static resource.
+    '''
     _base_path       = None
     _default_service = None
     
@@ -193,7 +196,7 @@ class StaticRoute(Route):
         ''' Get the resource service. '''
         
         if not self._default_service:
-            self._default_service = gcr('tori.controller.ResourceService')
+            self._default_service = Loader('tori.controller.ResourceService').package()
         
         # Get an alternative service if specified.
         service = self.bean_class() or self._default_service

@@ -1,4 +1,4 @@
-from tori.controller           import Controller
+from tori                      import Controller
 from tori.decorator.controller import renderer
 from tori.exception            import *
 

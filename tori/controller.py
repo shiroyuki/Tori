@@ -9,7 +9,8 @@ from mimetypes import guess_type as get_type
 from re        import match, sub
 from StringIO  import StringIO
 
-from tornado.web            import RequestHandler
+from tornado.web            import HTTPError, RequestHandler
+
 from tori                   import services as ToriService
 from tori.renderer          import DefaultRenderer
 from tori.exception         import *
@@ -67,7 +68,7 @@ class ResourceEntity(object):
     '''
     Static resource entity representing the real static resource which is already loaded to the memory.
     
-    *path* is the path to the static resource.
+    :param path: the path to the static resource.
     
     .. note::
         This is for internal use only.
@@ -95,64 +96,47 @@ class ResourceEntity(object):
 class ResourceService(RequestHandler):
     ''' Resource service is to serve a static resource via HTTP/S protocal. '''
     
-    _patterns        = {}
-    _cached_patterns = []
-    _cache_objects   = {}
+    _patterns = {}
     
     @staticmethod
     def add_pattern(pattern, base_path, enabled_cache=False):
         '''
         Add the routing pattern for the resource path prefix.
         
-        *pattern* is a routing pattern. It is a Python-compatible regular expression.
+        :param pattern: a routing pattern. It can be a Python-compatible regular expression.
         
-        *base_path* is a path prefix of the resource corresponding to the routing pattern.
+        :param base_path: a path prefix of the resource corresponding to the routing pattern.
         
-        *enabled_cache* is a flag to indicate whether any loaded resources need to be cached on the first request.
+        :param enabled_cache: a flag to indicate whether any loaded resources need to be cached on the first request.
         '''
+        
         ResourceService._patterns[pattern] = base_path
     
-    def get(self, path):
+    def get(self, *path):
         '''
         Get a particular resource.
+        
+        :param path: blocks of path used to composite an actual path.
         
         .. note::
             This method requires refactoring.
         '''
-        
         base_path    = None
-        real_path    = None
         resource     = None
         used_pattern = None
         request_uri  = self.request.uri
-        has_cache    = ResourceService._cache_objects.has_key(request_uri)
         
         # Remove the prefixed foreslashes.
+        path = '/'.join(path)
         path = sub('^/+', '', path)
         
-        if has_cache:
-            resource = ResourceService._cache_objects[request_uri]
-        elif ResourceService._patterns.has_key(request_uri):
-            used_pattern = request_uri
-            real_path    = ResourceService._patterns[request_uri]
-        else:
-            for pattern in ResourceService._patterns:
-                if not match(pattern, request_uri):
-                    continue
-                
-                used_pattern = pattern
-                real_path    = p.abspath(p.join(
-                    ResourceService._patterns[pattern],
-                    path
-                ))
-                
-                break
+        if ResourceService._patterns.has_key(request_uri):
+            # If the request URI is already pre-calculated or fixed, load the entity from the corresponding path.
+            resource = self.get_resource_entity(ResourceService._patterns[request_uri])
         
+        # When the resource is not loaded, try to get from the wildcard pattern.
         if not resource:
-            resource = ResourceEntity(real_path)
-        
-        if not has_cache and used_pattern in ResourceService._cached_patterns:
-            ResourceService._cached_patterns[used_pattern] = resource
+            resource = self._get_resource_based_on_pattern(path)
         
         resource_type = resource.type or 'text/plain'
         
@@ -163,3 +147,23 @@ class ResourceService(RequestHandler):
         except Exception, e:
             print 'Failed on resource distribution.'
             print e, type(e)
+    
+    def _get_resource_entity(self, real_path):
+        return ResourceEntity(real_path)
+    
+    def _get_resource_on_non_precalculated_pattern(self, path_to_resource):
+        request_uri = self.request.uri
+        
+        for pattern in ResourceService._patterns:
+            if not match(pattern, request_uri):
+                continue
+                
+            used_pattern = pattern
+            real_path    = p.abspath(p.join(
+                ResourceService._patterns[pattern],
+                path_to_resource
+            ))
+            
+            return self.get_resource_entity(real_path)
+        
+        raise HTTPError(404)
