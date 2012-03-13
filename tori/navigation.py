@@ -82,7 +82,7 @@ class Route(object):
     
     def type():
         ''' Get the routing type. '''
-        return self.source().name
+        return self.source().name()
     
     def source(self):
         ''' Get the original data for the route. '''
@@ -105,26 +105,26 @@ class Route(object):
            instantiates an instance of :class:`tornado.Application` as a
            backend application, and used for testing.
         '''
-        if not self._class and self.source().attrs.has_key('class'):
-            self._class = Loader(self.source().attrs['class']).package()
+        if not self._class and self.source().attribute('class'):
+            self._class = Loader(self.source().attribute('class')).package()
         
         return self._class
     
     @staticmethod
     def get_type(route):
         ''' Get the routing type for a given *route*. '''
-        if route.name not in Route._registered_routing_types:
+        if route.name() not in Route._registered_routing_types:
             raise RoutingTypeNotFoundError
         
-        return route.name
+        return route.name()
     
     @staticmethod
     def get_pattern(route):
         ''' Get the routing pattern for a given *route*. '''
-        if not route.attrs.has_key('pattern'):
+        if not route.attribute('pattern'):
             raise RoutingPatternNotFoundError
             
-        return route.attrs['pattern']
+        return route.attribute('pattern')
 
 class DynamicRoute(Route):
     ''' Dynamic route based on class Route handled by a controller. '''
@@ -171,11 +171,11 @@ class StaticRoute(Route):
     def location(self):
         ''' Get the location of the static resource/content. '''
         
-        if not self.source().attrs.has_key('location'):
+        if not self.source().attribute('location'):
             raise InvalidControllerDirectiveError, "The location of the resource is missing."
         
         if not self._location:
-            self._location = self.source().attrs['location']
+            self._location = self.source().attribute('location')
             
             secondary_location = path.join(self._base_path, self._location)
             
@@ -188,9 +188,9 @@ class StaticRoute(Route):
     def cache_enabled(self):
         ''' Check whether the caching option is enabled. '''
         
-        return self.source().attrs.has_key('cache')\
-            and self.source().attrs['cache']\
-            or False
+        _cache_enabled = self.source().attribute('cache')
+        
+        return _cache_enabled and _cache_enabled.lower() == 'true' or False
     
     def service(self):
         ''' Get the resource service. '''
@@ -217,18 +217,17 @@ class RelayRoute(Route):
     
     def is_permanent(self):
         ''' Check whether the relay route is permanent. '''
-        return self.source().attrs.has_key('permanent')\
-            and self.source().attrs['permanent']\
-            or False
+        _is_permanent = self.source().attribute('permanent')
+        return _is_permanent and _is_permanent.lower() == 'true' or False
     
     def destination(self):
         ''' Get the relaying destination. '''
         
         if not self._destination:
-            try:
-                self._destination = self.source().attrs['destination']
-            except KeyError:
-                raise InvalidControllerDirectiveError, "The destination is missing."
+            self._destination = self.source().attribute('destination')
+        
+        if not self._destination:
+            raise InvalidControllerDirectiveError, "The destination is missing."
         
         return self._destination
     

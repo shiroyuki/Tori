@@ -8,7 +8,7 @@ import sys
 from imagination.entity  import Entity  as ImaginationEntity
 from imagination.loader  import Loader  as ImaginationLoader
 from imagination.locator import Locator as ImaginationLocator
-from yotsuba.lib.kotoba  import Kotoba
+from kotoba              import load_from_file
 from tornado.ioloop      import IOLoop
 from tornado.web         import Application as WSGIApplication
 from tornado.web         import RedirectHandler
@@ -115,9 +115,10 @@ class DIApplication(Application):
         
         super(self.__class__, self).__init__(**settings)
         
-        self._config            = Kotoba(os.path.join(self._base_path, configuration_location))
+        self._config            = load_from_file(os.path.join(self._base_path, configuration_location))
         self._routingMap        = RoutingMap()
-        self._settings['debug'] = self._config.get('server debug').data()
+        self._settings['debug'] = self._config.find('server debug').data()
+        self._port              = self._config.find('server port').data()
         
         # Exclusive procedure
         self._register_services()
@@ -126,7 +127,7 @@ class DIApplication(Application):
         # Normal procedure
         self._update_routes(self._routingMap.export())
         self._activate()
-        self.listen(int(self._config.get('server port').data()))
+        self.listen(int(self._port))
     
     def _register_services(self):
         ''' Register services. '''
@@ -135,7 +136,7 @@ class DIApplication(Application):
         for id, package_path, args, kwargs in self._default_services:
             self.__set_service_entity(id, package_path, *args, **kwargs)
         
-        service_block = self._config.get('service')
+        service_block = self._config.children('service')
         
         service_config_path = service_block and service_block.data() or None
         
@@ -208,9 +209,14 @@ class DIApplication(Application):
         should not be used directly as it takes no effect unless it is used with `_update_routes`.
         and reactivate the application with `_activate`.
         '''
+        routing_sequence = self._config.children('routes')
+        
+        if not routing_sequence:
+            print self._config.find('routes')
+            return
         
         # Register the routes to controllers.
-        for route in self._config.get('routes > *'):
+        for route in routing_sequence[0].children():
             self._routingMap.register(
                 self.__analyze_route(route)
             )
