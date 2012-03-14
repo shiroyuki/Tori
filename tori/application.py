@@ -7,19 +7,17 @@ import sys
 # Kotoba 2.x from Yotsuba 3.1 will be replaced by Kotoba 3.0 as soon as the official release is available.
 from imagination.entity  import Entity  as ImaginationEntity
 from imagination.loader  import Loader  as ImaginationLoader
-from imagination.locator import Locator as ImaginationLocator
 from kotoba              import load_from_file
 from tornado.ioloop      import IOLoop
 from tornado.web         import Application as WSGIApplication
 from tornado.web         import RedirectHandler
 
-settings = {}
-services = ImaginationLocator()
-
 # Internal libraries
-from tori.common        import Console
-from tori.exception     import *
-from tori.navigation    import *
+from .centre     import settings as AppSettings
+from .centre     import services as AppServices
+from .common     import Console
+from .exception  import *
+from .navigation import *
 
 class Application(object):
     '''
@@ -47,6 +45,8 @@ class Application(object):
         self._base_path = os.path.abspath(os.path.dirname(os.path.abspath(reference_to_caller)))
         self._base_path = 'static_path' in settings and settings['static_path'] or self._base_path
         
+        self._settings['base_path'] = self._base_path
+        
         self._static_routing_setting = dict(path=self._base_path)
         self._routes = []
     
@@ -64,7 +64,7 @@ class Application(object):
         '''
         
         # Update the global settings.
-        settings.update(self._settings)
+        AppSettings.update(self._settings)
         
         # Instantiate the backend application.
         self._backend_app = WSGIApplication(self._routes, **self._settings)
@@ -142,7 +142,7 @@ class DIApplication(Application):
         
         if service_config_path:
             config_filepath = os.path.join(self._base_path, service_config_path)
-            services.load_xml(config_filepath)
+            AppServices.load_xml(config_filepath)
     
     def __make_service_entity(self, id, package_path, *args, **kwargs):
         '''
@@ -170,7 +170,7 @@ class DIApplication(Application):
         *args* and *kwargs* are parameters used to instantiate the service.
         '''
                 
-        services.set(id, self.__make_service_entity(id, package_path, *args, **kwargs))
+        AppServices.set(id, self.__make_service_entity(id, package_path, *args, **kwargs))
     
     def get_route(self, routing_pattern):
         ''' Get the route. '''

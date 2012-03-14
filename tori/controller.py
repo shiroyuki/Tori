@@ -136,7 +136,7 @@ class ResourceService(RequestHandler):
         
         # When the resource is not loaded, try to get from the wildcard pattern.
         if not resource:
-            resource = self._get_resource_based_on_pattern(path)
+            resource = self._get_resource_on_non_precalculated_pattern(path)
         
         resource_type = resource.type or 'text/plain'
         
@@ -164,6 +164,6 @@ class ResourceService(RequestHandler):
                 path_to_resource
             ))
             
-            return self.get_resource_entity(real_path)
+            return self._get_resource_entity(real_path)
         
         raise HTTPError(404)
