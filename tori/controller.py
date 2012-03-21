@@ -9,8 +9,7 @@ from mimetypes import guess_type as get_type
 from re        import match, sub
 from StringIO  import StringIO
 
-from tornado.web            import HTTPError, RequestHandler
-
+from tornado.web            import HTTPError, ErrorHandler, RequestHandler
 from tori                   import services as ToriService
 from tori.renderer          import DefaultRenderer
 from tori.exception         import *
@@ -19,14 +18,8 @@ class Controller(RequestHandler):
     '''
     The abstract controller for Tori framework which replaces Jinja2 as a template engine instead.
     '''
-    # def write_error(status_code, **kwargs):
-    #         if status_code == 500:
-    #             self.write('Server Error')
-    #         self.write('What the fuck')
-    #         self.flush()
-    #
     
-    def render(self, template_name, **contexts):
+    def render_template(self, template_name, **contexts):
         '''
         Render the template with the given contexts.
         
@@ -62,7 +55,23 @@ class Controller(RequestHandler):
         if not output:
             raise UnexpectedComputationError, 'Detected the rendering service malfunctioning.'
         
-        self.write(output)
+        return output
+    
+    def render(self, template_name, **contexts):
+        '''
+        Render the template with the given contexts.
+        
+        See :meth:`tori.renderer.Renderer.render` for more information.
+        '''
+        self.write(self.render_template(template_name, **contexts))
+
+class ErrorController(Controller):
+    """Generates an error response with status_code for all requests."""
+    def initialize(self, status_code):
+        self.set_status(status_code)
+
+    def prepare(self):
+        raise HTTPError(self._status_code)
 
 class ResourceEntity(object):
     '''
@@ -132,7 +141,7 @@ class ResourceService(RequestHandler):
         
         if ResourceService._patterns.has_key(request_uri):
             # If the request URI is already pre-calculated or fixed, load the entity from the corresponding path.
-            resource = self.get_resource_entity(ResourceService._patterns[request_uri])
+            resource = self._get_resource_entity(ResourceService._patterns[request_uri])
         
         # When the resource is not loaded, try to get from the wildcard pattern.
         if not resource:
@@ -142,8 +151,11 @@ class ResourceService(RequestHandler):
         
         self.set_header("Content-Type", resource_type)
         
+        if not resource.content():
+            raise HTTPError, 404
+        
         try:
-            self.write(resource.content())
+            self.finish(resource.content())
         except Exception, e:
             print 'Failed on resource distribution.'
             print e, type(e)

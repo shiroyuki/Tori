@@ -5,12 +5,12 @@ import sys
 
 # Third-party libraries
 # Kotoba 2.x from Yotsuba 3.1 will be replaced by Kotoba 3.0 as soon as the official release is available.
-from imagination.entity  import Entity  as ImaginationEntity
-from imagination.loader  import Loader  as ImaginationLoader
-from kotoba              import load_from_file
-from tornado.ioloop      import IOLoop
-from tornado.web         import Application as WSGIApplication
-from tornado.web         import RedirectHandler
+from   imagination.entity  import Entity  as ImaginationEntity
+from   imagination.loader  import Loader  as ImaginationLoader
+from   kotoba              import load_from_file
+from   tornado.ioloop      import IOLoop
+from   tornado.web         import Application as WSGIApplication
+import tornado.web
 
 # Internal libraries
 from .centre     import settings as AppSettings
@@ -124,6 +124,13 @@ class DIApplication(Application):
         self._register_services()
         self._map_routing_table()
         
+        # Map the error handler.
+        delegate = self._config.find('server error').data()
+        
+        if delegate:
+            Console.log('ERROR DELEGATE: %s' % delegate)
+            tornado.web.ErrorHandler = ImaginationLoader(delegate).package()
+        
         # Normal procedure
         self._update_routes(self._routingMap.export())
         self._activate()
@@ -212,7 +219,6 @@ class DIApplication(Application):
         routing_sequence = self._config.children('routes')
         
         if not routing_sequence:
-            print self._config.find('routes')
             return
         
         # Register the routes to controllers.
