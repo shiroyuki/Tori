@@ -76,7 +76,8 @@ class Application(object):
         `port_number` is an integer to indicate which port the application should be listen to.
         This setting is however only used in a standalone mode.
         '''
-        self._listening_port = port_number
+        
+        self._listening_port = int(os.environ.get('PORT', port_number))
         
         Console.log("Listen on port %d." % self._listening_port)
         
