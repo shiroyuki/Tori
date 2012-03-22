@@ -123,6 +123,7 @@ class DIApplication(Application):
         
         if settings.has_key('port'):
             self._port = settings['port']
+            Console.log('PORT OVERRIDDEN: %s' % self._port)
         
         # Exclusive procedure
         self._register_services()
