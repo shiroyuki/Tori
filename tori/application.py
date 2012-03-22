@@ -9,8 +9,9 @@ from   imagination.entity  import Entity  as ImaginationEntity
 from   imagination.loader  import Loader  as ImaginationLoader
 from   kotoba              import load_from_file
 from   tornado.ioloop      import IOLoop
-from   tornado.web         import Application as WSGIApplication
+from   tornado.web         import Application as OriginalApplication
 import tornado.web
+from   tornado.wsgi        import WSGIApplication as OriginalWSGIApplication
 
 # Internal libraries
 from .centre     import settings as AppSettings
@@ -67,7 +68,7 @@ class Application(object):
         AppSettings.update(self._settings)
         
         # Instantiate the backend application.
-        self._backend_app = WSGIApplication(self._routes, **self._settings)
+        self._backend_app = OriginalApplication(self._routes, **self._settings)
         
     def listen(self, port_number=8888):
         '''
@@ -94,6 +95,9 @@ class Application(object):
             IOLoop.instance().start()
         except KeyboardInterrupt:
             Console.log("\rCleanly stopped.")
+    
+    def get_backbone(self):
+        return self._backend_app
     
     def get_listening_port(self):
         return self._listening_port
@@ -148,7 +152,7 @@ class DIApplication(Application):
         
         # Register any missing necessary services with default configuration.
         for id, package_path, args, kwargs in self._default_services:
-            self.__set_service_entity(id, package_path, *args, **kwargs)
+            self._set_service_entity(id, package_path, *args, **kwargs)
         
         service_block = self._config.children('service')
         
@@ -158,7 +162,7 @@ class DIApplication(Application):
             config_filepath = os.path.join(self._base_path, service_config_path)
             AppServices.load_xml(config_filepath)
     
-    def __make_service_entity(self, id, package_path, *args, **kwargs):
+    def _make_service_entity(self, id, package_path, *args, **kwargs):
         '''
         Make and return a service entity.
         
@@ -173,7 +177,7 @@ class DIApplication(Application):
         
         return entity
     
-    def __set_service_entity(self, id, package_path, *args, **kwargs):
+    def _set_service_entity(self, id, package_path, *args, **kwargs):
         '''
         Set the given service entity.
         
@@ -184,7 +188,7 @@ class DIApplication(Application):
         *args* and *kwargs* are parameters used to instantiate the service.
         '''
                 
-        AppServices.set(id, self.__make_service_entity(id, package_path, *args, **kwargs))
+        AppServices.set(id, self._make_service_entity(id, package_path, *args, **kwargs))
     
     def get_route(self, routing_pattern):
         ''' Get the route. '''
@@ -231,10 +235,10 @@ class DIApplication(Application):
         # Register the routes to controllers.
         for route in routing_sequence[0].children():
             self._routingMap.register(
-                self.__analyze_route(route)
+                self._analyze_route(route)
             )
     
-    def __analyze_route(self, route):
+    def _analyze_route(self, route):
         actual_route    = None
         routing_type    = Route.get_type(route)
         
@@ -252,13 +256,27 @@ class DIApplication(Application):
             raise UnknownRoutingTypeError, routing_type
         
         return actual_route
-    
-    def __register_route(self, route):
-        routing_pattern = Route.get_pattern(route)
+
+# NOT TESTED
+class WSGIApplication(DIApplication):
+    def __init__(self, configuration_location, **settings):
+        '''
+        Interface to bootstrap a WSGI application with Tornado framework.
+
+        `settings` is a dictionary of extra settings to Tornado engine. For more information,
+        please consult with Tornado documentation.
+        '''
+        self._hierarchy_level = 3
         
-        if routing_pattern in self._registered_routes:
-            raise DuplicatedRouteError
-            
-        self._registered_routes.append(routing_pattern)
-            
-            
+        super(self.__class__, self).__init__(**settings)
+    
+    def _activate(self):
+        '''
+        Activate the backend application.
+        '''
+        
+        # Update the global settings.
+        AppSettings.update(self._settings)
+        
+        # Instantiate the backend application.
+        self._backend_app = OriginalWSGIApplication(self._routes, **self._settings)
