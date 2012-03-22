@@ -268,7 +268,7 @@ class WSGIApplication(DIApplication):
         '''
         self._hierarchy_level = 3
         
-        super(self.__class__, self).__init__(**settings)
+        super(self.__class__, self).__init__(configuration_location, **settings)
     
     def _activate(self):
         '''
