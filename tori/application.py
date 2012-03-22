@@ -138,8 +138,8 @@ class DIApplication(Application):
         
         # Normal procedure
         self._update_routes(self._routingMap.export())
+        self.listen(self._port)
         self._activate()
-        self.listen(int(self._port))
     
     def _register_services(self):
         ''' Register services. '''
