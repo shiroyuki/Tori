@@ -116,6 +116,8 @@ class DIApplication(Application):
         
         super(self.__class__, self).__init__(**settings)
         
+        Console.log('Overriding Setting: %s' % settings)
+        
         self._config            = load_from_file(os.path.join(self._base_path, configuration_location))
         self._routingMap        = RoutingMap()
         self._settings['debug'] = self._config.find('server debug').data().lower() == 'true'
@@ -123,7 +125,7 @@ class DIApplication(Application):
         
         if settings.has_key('port'):
             self._port = settings['port']
-            Console.log('PORT OVERRIDDEN: %s' % self._port)
+            Console.log('New listening port: %s' % self._port)
         
         # Exclusive procedure
         self._register_services()
@@ -133,7 +135,7 @@ class DIApplication(Application):
         delegate = self._config.find('server error').data()
         
         if delegate:
-            Console.log('ERROR DELEGATE: %s' % delegate)
+            Console.log('Custom Error Handler: %s' % delegate)
             tornado.web.ErrorHandler = ImaginationLoader(delegate).package()
         
         # Normal procedure
