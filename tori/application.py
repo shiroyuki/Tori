@@ -117,7 +117,7 @@ class DIApplication(Application):
         
         self._config            = load_from_file(os.path.join(self._base_path, configuration_location))
         self._routingMap        = RoutingMap()
-        self._settings['debug'] = self._config.find('server debug').data()
+        self._settings['debug'] = self._config.find('server debug').data().lower() == 'true'
         self._port              = self._config.find('server port').data()
         
         # Exclusive procedure

@@ -8,6 +8,7 @@ from   os import path
 import re
 
 from   jinja2         import Environment, FileSystemLoader, PackageLoader
+from   tori.centre    import settings as AppSettings
 from   tori.exception import *
 from   tori.template  import TemplateRepository
 
@@ -36,6 +37,13 @@ class Renderer(object):
         '''
         raise FutureFeatureException, "Need to implement."
 
+'''
+class DefaultCacheStorage(BytecodeCache):
+    def __init__(self): pass
+    def load_bytecode(self, bucket): pass
+    def dump_bytecode(self, bucket): pass
+'''
+
 class DefaultRenderer(Renderer):
     '''
     The default renderer with Jinja2
@@ -56,13 +64,18 @@ class DefaultRenderer(Renderer):
         if len(referers) == 0:
             raise RendererSetupError, 'Require either one resource module or multiple file paths to the templates.'
         
+        debug_mode = 'debug' in AppSettings and AppSettings['debug'] or False
+        
         self.name     = ':'.join(referers)
         self.referers = referers
-        
         self.loader   = (len(self.referers) == 1 and not path.exists(self.referers[0])) \
             and self._get_package_loader() \
             or  self._get_filesystem_loader()
-        self.storage  = Environment(loader=self.loader)
+        self.storage  = Environment(
+            loader      = self.loader,
+            trim_blocks = not debug_mode,
+            auto_reload = debug_mode
+        )
     
     def _get_filesystem_loader(self):
         '''
