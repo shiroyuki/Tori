@@ -77,7 +77,7 @@ class Application(object):
         This setting is however only used in a standalone mode.
         '''
         
-        self._listening_port = int(os.environ.get('PORT', port_number))
+        self._listening_port = int(port_number)
         
         Console.log("Listen on port %d." % self._listening_port)
         
@@ -120,6 +120,9 @@ class DIApplication(Application):
         self._routingMap        = RoutingMap()
         self._settings['debug'] = self._config.find('server debug').data().lower() == 'true'
         self._port              = self._config.find('server port').data()
+        
+        if settings.has_key('port'):
+            self._port = settings['port']
         
         # Exclusive procedure
         self._register_services()
