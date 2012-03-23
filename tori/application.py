@@ -5,13 +5,14 @@ import sys
 
 # Third-party libraries
 # Kotoba 2.x from Yotsuba 3.1 will be replaced by Kotoba 3.0 as soon as the official release is available.
-from   imagination.entity  import Entity  as ImaginationEntity
-from   imagination.loader  import Loader  as ImaginationLoader
-from   kotoba              import load_from_file
-from   tornado.ioloop      import IOLoop
-from   tornado.web         import Application as OriginalApplication
+from   imagination.entity import Entity  as ImaginationEntity
+from   imagination.loader import Loader  as ImaginationLoader
+from   kotoba             import load_from_file
+from   tornado.ioloop     import IOLoop
+from   tornado.web        import Application as OriginalApplication
 import tornado.web
-from   tornado.wsgi        import WSGIApplication as OriginalWSGIApplication
+from   tornado.wsgi       import WSGIApplication as OriginalWSGIApplication
+from   wsgiref            import handlers
 
 # Internal libraries
 from .centre     import settings as AppSettings
@@ -116,9 +117,10 @@ class DIApplication(Application):
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
         '''
-        self._hierarchy_level = 2
+        if not self._hierarchy_level:
+            self._hierarchy_level = 2
         
-        super(self.__class__, self).__init__(**settings)
+        Application.__init__(self, **settings)
         
         Console.log('Overriding Setting: %s' % settings)
         
@@ -268,7 +270,7 @@ class WSGIApplication(DIApplication):
         '''
         self._hierarchy_level = 3
         
-        super(self.__class__, self).__init__(configuration_location, **settings)
+        DIApplication.__init__(self, configuration_location, **settings)
     
     def _activate(self):
         '''
@@ -280,3 +282,6 @@ class WSGIApplication(DIApplication):
         
         # Instantiate the backend application.
         self._backend_app = OriginalWSGIApplication(self._routes, **self._settings)
+
+    def start(self):
+        handlers.CGIHandler().run(self.get_backbone())
