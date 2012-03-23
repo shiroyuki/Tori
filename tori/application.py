@@ -256,7 +256,7 @@ class DIApplication(Application):
 class WSGIApplication(DIApplication):
     def __init__(self, configuration_location, **settings):
         '''
-        Interface to bootstrap a WSGI application with Tornado framework.
+        Interface to bootstrap a WSGI application with Apache WSGI module.
 
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
