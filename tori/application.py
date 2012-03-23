@@ -37,16 +37,17 @@ class Application(object):
         self._settings          = settings
         self._settings['debug'] = False
         
-        # Get the reference to the calling function
-        current_function    = sys._getframe(self._hierarchy_level)
-        caller_function     = current_function.f_code
-        reference_to_caller = caller_function.co_filename
+        if 'base_path' in self._settings:
+            # Get the reference to the calling function
+            current_function    = sys._getframe(self._hierarchy_level)
+            caller_function     = current_function.f_code
+            reference_to_caller = caller_function.co_filename
         
-        # Base path
-        self._base_path = os.path.abspath(os.path.dirname(os.path.abspath(reference_to_caller)))
-        self._base_path = 'static_path' in settings and settings['static_path'] or self._base_path
+            # Base path
+            self._base_path = os.path.abspath(os.path.dirname(os.path.abspath(reference_to_caller)))
+            self._base_path = 'static_path' in settings and settings['static_path'] or self._base_path
         
-        self._settings['base_path'] = self._base_path
+            self._settings['base_path'] = self._base_path
         
         self._static_routing_setting = dict(path=self._base_path)
         self._routes = []
