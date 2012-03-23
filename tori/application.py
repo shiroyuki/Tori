@@ -49,6 +49,8 @@ class Application(object):
         
             self._settings['base_path'] = self._base_path
         
+        self._base_path = self._settings['base_path']
+        
         self._static_routing_setting = dict(path=self._base_path)
         self._routes = []
     
