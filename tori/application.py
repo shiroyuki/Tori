@@ -31,8 +31,7 @@ class Application(object):
     '''
     
     def __init__(self, **settings):
-        if not self._hierarchy_level:
-            self._hierarchy_level = 1
+        self._hierarchy_level = len(self.__class__.__mro__) - 1
         
         # Setting for the application.
         self._settings          = settings
@@ -112,17 +111,12 @@ class DIApplication(Application):
     
     def __init__(self, configuration_location, **settings):
         '''
-        Interface to bootstrap a WSGI application with Tornado framework.
+        Interface to bootstrap a WSGI application with Tornado built-in server.
 
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
         '''
-        if not self._hierarchy_level:
-            self._hierarchy_level = 2
-        
         Application.__init__(self, **settings)
-        
-        Console.log('Overriding Setting: %s' % settings)
         
         self._config            = load_from_file(os.path.join(self._base_path, configuration_location))
         self._routingMap        = RoutingMap()
@@ -259,7 +253,6 @@ class DIApplication(Application):
         
         return actual_route
 
-# NOT TESTED
 class WSGIApplication(DIApplication):
     def __init__(self, configuration_location, **settings):
         '''
@@ -268,7 +261,6 @@ class WSGIApplication(DIApplication):
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
         '''
-        self._hierarchy_level = 3
         
         DIApplication.__init__(self, configuration_location, **settings)
     

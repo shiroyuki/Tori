@@ -20,6 +20,7 @@ class TestDecoratorCommonSingletonClass(unittest.TestCase):
             self.assertTrue(True, 'Singleton Class: Passed the initialization as expected.')
         except SingletonInitializationException:
             self.assertTrue(False, 'Singleton Class: Failed the initialization with known exception.')
+        
         # Test for the type.
         self.assertIsInstance(SuperDummyClass.instance(), SuperDummyClass)
         # Test if it is working. (case #1)
@@ -40,6 +41,7 @@ class TestDecoratorCommonSingletonClass(unittest.TestCase):
             self.assertTrue(True, 'Singleton Class: Passed the initialization as expected.')
         except SingletonInitializationException:
             self.assertTrue(False, 'Singleton Class: Failed the initialization with known exception.')
+        
         # Test for the type.
         self.assertIsInstance(SuperDummyClass.instance(), SuperDummyClass)
         # Test if it is working. (case #1)
@@ -62,6 +64,7 @@ class TestDecoratorCommonSingletonClass(unittest.TestCase):
             self.assertTrue(True, 'Singleton Class: Passed the initialization as expected.')
         except SingletonInitializationException:
             self.assertTrue(False, 'Singleton Class: Failed the initialization with known exception.')
+        
         # Test for the type.
         self.assertIsInstance(SuperDummyClass.instance(), SuperDummyClass)
         # Test if it is working. (case #1)
@@ -110,6 +113,7 @@ class TestDecoratorCommonSingletonClass(unittest.TestCase):
             self.assertTrue(True, 'Singleton Class: Passed the initialization as expected.')
         except SingletonInitializationException:
             self.assertTrue(False, 'Singleton Class: Failed the initialization with known exception.')
+        
         # Test for the type.
         self.assertIsInstance(SuperDummyClass.instance(), SuperDummyClass)
         # Test if it is working. (case #1)
