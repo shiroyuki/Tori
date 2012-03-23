@@ -37,7 +37,7 @@ class Application(object):
         self._settings          = settings
         self._settings['debug'] = False
         
-        if 'base_path' in self._settings:
+        if 'base_path' not in self._settings:
             # Get the reference to the calling function
             current_function    = sys._getframe(self._hierarchy_level)
             caller_function     = current_function.f_code
