@@ -53,7 +53,7 @@ First, this requires Python 2.7. It may work with the older version of Python bu
     <tr>
 		<td>Yotsuba (yotsuba)</td>
 		<td>3.1</td>
-		<td>XML parser for `tori.application.DIApplication`</td>
+		<td>XML parser for `tori.application.Application`</td>
 	</tr>
 </table>
 

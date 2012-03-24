@@ -1,5 +1,5 @@
 '''
-A sample application using DIApplication.
+A sample application using Application.
 
 :author: Juti Noppornpitak <juti_n@yahoo.co.jp>
 '''
@@ -8,10 +8,10 @@ from time import time
 
 import bootstrap
 
-from   tori.application import DIApplication
+from   tori.application import Application
 
 time_at_blank_state = time()
-application = DIApplication('server.xml')
+application = Application('server.xml')
 time_at_prepared_state = time()
 print 'Time elapsed on setup: %s' % (time_at_prepared_state - time_at_blank_state)
 application.start()

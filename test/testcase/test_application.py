@@ -1,13 +1,13 @@
 import unittest
 
-from tori.application import DIApplication, WSGIApplication
+from tori.application import Application, WSGIApplication
 from tori.navigation  import *
 
 class TestDependencyInjectableApplicationClass(unittest.TestCase):
     ''' Test a dependency-injectable Application class. '''
     
     def setUp(self):
-        self.app = DIApplication('../data/good_server.xml')
+        self.app = Application('../data/good_server.xml')
     
     def tearDown(self):
         del self.app
@@ -41,7 +41,7 @@ class TestDependencyInjectableApplicationClass(unittest.TestCase):
     def test_mandatory_dependencies(self):
         ''' Test for mandatory dependencies required by Tori.Application '''
         self.assertEqual(self.app._hierarchy_level, 2)
-        self.assertIsInstance(self.app._routingMap, RoutingMap)
+        self.assertIsInstance(self.app._routing_map, RoutingMap)
         
         wsgi_app = WSGIApplication('../data/good_server.xml')
         self.assertEqual(wsgi_app._hierarchy_level, 3)

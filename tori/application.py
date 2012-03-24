@@ -9,9 +9,9 @@ from   imagination.entity import Entity  as ImaginationEntity
 from   imagination.loader import Loader  as ImaginationLoader
 from   kotoba             import load_from_file
 from   tornado.ioloop     import IOLoop
-from   tornado.web        import Application as OriginalApplication
+from   tornado.web        import Application as TornadoNormalApplication
 import tornado.web
-from   tornado.wsgi       import WSGIApplication as OriginalWSGIApplication
+from   tornado.wsgi       import WSGIApplication as TornadoWSGIApplication
 from   wsgiref            import handlers
 
 # Internal libraries
@@ -21,7 +21,7 @@ from .common     import Console
 from .exception  import *
 from .navigation import *
 
-class Application(object):
+class BaseApplication(object):
     '''
     Interface to bootstrap a WSGI application with Tornado framework. This is the basic
     application class which do nothing. Please don't use this directly.
@@ -71,7 +71,7 @@ class Application(object):
         AppSettings.update(self._settings)
         
         # Instantiate the backend application.
-        self._backend_app = OriginalApplication(self._routes, **self._settings)
+        self._backend_app = TornadoNormalApplication(self._routes, **self._settings)
         
     def listen(self, port_number=8888):
         '''
@@ -94,7 +94,7 @@ class Application(object):
         try:
             self._backend_app.listen(self._listening_port)
             
-            Console.log("Service start listening from %s." % self._base_path)
+            Console.log("Start the application based at %s." % self._base_path)
             IOLoop.instance().start()
         except KeyboardInterrupt:
             Console.log("\rCleanly stopped.")
@@ -105,7 +105,7 @@ class Application(object):
     def get_listening_port(self):
         return self._listening_port
 
-class DIApplication(Application):
+class Application(BaseApplication):
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
     _default_services         = [
         ('finder', 'tori.common.Finder', [], {}),
@@ -119,47 +119,106 @@ class DIApplication(Application):
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
         '''
-        Application.__init__(self, **settings)
+        BaseApplication.__init__(self, **settings)
         
-        self._config            = load_from_file(os.path.join(self._base_path, configuration_location))
-        self._routingMap        = RoutingMap()
-        self._settings['debug'] = self._config.find('server debug').data().lower() == 'true'
-        self._port              = self._config.find('server port').data()
+        self._config_main_path = os.path.join(self._base_path, configuration_location)
+        self._config_base_path = os.path.dirname(self._config_main_path)
         
+        self._config      = load_from_file(self._config_main_path)
+        self._routing_map = RoutingMap()
+        
+        # Default properties
+        self._scope = settings.has_key('scope') and settings['scope'] or None
+        self._port  = 8000
+        
+        # Register the default services.
+        self._register_default_services()
+        
+        # Configure the included files first.
+        for inclusion in self._config.children('include'):
+            source_location = inclusion.attribute('src')
+            
+            if source_location[0] != '/':
+                source_location = os.path.join(self._config_base_path, source_location)
+                
+            pre_config = load_from_file(source_location)
+            
+            self._configure(pre_config, source_location)
+            
+            Console.log('Included the configuration from %s' % source_location)
+        
+        self._configure(self._config)
+        
+        # Override the properties with the parameters.
         if settings.has_key('port'):
             self._port = settings['port']
-            Console.log('New listening port: %s' % self._port)
+            Console.log('Changed the listening port: %s' % self._port)
         
-        # Exclusive procedure
-        self._register_services()
-        self._map_routing_table()
+        # Normal procedure
+        self._update_routes(self._routing_map.export())
+        self.listen(self._port)
+        self._activate()
+    
+    def _configure(self, configuration, config_path=None):
+        if (configuration.children('server') > 1):
+            raise InvalidConfigurationError, 'Too many server configuration.'
         
-        # Map the error handler.
-        delegate = self._config.find('server error').data()
+        if (configuration.children('routes') > 1):
+            raise InvalidConfigurationError, 'Too many routing configuration.'
+        
+        port = configuration.find('server port')
+        
+        if len(port) > 1:
+            raise DuplicatedPortError
+        elif port:
+            self._port = port.data()
+        
+        # Find the debugging flag
+        self._settings['debug'] = configuration.find('server debug').data().lower() == 'true'
+        
+        # Exclusive procedures
+        self._register_imagination_services(configuration, config_path or self._config_base_path)
+        self._map_routing_table(configuration)
+        self._set_error_delegate(configuration)
+    
+    def _set_error_delegate(self, configuration):
+        ''' Set a new error delegate based on the given configuration file if specified. '''
+        delegate = configuration.find('server error').data()
         
         if delegate:
             Console.log('Custom Error Handler: %s' % delegate)
             tornado.web.ErrorHandler = ImaginationLoader(delegate).package()
-        
-        # Normal procedure
-        self._update_routes(self._routingMap.export())
-        self.listen(self._port)
-        self._activate()
     
-    def _register_services(self):
-        ''' Register services. '''
-        
-        # Register any missing necessary services with default configuration.
+    def _register_default_services(self):
         for id, package_path, args, kwargs in self._default_services:
             self._set_service_entity(id, package_path, *args, **kwargs)
+    
+    def _register_imagination_services(self, configuration, base_path):
+        ''' Register services. '''
+        service_blocks = configuration.children('service')
         
-        service_block = self._config.children('service')
-        
-        service_config_path = service_block and service_block.data() or None
-        
-        if service_config_path:
-            config_filepath = os.path.join(self._base_path, service_config_path)
+        for service_block in service_blocks:
+            service_config_path = service_block.data()
+            
+            if service_config_path[0] != '/':
+                config_filepath = os.path.join(base_path, service_config_path)
+                
             AppServices.load_xml(config_filepath)
+    
+    def _map_routing_table(self, configuration):
+        '''
+        Update a routing table based on the configuration.
+        '''
+        routing_sequences = configuration.children('routes')
+        
+        if not routing_sequences:
+            return
+        
+        # Register the routes to controllers.
+        for routing_sequence in routing_sequences:
+            new_routing_map = RoutingMap.make(routing_sequence, self._base_path)
+            
+            self._routing_map.update(new_routing_map)
     
     def _make_service_entity(self, id, package_path, *args, **kwargs):
         '''
@@ -191,72 +250,9 @@ class DIApplication(Application):
     
     def get_route(self, routing_pattern):
         ''' Get the route. '''
-        return self._routingMap.get(routing_pattern)
-    
-    def _map_routing_table(self):
-        '''
-        Map a routing table based on the configuration.
-        
-        Suppose the controller is `app.controller.MainController` the configuration is as followed:
-        
-            <application>
-                <!-- ... -->
-                <routes>
-                    <!-- Example for controller -->
-                    <controller class="app.controller.MainController" pattern="/">
-                    <!--
-                        Example for static content
-                        
-                        Please note that the content of route of this type can be a relative
-                        path, a full path or blank. If it is blank, it will look into a folder
-                        called `static` living at the same location as the WSGI/server script.
-                        
-                        This should be only used for development only.
-                    -->
-                    <resource location="resources" pattern="/resources/(.*)"/>
-                    <!-- Example for redirection -->
-                    <redirection destination="http://shiroyuki.com" pattern="/about-shiroyuki" permanent="False"/>
-                    <!-- Example for proxy -->
-                    <proxy type="http://shiroyuki.com/api" pattern="/api"/>
-                </routes>
-                <!-- ... -->
-            </application>
-        
-        This is a pseudo protected method, which is triggered automatically on instantiation and
-        should not be used directly as it takes no effect unless it is used with `_update_routes`.
-        and reactivate the application with `_activate`.
-        '''
-        routing_sequence = self._config.children('routes')
-        
-        if not routing_sequence:
-            return
-        
-        # Register the routes to controllers.
-        for route in routing_sequence[0].children():
-            self._routingMap.register(
-                self._analyze_route(route)
-            )
-    
-    def _analyze_route(self, route):
-        actual_route    = None
-        routing_type    = Route.get_type(route)
-        
-        # Create a route by type.
-        if routing_type == 'controller':
-            actual_route = DynamicRoute(route)
-        elif routing_type == 'resource':
-            actual_route = StaticRoute(route, self._base_path)
-        elif routing_type == 'redirection':
-            actual_route = RelayRoute(route)
-        elif routing_type == 'proxy':
-            raise FutureFeatureException, 'Routing a proxy is yet supported at the moment.'
-            
-        if not actual_route:
-            raise UnknownRoutingTypeError, routing_type
-        
-        return actual_route
+        return self._routing_map.get(routing_pattern)
 
-class WSGIApplication(DIApplication):
+class WSGIApplication(Application):
     def __init__(self, configuration_location, **settings):
         '''
         Interface to bootstrap a WSGI application with Apache WSGI module.
@@ -265,7 +261,7 @@ class WSGIApplication(DIApplication):
         please consult with Tornado documentation.
         '''
         
-        DIApplication.__init__(self, configuration_location, **settings)
+        Application.__init__(self, configuration_location, **settings)
     
     def _activate(self):
         '''
@@ -276,7 +272,12 @@ class WSGIApplication(DIApplication):
         AppSettings.update(self._settings)
         
         # Instantiate the backend application.
-        self._backend_app = OriginalWSGIApplication(self._routes, **self._settings)
+        self._backend_app = TornadoWSGIApplication(self._routes, **self._settings)
 
     def start(self):
+        '''
+        Start the process.
+        
+        .. warn:: This method is only necessary for a Google App Engine.
+        '''
         handlers.CGIHandler().run(self.get_backbone())

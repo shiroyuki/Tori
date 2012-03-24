@@ -29,7 +29,7 @@ def _assign_renderer(class_reference, *args, **kwargs):
     will be `DummyController`, not `dummy_controller`.
     
     Note that this method is not for direct use. You can invoke via `@renderer` or the
-    configuration file only via `tori.application.DIApplication`.
+    configuration file only via `tori.application.Application`.
     
     Additionally, the arguments might be different if the renderer is not the default one.
     '''

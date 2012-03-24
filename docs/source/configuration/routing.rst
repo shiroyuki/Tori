@@ -3,7 +3,9 @@ Routing
 
 :Author: Juti Noppornpitak
 
-The routes is prioritized by the order in the routing list.
+The routes (``<routes>``) is prioritized by the order in the routing list.
+
+There are 4 types of routes are supported.
 
 =========== =================================================================
 Directive   Description
@@ -20,8 +22,17 @@ process and respond to any requests to the pattern. Each routing pattern is uniq
 For a routing directive ``controller``, the attribute ``class`` is a class reference to a particular controller where the
 controller must be on the system path (for Python).
 
+.. code-block:: xml
+
+    <controller class="app.note.controller.IndexController" pattern="/notes/(.*)"/>
+
 For a routing directive ``redirection``, the attribute ``destination`` is a string indicating the destination of the redirection,
 and the attribute ``permanent`` is a boolean indicating whether the redirection is permanent.
+
+.. code-block:: xml
+
+    <redirection destination="/notes/" pattern="/notes"/>
+
 
 For a routing directive ``resource``, the attribute ``location`` is either:
 
@@ -30,13 +41,10 @@ For a routing directive ``resource``, the attribute ``location`` is either:
 
 the attribute ``cache`` is a boolean to indicate whether the resource should be cache.
 
-.. warning::
-    The current implementation of ``resource`` only handles directory.
+.. code-block:: xml
+
+    <resource location="resources/favicon.ico" pattern="/favicon.ico" cache="true"/>
 
 .. warning::
     The directive ``proxy`` is not supported at this moment.
-
-.. note::
-    Directive ``resource`` should only be used on the development environment. A traditional web server like Apache, Lighttpd or
-    NginX is recommended for deploying static content.
 

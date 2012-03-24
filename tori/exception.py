@@ -30,6 +30,11 @@ class SingletonInitializationException(Exception):
     '''
 
 # Dependency-injectable Application
+class InvalidConfigurationError(Exception):
+    '''
+    Exception thrown only when the configuration is invalid.
+    '''
+
 class DuplicatedRouteError(Exception):
     '''
     Exception used when the routing pattern is already registered.
@@ -59,6 +64,9 @@ class InvalidRedirectionDirectiveError(Exception):
     '''
     Exception used when the redirection directive is incomplete because some parameters aren't provided or incompatible.
     '''
+
+class DuplicatedPortError(Exception):
+    ''' Exception thrown only when the port config is duplicated within the same configuration file. '''
 
 # Controllers
 class RenderingSourceMissingError(Exception):

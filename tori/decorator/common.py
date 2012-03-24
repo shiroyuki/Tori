@@ -7,6 +7,19 @@ This package contains decorators for common use.
 import inspect
 from   tori.exception import *
 
+class BaseClassDecorator(object):
+    ''' Base decorator based from an example at http://www.artima.com/weblogs/viewpost.jsp?thread=240808. '''
+    def __init__(self, reference):
+        ''' On the initialization of the given ``function``. '''
+        self._reference = reference
+    
+    def reference(self):
+        return self._reference
+    
+    def __call__(self, *args, **kwargs):
+        ''' On the execution of the function. '''
+        pass
+
 def make_singleton_class(class_reference, *args, **kwargs):
     '''
     Make the given class a singleton class.

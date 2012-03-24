@@ -15,11 +15,12 @@ from os          import path
 
 # Third-party libraries
 from imagination.loader import Loader
+from kotoba.kotoba      import Kotoba
 from tornado.web        import RedirectHandler
 
 # Internal libraries
-from tori.common    import Console
-from tori.exception import *
+from .common    import Console
+from .exception import *
 
 class RoutingMap(object):
     ''' Routing Map '''
@@ -29,23 +30,27 @@ class RoutingMap(object):
         self._map            = {}
         self._final_sequence = None
     
-    def register(self, route):
+    def map(self):
+        return self._map
+    
+    def register(self, route, force_action=False):
         ''' Register a *route*. '''
         
         if not isinstance(route, Route):
             raise InvalidInput, "Expected a route."
         
         # Register the pattern to prevent the duplicate routing.
-        if route.pattern() in self._sequence:
+        if not force_action and route.pattern() in self._sequence:
             raise DuplicatedRouteError
         
-        self._sequence.append(route.pattern())
+        if route.pattern() not in self._sequence:
+            self._sequence.append(route.pattern())
         
         # Register the route to the map.
         self._map[route.pattern()] = route
         
         # Reset the final sequence.
-        self._final_sequence       = None
+        self._final_sequence = None
     
     def get(self, routing_pattern):
         ''' Get the route by *routing_pattern* where it is a string. '''
@@ -65,18 +70,43 @@ class RoutingMap(object):
                 self._final_sequence.append(self.get(routing_pattern).to_tuple())
         
         return self._final_sequence
+    
+    def update(self, other):
+        for route in other.map().values():
+            self.register(route, True)
+    
+    @staticmethod
+    def make(configuration, base_path=None):
+        '''
+        Make a routing table based on the given *configuration*.
+        
+        :param `base_path`: is an optional used by :method `Route.make`:.
+        '''
+        if not configuration:
+            return
+        
+        if not isinstance(configuration, Kotoba):
+            raise InvalidInput
+        
+        routing_map = RoutingMap()
+        
+        # Register the routes to controllers.
+        for route_data in configuration.children():
+            routing_map.register(Route.make(route_data, base_path))
+        
+        return routing_map
 
 class Route(object):
     '''
     The abstract class representing a routing directive.
     
-    :param route: an instance of :class:`yotsuba.lib.kotoba.DOMElement` representing the route.
+    :param route: an instance of :class:`kotoba.kotoba.Kotoba` representing the route.
     '''
     
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
     
-    def __init__(self, route):
-        self._source  = route
+    def __init__(self, route_data):
+        self._source  = route_data
         self._class   = None
         self._pattern = None
     
@@ -98,12 +128,6 @@ class Route(object):
     def bean_class(self):
         '''
         Get the class reference for the route.
-        
-        .. warning::
-           This method is primarily used to register a class reference to
-           the routing list when the :class:`tori.application.Application`
-           instantiates an instance of :class:`tornado.Application` as a
-           backend application, and used for testing.
         '''
         if not self._class and self.source().attribute('class'):
             self._class = Loader(self.source().attribute('class')).package()
@@ -111,20 +135,45 @@ class Route(object):
         return self._class
     
     @staticmethod
-    def get_type(route):
-        ''' Get the routing type for a given *route*. '''
-        if route.name() not in Route._registered_routing_types:
-            raise RoutingTypeNotFoundError
+    def make(route_data, base_path=None):
+        if not isinstance(route_data, Kotoba):
+            raise InvalidInput
         
-        return route.name()
+        route = None
+        kind  = Route.get_type(route_data)
+        
+        # Create a route by type.
+        if kind == 'controller':
+            route = DynamicRoute(route_data)
+        elif kind == 'resource' and base_path:
+            route = StaticRoute(route_data, base_path)
+        elif kind == 'resource' and not base_path:
+            raise InvalidInput, 'base_path is not provided.'
+        elif kind == 'redirection':
+            route = RelayRoute(route_data)
+        elif kind == 'proxy':
+            raise FutureFeatureException, 'Routing a proxy is yet supported at the moment.'
+            
+        if not route:
+            raise UnknownRoutingTypeError, kind
+        
+        return route
     
     @staticmethod
-    def get_pattern(route):
+    def get_type(route_data):
+        ''' Get the routing type for a given *route*. '''
+        if route_data.name() not in Route._registered_routing_types:
+            raise RoutingTypeNotFoundError
+        
+        return route_data.name()
+    
+    @staticmethod
+    def get_pattern(route_data):
         ''' Get the routing pattern for a given *route*. '''
-        if not route.attribute('pattern'):
+        if not route_data.attribute('pattern'):
             raise RoutingPatternNotFoundError
             
-        return route.attribute('pattern')
+        return route_data.attribute('pattern')
 
 class DynamicRoute(Route):
     ''' Dynamic route based on class Route handled by a controller. '''

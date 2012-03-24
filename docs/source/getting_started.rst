@@ -64,9 +64,9 @@ See :doc:`configuration/index` for more information on the configuration.
 
 Then, we write a bootstrap file at ``project/server.py`` containing::
 
-    from tori.application import DIApplication
+    from tori.application import Application
 
-    application = DIApplication('server.xml')
+    application = Application('server.xml')
     application.start()
 
 Now, to run the server, you can simply just execute::
