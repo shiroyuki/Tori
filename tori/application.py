@@ -160,10 +160,10 @@ class Application(BaseApplication):
         self._activate()
     
     def _configure(self, configuration, config_path=None):
-        if (configuration.children('server') > 1):
+        if len(configuration.children('server')) > 1:
             raise InvalidConfigurationError, 'Too many server configuration.'
         
-        if (configuration.children('routes') > 1):
+        if len(configuration.children('routes')) > 1:
             raise InvalidConfigurationError, 'Too many routing configuration.'
         
         port = configuration.find('server port')
