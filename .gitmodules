@@ -1,9 +1,0 @@
-[submodule "tornado"]
-	path = tornado
-	url = https://github.com/facebook/tornado.git
-[submodule "branch2.2"]
-	path = branch2.2
-	url = https://github.com/facebook/tornado.git
-[submodule "Yotsuba"]
-	path = Yotsuba
-	url = https://github.com/shiroyuki/Yotsuba.git
