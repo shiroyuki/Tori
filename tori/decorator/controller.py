@@ -3,6 +3,9 @@
 
 This package contains decorators for enhancing controllers.
 '''
+import httplib
+import traceback
+
 from tori.exception import *
 
 def disable_access(action):
@@ -51,3 +54,27 @@ def renderer(*args, **kwargs):
         return _assign_renderer(class_reference, *args, **kwargs)
     
     return inner_decorator
+
+def custom_error(template_name, **contexts):
+    def updated_controller(controller):
+        def write_error(self, status_code, **kwargs):
+            debug_info = []
+        
+            if self.settings.get("debug") and "exc_info" in kwargs:
+                # in debug mode, try to send a traceback
+                for line in traceback.format_exception(*kwargs["exc_info"]):
+                    debug_info.append(line)
+        
+            self.render(
+                template_name,
+                code       = status_code,
+                message    = httplib.responses[status_code],
+                debug_info = ''.join(debug_info),
+                **contexts
+            )
+    
+        controller.write_error = write_error
+    
+        return controller
+    
+    return updated_controller
