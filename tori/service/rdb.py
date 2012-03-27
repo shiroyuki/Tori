@@ -35,9 +35,24 @@ class RelationalDatabaseService(object):
             With the service, it is not recommended to directly use this method.
         '''
         if not self._engine:
-            self._engine = create_engine(self._url, echo=False)
+            self._configure_engine()
         
         return self._engine
+    
+    def _configure_engine(self):
+        self._engine = create_engine(
+            self._url,
+            echo=False
+        )
+    
+    def url(self, new_url=None):
+        ''' Get the connecting URL. Also set the URL if *new_url* is set. '''
+        if not new_url:
+            self._url = new_url
+            
+            self._configure_engine()
+        
+        return new_url
     
     def session(self, use_primary=True):
         '''
