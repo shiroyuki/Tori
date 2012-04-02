@@ -40,7 +40,11 @@ def make_singleton_class(class_reference, *args, **kwargs):
     # The statice method to get the singleton instance of the reference class
     @staticmethod
     def instance():
-        ''' Get an instance. '''
+        '''
+        Get a singleton instance.
+        
+        .. note:: This class is capable to act as a singleton class by invoking this method.
+        '''
         return class_reference._singleton_instance
     
     # Intercept if the class has already been a singleton class.

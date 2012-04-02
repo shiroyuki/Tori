@@ -166,6 +166,12 @@ class Application(BaseApplication):
         if len(configuration.children('routes')) > 1:
             raise InvalidConfigurationError, 'Too many routing configuration.'
         
+        # Set the cookie secret for secure cookies.
+        client_secret = configuration.find('server secret')
+        if client_secret:
+            self._settings['cookie_secret'] = client_secret.data()
+        
+        # Set the port number.
         port = configuration.find('server port')
         
         if len(port) > 1:

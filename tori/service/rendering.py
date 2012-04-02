@@ -4,7 +4,6 @@
 This package contains the rendering service. This is a module automatically loaded by :class:`tori.application.Application`.
 '''
 
-from tori.decorator.common import singleton
 from tori.exception        import *
 from tori.renderer         import Renderer
 from tori.template         import TemplateRepository

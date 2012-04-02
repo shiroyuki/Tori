@@ -4,23 +4,22 @@
 The default relational database service for Tori framework.
 '''
 
-from sqlalchemy                 import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm             import sessionmaker
+from sqlalchemy     import create_engine
+from sqlalchemy.orm import sessionmaker
 
-from tori.exception             import *
-
-BaseEntity = declarative_base()
+from tori.exception import *
+from tori.rdb       import Entity as BaseEntity
 
 class RelationalDatabaseService(object):
     '''
     This service provides basic functionality to interact a relational database.
     
-    This service heavily uses lazy loading for the sake of faster startup and resource efficiency.
+    It also heavily uses lazy loading for the sake of faster startup and resource efficiency.
     
-    *url* is a URL to the database, possibly including location, credential and name.
+    :param `url`: a URL to the database, possibly including location, credential and name.\
+                  The default value is ``sqlite:///:memory:``.
     '''
-    def __init__(self, url):    
+    def __init__(self, url='sqlite:///:memory:'):    
         self._engine    = None
         self._url       = url
         self._reflected = False
@@ -46,7 +45,11 @@ class RelationalDatabaseService(object):
         )
     
     def url(self, new_url=None):
-        ''' Get the connecting URL. Also set the URL if *new_url* is set. '''
+        '''
+        Get the connecting URL.
+        
+        :param `new_url`: a new URL for the database connection.
+        '''
         if not new_url:
             self._url = new_url
             
@@ -54,11 +57,11 @@ class RelationalDatabaseService(object):
         
         return new_url
     
-    def session(self, use_primary=True):
+    def session(self):
         '''
-        Get a SQLAlchemy session.
+        Get a SQLAlchemy session for the current connection.
         
-        *anonymous*
+        :return: an instance of :class:`sqlalchemy.orm.session.Session` for the current connection.
         '''
         engine = self.engine()
         
@@ -70,43 +73,29 @@ class RelationalDatabaseService(object):
         if not self._session_class:
             self._session_class = sessionmaker(bind=engine)
         
-        if use_primary and not self._primary_session:
-            self._primary_session = self._session_class()
-        
-        return self._primary_session or self._session_class()
+        return self._session_class()
     
-    def commit(self):
-        ''' Manually commit the changes from open_session. '''
-        
-        primary_session = self.session()
-        
-        if primary_session.new or primary_session.dirty or primary_session.deleted:
-            primary_session.commit()
-            primary_session.flush()
-    
-    def post(self, entity, commit_now=True):
+    def post(self, entity):
         '''
-        Post an given entity as a new entity.
+        Insert a new `entity` into the database.
         
-        *entity* is a new entity.
-        
-        *auto_commit* is to indicate whether the method should commit this change automatically.
+        :param `entity`: a new entity.
         '''
         if not isinstance(entity, BaseEntity):
             raise InvalidInput, 'Expecting an entity based on BaseEntity or a declarative base entity.'
         
-        session = self.session(False)
+        session = self.session()
         
         session.add(entity)
-        
-        if commit_now:
-            session.commit()
-            session.flush()
-            session.close()
-            return;
+        session.commit()
+        session.close()
     
-    def _get_all(self, entity_type):
-        ''' Get all entities of type *entity_type*. '''
+    def get_all(self, entity_type):
+        '''
+        Get all entities of type *entity_type*.
+        
+        :param `entity_type`: the class reference of the entities being searched
+        '''
         
         session = self.session(False)
         items   = session.query(entity_type).all()
@@ -117,9 +106,17 @@ class RelationalDatabaseService(object):
 
 class EntityService(RelationalDatabaseService):
     def __init__(self, url, entity_type):
-        super(self.__class__, self).__init__(url)
+        RelationalDatabaseService.__init__(self, url)
         
         self._entity_type = entity_type
     
+    def get(key):
+        session = self.session(False)
+        item    = session.query(entity_type).get(key)
+        
+        session.close()
+        
+        return item
+    
     def get_all(self):
-        return self._get_all(self._entity_type)
+        return super().get_all(self._entity_type)

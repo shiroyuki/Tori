@@ -4,9 +4,32 @@
 This package contains classes and functions for common use.
 '''
 import os
+import hashlib
 import re
 import sys
 import time
+
+from .decorator.common import singleton
+
+@singleton
+class Enigma(object):
+    ''' Hashlib wrapper '''
+    def __init__(self):
+        self._hash_engine = None
+    
+    def hash(self, value):
+        '''
+        Make a hash out of the given ``value``.
+        
+        :param `value`: the data being encoded.
+        :return:        the hashed data string
+        '''
+        if not self._hash_engine:
+            self._hash_engine = hashlib.new('sha512')
+        
+        self._hash_engine.update(unicode(value))
+        
+        return self._hash_engine.hexdigest()
 
 class Finder(object):
     ''' File System API Wrapper '''

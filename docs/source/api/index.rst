@@ -6,7 +6,7 @@ Application Programming Interface
 This section is all about the reference for Tori API.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :glob:
    
    *

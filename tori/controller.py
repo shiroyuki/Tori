@@ -8,16 +8,66 @@ from os        import path as p
 from mimetypes import guess_type as get_type
 from re        import match, sub
 from StringIO  import StringIO
+from time      import time
 
-from tornado.web            import HTTPError, ErrorHandler, RequestHandler
-from tori                   import services as ToriService
-from tori.renderer          import DefaultRenderer
-from tori.exception         import *
+from tornado.web import HTTPError, ErrorHandler, RequestHandler
+
+from .centre    import services as ToriService
+from .common    import Enigma
+from .renderer  import DefaultRenderer
+from .exception import *
 
 class Controller(RequestHandler):
     '''
     The abstract controller for Tori framework which replaces Jinja2 as a template engine instead.
     '''
+    
+    def __init__(self, *args, **kwargs):
+        RequestHandler.__init__(self, *args, **kwargs)
+        
+        self.session_id   = None
+        self.session_repo = None
+        
+        # Start the session if the session component is registered.
+        self.__start_session()
+    
+    def __start_session(self):
+        ''' Start the session. '''
+        if not ToriService.has('session') or 'cookie_secret' not in self.settings:
+            return
+        
+        self.session_repo = ToriService.get('session')
+        self.session_id   = self.get_secure_cookie('ssid')
+        
+        if not self.session_id:
+            self.session_id = self.session_repo.generate()
+            
+            self.set_secure_cookie('ssid', self.session_id)
+        
+        self.session('updated_at', time())
+    
+    def session(self, key, new_content=None):
+        '''
+        Get the session or set it if ``new_content`` is set.
+        
+        :param `key`:         Session data key
+        :param `new_content`: Session data content
+        
+        :return: the data stored in the session or ``None``
+        '''
+        if not self.session_repo:
+            raise SessionError, 'This session component is not initialized.'
+        
+        if new_content:
+            self.session_repo.set(self.session_id, key, new_content)
+            return new_content
+        
+        session = self.session_repo.get(self.session_id, key)
+        
+        return session
+    
+    def delete_session(self, key):
+        ToriService.get('session').delete(self.session_id, key)
     
     def render_template(self, template_name, **contexts):
         '''
@@ -59,7 +109,7 @@ class Controller(RequestHandler):
     
     def render(self, template_name, **contexts):
         '''
-        Render the template with the given contexts.
+        Render the template with the given contexts and push the output buffer.
         
         See :meth:`tori.renderer.Renderer.render` for more information.
         '''

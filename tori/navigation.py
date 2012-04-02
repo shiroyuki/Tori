@@ -212,10 +212,7 @@ class StaticRoute(Route):
             self._base_path = base_path
         
         # Map the routing pattern to the actual location.
-        try:
-            self.service().add_pattern(self.pattern(), self.location(), self.cache_enabled())
-        except Exception, e:
-            Console.warn('Cannot register the pattern for static resource because:\n-- %s.' % e.message)
+        self.service().add_pattern(self.pattern(), self.location(), self.cache_enabled())
     
     def location(self):
         ''' Get the location of the static resource/content. '''
