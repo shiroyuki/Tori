@@ -309,16 +309,16 @@ class Mock(object):
         pass
 
     def __call__(self, *args, **kwargs):
-        return Mock()
+        return Mock(*args, **kwargs)
 
     @classmethod
-    def __getattr__(self, name):
+    def __getattr__(self, name, *args, **kwargs):
         if name in ('__file__', '__path__'):
             return '/dev/null'
         elif name[0] == name[0].upper():
-            return type(name, (), {})
+            return type(name, args, kwargs)
         else:
-            return Mock()
+            return Mock(*args, **kwargs)
 
 MOCK_MODULES = [
     'tornado',
