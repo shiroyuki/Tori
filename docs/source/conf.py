@@ -347,6 +347,8 @@ MOCK_MODULES = [
     'sqlalchemy.ext',
     'sqlalchemy.ext.declarative',
     'sqlalchemy.ext.declarative.declarative_base',
+    'sqlalchemy.orm',
+    'sqlalchemy.orm.sessionmaker',
     'sqlalchemy.types',
     'sqlalchemy.types.Integer',
     'sqlalchemy.types.PickleType',
