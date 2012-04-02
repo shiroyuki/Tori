@@ -334,7 +334,12 @@ MOCK_MODULES = [
     'kotoba.load_from_file',
     'imagination.locator',
     'imagination.loader',
-    'imagination.entity'
+    'imagination.entity',
+    'sqlalchemy.ext.declarative.declarative_base',
+    'sqlalchemy.Column',
+    'sqlalchemy.types.Integer',
+    'sqlalchemy.types.PickleType',
+    'sqlalchemy.types.String'
 ]
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
