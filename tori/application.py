@@ -8,6 +8,7 @@ import sys
 from   imagination.entity import Entity  as ImaginationEntity
 from   imagination.loader import Loader  as ImaginationLoader
 from   kotoba             import load_from_file
+from   tornado.autoreload import watch
 from   tornado.ioloop     import IOLoop
 from   tornado.web        import Application as TornadoNormalApplication
 import tornado.web
@@ -134,6 +135,9 @@ class Application(BaseApplication):
         # Register the default services.
         self._register_default_services()
         
+        # Add the main configuration to the watch list.
+        watch(self._config_main_path)
+        
         # Configure the included files first.
         for inclusion in self._config.children('include'):
             source_location = inclusion.attribute('src')
@@ -144,6 +148,8 @@ class Application(BaseApplication):
             pre_config = load_from_file(source_location)
             
             self._configure(pre_config, source_location)
+            
+            watch(source_location)
             
             Console.log('Included the configuration from %s' % source_location)
         

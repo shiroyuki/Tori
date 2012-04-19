@@ -12,10 +12,11 @@ from time      import time
 
 from tornado.web import HTTPError, ErrorHandler, RequestHandler
 
-from .centre    import services as ToriService
-from .common    import Enigma
-from .renderer  import DefaultRenderer
-from .exception import *
+from tori.centre    import services as ToriService
+from tori.common    import Enigma, Console
+from tori.exception import *
+from tori.renderer  import DefaultRenderer
+from tori.service.data.base import ResourceEntity
 
 class Controller(RequestHandler):
     '''
@@ -43,8 +44,15 @@ class Controller(RequestHandler):
             self.session_id = self.session_repo.generate()
             
             self.set_secure_cookie('ssid', self.session_id)
+    
+    def component(self, name):
+        '''
+        Get the (re-usable) component from the initialized Imagination component locator service.
         
-        self.session('updated_at', time())
+        :param `name`: the name of the registered re-usable component.
+        :return:       module, package registered or ``None``
+        '''
+        return ToriService.has(name) and ToriService.get(name) or None
     
     def session(self, key, new_content=None):
         '''
@@ -67,7 +75,7 @@ class Controller(RequestHandler):
         return session
     
     def delete_session(self, key):
-        ToriService.get('session').delete(self.session_id, key)
+        self.component('session').delete(self.session_id, key)
     
     def render_template(self, template_name, **contexts):
         '''
@@ -87,7 +95,7 @@ class Controller(RequestHandler):
         output = None
         
         try:
-            output = ToriService.get('renderer').render(
+            output = self.component('renderer').render(
                 self._rendering_source,
                 template_name,
                 **contexts
@@ -96,7 +104,7 @@ class Controller(RequestHandler):
             # When the renderer is not found. It is possible that the renderer is not yet
             # instantiated. This block of the code will do the lazy loading.
             renderer = self._rendering_engine(self._rendering_source)
-            output   = ToriService.get('renderer').register(renderer).render(
+            output   = self.component('renderer').register(renderer).render(
                 self._rendering_source,
                 template_name,
                 **contexts
@@ -123,39 +131,15 @@ class ErrorController(Controller):
     def prepare(self):
         raise HTTPError(self._status_code)
 
-class ResourceEntity(object):
-    '''
-    Static resource entity representing the real static resource which is already loaded to the memory.
-    
-    :param path: the path to the static resource.
-    
-    .. note::
-        This is for internal use only.
-    '''
-    def __init__(self, path):
-        self.path     = path
-        self._content = None
-        
-        self.type     = get_type(path)
-        self.type     = self.type[0]
-    
-    def content(self):
-        ''' Get the content of the entity. '''
-        if self._content:
-            return self._content
-        
-        if not p.exists(self.path):
-            return None
-        
-        with open(self.path) as f:
-            self._content = f.read()
-        
-        return self._content
-
 class ResourceService(RequestHandler):
     ''' Resource service is to serve a static resource via HTTP/S protocal. '''
     
-    _patterns = {}
+    _patterns      = {}
+    _cache_objects = {}
+    
+    _plugins            = {}
+    _plugins_tag_name   = 'resource-service-plugin'
+    _plugins_registered = False
     
     @staticmethod
     def add_pattern(pattern, base_path, enabled_cache=False):
@@ -189,21 +173,37 @@ class ResourceService(RequestHandler):
         path = '/'.join(path)
         path = sub('^/+', '', path)
         
+        # If the request URI is already pre-calculated or fixed, load the
+        # entity from the corresponding path.
         if ResourceService._patterns.has_key(request_uri):
-            # If the request URI is already pre-calculated or fixed, load the entity from the corresponding path.
             resource = self._get_resource_entity(ResourceService._patterns[request_uri])
         
         # When the resource is not loaded, try to get from the wildcard pattern.
         if not resource:
             resource = self._get_resource_on_non_precalculated_pattern(path)
         
+        # Get the resource type.
         resource_type = resource.type or 'text/plain'
         
         self.set_header("Content-Type", resource_type)
         
+        # Return HTTP 404 if the content is not found.
         if not resource.content():
             raise HTTPError, 404
         
+        # Retrieve the plugins if registered.
+        if not ResourceService._plugins_registered:
+            ResourceService._plugins = ToriService.getListByTag(
+                ResourceService._plugins_tag_name
+            )
+        
+        # Apply the plugin.
+        for plugin in ResourceService._plugins:
+            if plugin.expect(resource):
+                resource = plugin.execute(resource)
+            # End the iteraltion
+        
+        # Return the content.
         try:
             self.finish(resource.content())
         except Exception, e:
@@ -228,4 +228,4 @@ class ResourceService(RequestHandler):
             
             return self._get_resource_entity(real_path)
         
-        raise HTTPError(404)
+        raise HTTPError, 404

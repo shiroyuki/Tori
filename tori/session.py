@@ -15,7 +15,7 @@ from .centre      import settings as AppSettings
 from .common      import Enigma
 from .exception   import *
 from .rdb         import Entity
-from .service.rdb import EntityService
+from .service.rdb import EntityService, RelationalDatabaseService
 
 class DbSessionEntity(Entity):
     '''
@@ -128,14 +128,15 @@ class DbSession(AbstractSession):
     '''
     
     def __init__(self, url='sqlite:///:memory:'):
-        self.entities  = EntityService(url, DbSessionEntity)
-        self.db        = None
+        self.db         = RelationalDatabaseService(url)
+        self.entities   = EntityService(url, DbSessionEntity)
+        self.db_session = None
     
     def session(self):
-        if not self.db:
-            self.db = self.entities.session()
+        if not self.db_session:
+            self.db_session = self.db.session()
         
-        return self.db
+        return self.db_session
     
     def base_filter(self, id):
         return self.session().\
@@ -143,37 +144,38 @@ class DbSession(AbstractSession):
             filter(DbSessionEntity.session_id==id)
     
     def commit(self):
-        if not self.db:
+        if not self.db_session:
             return
         
-        self.db.commit()
+        self.db_session.commit()
         self.close()
     
     def close(self):
-        if not self.db:
+        if not self.db_session:
             return
         
-        self.db.close()
+        self.db_session.close()
         
-        self.db = None
+        self.db_session = None
     
     def delete(self, id, key):
-        session = self.get(session_id, key, False)
-        
-        if not session:
-            self.close()
-            return
-        
-        self.session().delete(session)
-        self.commit()
-    
-    def get(self, id, key, auto_close=True):
         data = self.base_filter(id).\
             filter(DbSessionEntity.key==key).\
             first()
         
-        if auto_close:
+        if not data:
             self.close()
+            return
+        
+        self.session().delete(data)
+        self.commit()
+    
+    def get(self, id, key):
+        data = self.base_filter(id).\
+            filter(DbSessionEntity.key==key).\
+            first()
+        
+        self.close()
         
         return data and data.content or None
     
@@ -184,13 +186,15 @@ class DbSession(AbstractSession):
         
         return len(data) > 0
     
-    def set(self, id, key, value):
-        session = self.get(id, key, False)
+    def set(self, id, key, content):
+        data = self.base_filter(id).\
+            filter(DbSessionEntity.key==key).\
+            first()
         
-        if not session:
-            session = DbSessionEntity(id, key, value)
-            self.session().add(session)
+        if not data:
+            data = DbSessionEntity(id, key, content)
+            self.session().add(data)
         
-        session.value = value
+        data.content = content
         
         self.commit()

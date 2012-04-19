@@ -298,7 +298,6 @@ epub_copyright = u'2012, Juti Noppornpitak'
 # Allow duplicate toc entries.
 #epub_tocdup = True
 
-
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None}
 
