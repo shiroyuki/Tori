@@ -23,6 +23,7 @@ class RelationalDatabaseService(object):
         self._engine    = None
         self._url       = url
         self._reflected = False
+        self._session   = None
         self._session_class   = None
         self._primary_session = None
 
@@ -73,7 +74,16 @@ class RelationalDatabaseService(object):
         if not self._session_class:
             self._session_class = sessionmaker(bind=engine)
 
-        return self._session_class()
+        if not self._session:
+            self._session = self._session_class()
+
+        return self._session
+
+    def close(self):
+        ''' Close the database session. '''
+        self._session.close()
+
+        self._session = None
 
     def post(self, entity):
         '''
@@ -87,7 +97,19 @@ class RelationalDatabaseService(object):
 
         session.add(entity)
         session.commit()
-        session.close()
+
+    def get(self, entity_type, key):
+        '''
+        Get an entity of type *entity_type*.
+
+        :param `entity_type`: the class reference of the entities being searched
+        :param `key`:         the lookup key
+        '''
+
+        session = self.session()
+        entity  = session.query(entity_type).get(key)
+
+        return entity
 
     def get_all(self, entity_type):
         '''
@@ -98,8 +120,6 @@ class RelationalDatabaseService(object):
 
         session = self.session()
         items   = session.query(entity_type).all()
-
-        session.close()
 
         return items
 
@@ -118,15 +138,9 @@ class EntityService(object):
             session.add(entity)
 
         session.commit()
-        session.close()
 
-    def get(key):
-        session = self._database.session()
-        item    = session.query(self._kind).get(key)
-
-        session.close()
-
-        return item
+    def get(self, key):
+        return self._database.get(self._kind, key)
 
     def get_all(self):
         return self._database.get_all(self._kind)
