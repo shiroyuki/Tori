@@ -78,6 +78,11 @@ class RelationalDatabaseService(object):
             self._session = self._session_class()
 
         return self._session
+    
+    def query(self, entity_type):
+        session = self.session()
+        
+        return session.query(entity_type)
 
     def close(self):
         ''' Close the database session. '''
@@ -85,17 +90,19 @@ class RelationalDatabaseService(object):
 
         self._session = None
 
-    def post(self, entity):
+    def post(self, *entities):
         '''
-        Insert a new `entity` into the database.
+        Insert new `entities` into the database.
 
-        :param `entity`: a new entity.
+        :param `entities`: a list of new entities.
         '''
-        assert isinstance(entity, BaseEntity), 'Expected an entity based on BaseEntity or a declarative base entity.'
-
         session = self.session()
 
-        session.add(entity)
+        for entity in entities:
+            assert isinstance(entity, BaseEntity), 'Expected an entity based on BaseEntity or a declarative base entity.'
+            
+            session.add(entity)
+        
         session.commit()
 
     def get(self, entity_type, key):
@@ -106,10 +113,7 @@ class RelationalDatabaseService(object):
         :param `key`:         the lookup key
         '''
 
-        session = self.session()
-        entity  = session.query(entity_type).get(key)
-
-        return entity
+        return self.query(entity_type).get(key)
 
     def get_all(self, entity_type):
         '''
@@ -118,10 +122,7 @@ class RelationalDatabaseService(object):
         :param `entity_type`: the class reference of the entities being searched
         '''
 
-        session = self.session()
-        items   = session.query(entity_type).all()
-
-        return items
+        return self.query(entity_type).all()
 
 class EntityService(object):
     def __init__(self, db, kind):
@@ -129,6 +130,11 @@ class EntityService(object):
         self._kind     = kind
 
     def post(self, *entities):
+        '''
+        Post an entity to the database.
+        
+        :params `entities`: the list of entities.
+        '''
         session = self._database.session()
 
         for entity in entities:
@@ -139,8 +145,19 @@ class EntityService(object):
 
         session.commit()
 
+    def query(self):
+        '''
+        Retrieve the query object.
+        
+        :return: SQLAlchemy's `Query` object for the entity.
+        '''
+        return self._database.query(self._kind)
+
     def get(self, key):
         return self._database.get(self._kind, key)
 
     def get_all(self):
         return self._database.get_all(self._kind)
+    
+    def commit(self):
+        return self._database.session().commit()
