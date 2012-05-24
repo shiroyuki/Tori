@@ -7,8 +7,10 @@ This package contains decorators for common use.
 import inspect
 from   tori.exception import *
 
-class BaseClassDecorator(object):
-    ''' Base decorator based from an example at http://www.artima.com/weblogs/viewpost.jsp?thread=240808. '''
+class BaseDecoratorForCallableObject(object):
+    '''
+    Base decorator based from an example at http://www.artima.com/weblogs/viewpost.jsp?thread=240808.
+    '''
     def __init__(self, reference):
         ''' On the initialization of the given ``function``. '''
         self._reference = reference

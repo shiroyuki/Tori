@@ -325,6 +325,7 @@ MOCK_MODULES = [
     'tornado.ioloop.IOLoop',
     'tornado.web',
     'tornado.web.Application',
+    'tornado.web.ErrorHandler',
     'tornado.web.HTTPError',
     'tornado.web.RedirectHandler',
     'tornado.web.RequestHandler',
@@ -343,6 +344,7 @@ MOCK_MODULES = [
     'sqlalchemy',
     'sqlalchemy.Column',
     'sqlalchemy.create_engine',
+    'sqlalchemy.exc',
     'sqlalchemy.ext',
     'sqlalchemy.ext.declarative',
     'sqlalchemy.ext.declarative.declarative_base',
@@ -356,5 +358,6 @@ MOCK_MODULES = [
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if on_rtd:
+#if True:
     for mod_name in MOCK_MODULES:
         sys.modules[mod_name] = Mock()

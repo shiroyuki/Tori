@@ -12,6 +12,7 @@ from time      import time
 
 from tornado.web import HTTPError, ErrorHandler, RequestHandler
 
+from tori           import __version__
 from tori.centre    import services as ToriService
 from tori.common    import Enigma, Console
 from tori.exception import *
@@ -30,9 +31,9 @@ class Controller(RequestHandler):
         self.session_repo = None
         
         # Start the session if the session component is registered.
-        self.__start_session()
+        self._start_session()
     
-    def __start_session(self):
+    def _start_session(self):
         ''' Start the session. '''
         if not ToriService.has('session') or 'cookie_secret' not in self.settings:
             return
@@ -122,6 +123,62 @@ class Controller(RequestHandler):
         See :meth:`tori.renderer.Renderer.render` for more information.
         '''
         self.write(self.render_template(template_name, **contexts))
+
+class RestController(Controller):
+    '''
+    Abstract REST-capable controller based on a single primary key.
+    '''
+    def list(self):
+        ''' Retrieve the list of all entities. '''
+        self.set_status(405)
+    
+    def retrieve(self, id):
+        ''' Retrieve an entity with `id`. '''
+        self.set_status(405)
+    
+    def create(self):
+        ''' Create an entity. '''
+        self.set_status(405)
+    
+    def remove(self, id):
+        ''' Remove an entity with `id`. '''
+        self.set_status(405)
+
+    def update(self, id):
+        ''' Update an entity with `id`. '''
+        self.set_status(405)
+    
+    def get(self, id=None):
+        ''' Handle GET requests. '''
+        if not id:
+            self.list()
+            return
+        
+        self.retrieve(int(id))
+    
+    def post(self, id=None):
+        ''' Handle POST requests. '''
+        if id:
+            self.set_status(405)
+            return
+        
+        self.create()
+    
+    def put(self, id=None):
+        ''' Handle PUT requests. '''
+        if not id:
+            self.set_status(405)
+            return
+        
+        self.update(int(id))
+    
+    def delete(self, id=None):
+        ''' Handle DELETE requests. '''
+        if id:
+            self.set_status(405)
+            return
+        
+        self.remove(int(id))
 
 class ErrorController(Controller):
     """Generates an error response with status_code for all requests."""
