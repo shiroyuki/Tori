@@ -15,9 +15,7 @@ from .decorator.common import singleton
 @singleton
 class Enigma(object):
     ''' Hashlib wrapper '''
-    def __init__(self):
-        self._hash_engine = None
-
+    
     def hash(self, value):
         '''
         Make a hash out of the given ``value``.
@@ -25,12 +23,12 @@ class Enigma(object):
         :param `value`: the data being encoded.
         :return:        the hashed data string
         '''
-        if not self._hash_engine:
-            self._hash_engine = hashlib.new('sha512')
+        
+        hash_engine = hashlib.new('sha512')
+        
+        hash_engine.update(unicode(value))
 
-        self._hash_engine.update(unicode(value))
-
-        return self._hash_engine.hexdigest()
+        return hash_engine.hexdigest()
 
     def random_number(self):
         return random.randint(0,100000000000)
