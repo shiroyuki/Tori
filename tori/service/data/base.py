@@ -18,16 +18,21 @@ class ResourceEntity(object):
         self.type = get_type(path)
         self.type = self.type[0]
     
+    def exists(self):
+        return p.exists(self.path)
+    
     def content(self):
         ''' Get the content of the entity. '''
         if self._content:
             return self._content
         
-        if not p.exists(self.path):
+        if not self.exists():
             return None
         
         with open(self.path) as f:
             self._content = f.read()
+        
+        f.close()
         
         return self._content
     
