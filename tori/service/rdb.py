@@ -8,24 +8,27 @@ from sqlalchemy     import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
+from tori.common    import Console
 from tori.exception import *
 from tori.rdb       import Entity as BaseEntity
 
 class RelationalDatabaseService(object):
     '''
     Relational Database Service based on SQLAlchemy 0.7+
-    
+
     This service provides basic functionality to interact a relational database. It also
     heavily uses lazy loading for the sake of faster startup and resource efficiency.
 
     :param url: a URL to the database, possibly including location, credential and name.\
                   The default value is ``sqlite:///:memory:``.
-    
+
     .. warning::
         This class is not thread-safe. If you use with Imagination's ``Locator``, strongly
         recommend to use ``fork`` instead of ``get``. See the documentation for more details.
     '''
     def __init__(self, url='sqlite:///:memory:'):
+        Console.log('tori.service.rdb.RelationalDatabaseService: %s' % url)
+        
         self._engine    = None
         self._url       = url
         self._reflected = False
@@ -90,9 +93,9 @@ class RelationalDatabaseService(object):
 
         for entity in entities:
             assert isinstance(entity, BaseEntity), 'Expected an entity based on BaseEntity or a declarative base entity.'
-            
+
             session.add(entity)
-        
+
         session.commit()
 
     def get(self, entity_type, key):
@@ -119,10 +122,10 @@ class RelationalDatabaseService(object):
 class EntityService(object):
     '''
     Entity service compatible with :class:`RelationalDatabaseService`.
-    
+
     :param db:   the database service interface
-    :param kind: the type of entity which is a subclass of :class:`tori.rdb.Entity`. 
-    
+    :param kind: the type of entity which is a subclass of :class:`tori.rdb.Entity`.
+
     .. warning::
         This class is not thread-safe. If you use with Imagination's ``Locator``, strongly
         recommend to use ``fork`` instead of ``get``. See the documentation for more details.
@@ -135,15 +138,15 @@ class EntityService(object):
     def session(self):
         if not self._session:
             self._session = self._database.session()
-        
+
         return self._session
 
     def make(self, **attributes):
         '''
         Make an entity of the defined entity class.
-        
+
         :param attributes: the dictionary of attributes for the defined entity class.
-        
+
         :return: an entity of the defined entity class.
         '''
         return self._kind(**attributes)
@@ -151,9 +154,9 @@ class EntityService(object):
     def post(self, *entities):
         '''
         Post new entities to the database.
-        
+
         :param entities: the list of entities.
-        
+
         :return: ``True`` if there is no error.
         '''
         session = self.session()
@@ -165,26 +168,26 @@ class EntityService(object):
             session.add(entity)
 
         return self.commit()
-    
+
     def put(self):
         '''
         Apply all changes on any existing entities within the same session to the database.
-        
+
         :return: ``True`` if there is no error.
-        
+
         .. warning:: This is not a thread-safe operation.
         '''
 
         return self.commit()
-    
+
     def delete(self, *entities):
         '''
         Delete entities.
-        
+
         :param entities: the list of entities.
-        
+
         '''
-        
+
         session = self.session()
 
         for entity in entities:
@@ -192,13 +195,13 @@ class EntityService(object):
                    'Expected an entity of class %s.' % self._kind.__name__
 
             session.delete(entity)
-        
+
         session.commit()
 
     def query(self):
         '''
         Retrieve the query object.
-        
+
         :return: SQLAlchemy's `Query` object for the entity.
         '''
         return self.session().query(self._kind)
@@ -206,7 +209,7 @@ class EntityService(object):
     def get(self, key):
         '''
         Retrieve an entity of the defined type by primary key.
-        
+
         :param key: primary key
         :return:    an instance of the defined class or ``None``
         '''
@@ -215,25 +218,25 @@ class EntityService(object):
     def get_all(self):
         '''
         Retrieve the list of all entities of the defined entity class.
-        
+
         :return: the list of all entities of the defined entity class.
         '''
         return self.query().all()
-    
+
     def commit(self):
         '''
         Apply all changes on any existing entities within the same session to the database.
-        
+
         :return: ``True`` if there is no error.
-        
+
         .. warning:: This is not a thread-safe operation.
         '''
-        
+
         try:
             self.session().commit()
         except IntegrityError:
             self.session().rollback()
-            
+
             return False
-        
-        return 
+
+        return True

@@ -12,7 +12,7 @@ from sqlalchemy       import Column
 from sqlalchemy.types import Integer, PickleType, String
 
 from .centre      import settings as AppSettings
-from .common      import Enigma
+from .common      import Console, Enigma
 from .exception   import *
 from .rdb         import Entity
 from .service.rdb import EntityService, RelationalDatabaseService
@@ -128,8 +128,10 @@ class DbSession(AbstractSession):
     '''
     
     def __init__(self, url='sqlite:///:memory:'):
+        Console.log('tori.session.DbSession: %s' % url)
+        
         self.db         = RelationalDatabaseService(url)
-        self.entities   = EntityService(url, DbSessionEntity)
+        self.entities   = EntityService(self.db, DbSessionEntity)
         self.db_session = None
     
     def session(self):

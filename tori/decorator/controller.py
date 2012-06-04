@@ -8,15 +8,6 @@ import traceback
 
 from tori.exception import *
 
-def disable_access(action):
-    '''
-    Disable access to the targeted action of the controller.
-    '''
-    def __override_action__(*args, **kwargs):
-        raise web.HTTPError(403)
-    
-    return __override_action__
-
 def _assign_renderer(class_reference, *args, **kwargs):
     '''
     Assign the renderer to the given controller-type class.
