@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
+
 # Standard libraries
 import os
 import re
 import sys
 
 # Third-party libraries
-# Kotoba 2.x from Yotsuba 3.1 will be replaced by Kotoba 3.0 as soon as the official release is available.
 from   imagination.entity import Entity  as ImaginationEntity
 from   imagination.loader import Loader  as ImaginationLoader
 from   kotoba             import load_from_file
@@ -26,54 +27,54 @@ class BaseApplication(object):
     '''
     Interface to bootstrap a WSGI application with Tornado framework. This is the basic
     application class which do nothing. Please don't use this directly.
-        
+
     `settings` is a dictionary of extra settings to Tornado engine. For more information,
     please consult with Tornado documentation.
     '''
-    
+
     def __init__(self, **settings):
         self._hierarchy_level = len(self.__class__.__mro__) - 1
-        
+
         # Setting for the application.
         self._settings          = settings
         self._settings['debug'] = False
-        
+
         if 'base_path' not in self._settings:
             # Get the reference to the calling function
             current_function    = sys._getframe(self._hierarchy_level)
             caller_function     = current_function.f_code
             reference_to_caller = caller_function.co_filename
-        
+
             # Base path
             self._base_path = os.path.abspath(os.path.dirname(os.path.abspath(reference_to_caller)))
             self._base_path = 'static_path' in settings and settings['static_path'] or self._base_path
-        
+
             self._settings['base_path'] = self._base_path
-        
+
         self._base_path = self._settings['base_path']
-        
+
         self._static_routing_setting = dict(path=self._base_path)
         self._routes = []
-    
+
     def _update_routes(self, routes):
         '''
         Update the routes.
-        
+
         `routes` is the list of routes. See Tornado documentation on `tornado.web.Application` for more detail.
         '''
         self._routes = routes
-    
+
     def _activate(self):
         '''
         Activate the backend application.
         '''
-        
+
         # Update the global settings.
         AppSettings.update(self._settings)
-        
+
         # Instantiate the backend application.
         self._backend_app = TornadoNormalApplication(self._routes, **self._settings)
-        
+
     def listen(self, port_number=8888):
         '''
         Tell the app to listen on the given port number.
@@ -81,28 +82,28 @@ class BaseApplication(object):
         `port_number` is an integer to indicate which port the application should be listen to.
         This setting is however only used in a standalone mode.
         '''
-        
+
         self._listening_port = int(port_number)
-        
+
         Console.log("Listen on port %d." % self._listening_port)
-        
+
         return self
-    
+
     def start(self):
         '''
         Start a server/service.
         '''
         try:
             self._backend_app.listen(self._listening_port)
-            
+
             Console.log("Start the application based at %s." % self._base_path)
             IOLoop.instance().start()
         except KeyboardInterrupt:
             Console.log("\rCleanly stopped.")
-    
+
     def get_backbone(self):
         return self._backend_app
-    
+
     def get_listening_port(self):
         return self._listening_port
 
@@ -112,7 +113,7 @@ class Application(BaseApplication):
         ('finder', 'tori.common.Finder', [], {}),
         ('renderer', 'tori.service.rendering.RenderingService', [], {})
     ]
-    
+
     def __init__(self, configuration_location, **settings):
         '''
         Interface to bootstrap a WSGI application with Tornado built-in server.
@@ -121,145 +122,145 @@ class Application(BaseApplication):
         please consult with Tornado documentation.
         '''
         BaseApplication.__init__(self, **settings)
-        
+
         self._config_main_path = os.path.join(self._base_path, configuration_location)
         self._config_base_path = os.path.dirname(self._config_main_path)
-        
+
         self._config      = load_from_file(self._config_main_path)
         self._routing_map = RoutingMap()
-        
+
         # Default properties
         self._scope = settings.has_key('scope') and settings['scope'] or None
         self._port  = 8000
-        
+
         # Register the default services.
         self._register_default_services()
-        
+
         # Add the main configuration to the watch list.
         watch(self._config_main_path)
-        
+
         # Configure the included files first.
         for inclusion in self._config.children('include'):
             source_location = inclusion.attribute('src')
-            
+
             if source_location[0] != '/':
                 source_location = os.path.join(self._config_base_path, source_location)
-                
+
             pre_config = load_from_file(source_location)
-            
+
             self._configure(pre_config, source_location)
-            
+
             watch(source_location)
-            
+
             Console.log('Included the configuration from %s' % source_location)
-        
+
         self._configure(self._config)
-        
+
         # Override the properties with the parameters.
         if settings.has_key('port'):
             self._port = settings['port']
             Console.log('Changed the listening port: %s' % self._port)
-        
+
         # Normal procedure
         self._update_routes(self._routing_map.export())
         self.listen(self._port)
         self._activate()
-    
+
     def _configure(self, configuration, config_path=None):
         if len(configuration.children('server')) > 1:
             raise InvalidConfigurationError, 'Too many server configuration.'
-        
+
         if len(configuration.children('routes')) > 1:
             raise InvalidConfigurationError, 'Too many routing configuration.'
-        
+
         # Set the cookie secret for secure cookies.
         client_secret = configuration.find('server secret')
         if client_secret:
             self._settings['cookie_secret'] = client_secret.data()
-        
+
         # Set the port number.
         port = configuration.find('server port')
-        
+
         if len(port) > 1:
             raise DuplicatedPortError
         elif port:
             self._port = port.data()
-        
+
         # Find the debugging flag
         self._settings['debug'] = configuration.find('server debug').data().lower() == 'true'
-        
+
         # Exclusive procedures
         self._register_imagination_services(configuration, config_path or self._config_base_path)
         self._map_routing_table(configuration)
         self._set_error_delegate(configuration)
-    
+
     def _set_error_delegate(self, configuration):
         ''' Set a new error delegate based on the given configuration file if specified. '''
         delegate = configuration.find('server error').data()
-        
+
         if delegate:
             Console.log('Custom Error Handler: %s' % delegate)
             tornado.web.ErrorHandler = ImaginationLoader(delegate).package()
-    
+
     def _register_default_services(self):
         for id, package_path, args, kwargs in self._default_services:
             self._set_service_entity(id, package_path, *args, **kwargs)
-    
+
     def _register_imagination_services(self, configuration, base_path):
         ''' Register services. '''
         service_blocks = configuration.children('service')
-        
+
         for service_block in service_blocks:
             service_config_path = service_block.data()
-            
+
             if service_config_path[0] != '/':
                 config_filepath = os.path.join(base_path, service_config_path)
-                
+
             AppServices.load_xml(config_filepath)
-    
+
     def _map_routing_table(self, configuration):
         '''
         Update a routing table based on the configuration.
         '''
         routing_sequences = configuration.children('routes')
-        
+
         if not routing_sequences:
             return
-        
+
         # Register the routes to controllers.
         for routing_sequence in routing_sequences:
             new_routing_map = RoutingMap.make(routing_sequence, self._base_path)
-            
+
             self._routing_map.update(new_routing_map)
-    
+
     def _make_service_entity(self, id, package_path, *args, **kwargs):
         '''
         Make and return a service entity.
-        
+
         *id* is the ID of a new service entity.
-        
+
         *package_path* is the package path.
-        
+
         *args* and *kwargs* are parameters used to instantiate the service.
         '''
         loader = ImaginationLoader(package_path)
         entity = ImaginationEntity(id, loader, *args, **kwargs)
-        
+
         return entity
-    
+
     def _set_service_entity(self, id, package_path, *args, **kwargs):
         '''
         Set the given service entity.
-        
+
         *id* is the ID of a new service entity.
-        
+
         *package_path* is the package path.
-        
+
         *args* and *kwargs* are parameters used to instantiate the service.
         '''
-                
+
         AppServices.set(id, self._make_service_entity(id, package_path, *args, **kwargs))
-    
+
     def get_route(self, routing_pattern):
         ''' Get the route. '''
         return self._routing_map.get(routing_pattern)
@@ -272,24 +273,24 @@ class WSGIApplication(Application):
         `settings` is a dictionary of extra settings to Tornado engine. For more information,
         please consult with Tornado documentation.
         '''
-        
+
         Application.__init__(self, configuration_location, **settings)
-    
+
     def _activate(self):
         '''
         Activate the backend application.
         '''
-        
+
         # Update the global settings.
         AppSettings.update(self._settings)
-        
+
         # Instantiate the backend application.
         self._backend_app = TornadoWSGIApplication(self._routes, **self._settings)
 
     def start(self):
         '''
         Start the process.
-        
+
         .. warn:: This method is only necessary for a Google App Engine.
         '''
         handlers.CGIHandler().run(self.get_backbone())

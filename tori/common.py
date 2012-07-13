@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 '''
 :Author: Juti Noppornpitak
 
@@ -15,7 +17,7 @@ from .decorator.common import singleton
 @singleton
 class Enigma(object):
     ''' Hashlib wrapper '''
-    
+
     def hash(self, value):
         '''
         Make a hash out of the given ``value``.
@@ -23,9 +25,9 @@ class Enigma(object):
         :param `value`: the data being encoded.
         :return:        the hashed data string
         '''
-        
+
         hash_engine = hashlib.new('sha512')
-        
+
         hash_engine.update(unicode(value))
 
         return hash_engine.hexdigest()

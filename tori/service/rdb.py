@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 '''
 :Author: Juti Noppornpitak
 
@@ -28,7 +30,7 @@ class RelationalDatabaseService(object):
     '''
     def __init__(self, url='sqlite:///:memory:'):
         Console.log('tori.service.rdb.RelationalDatabaseService: %s' % url)
-        
+
         self._engine    = None
         self._url       = url
         self._reflected = False

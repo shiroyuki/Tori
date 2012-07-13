@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 '''
 :Author: Juti Noppornpitak
 
-This package contains an abstract controller (based on :class:`tornado.web.RequestHandler`) and built-in controllers.
+This package contains an abstract controller (based on
+:class:`tornado.web.RequestHandler`) and built-in controllers.
 '''
 
 from os        import path as p
@@ -21,7 +24,8 @@ from tori.service.data.base import ResourceEntity
 
 class Controller(RequestHandler):
     '''
-    The abstract controller for Tori framework which replaces Jinja2 as a template engine instead.
+    The abstract controller for Tori framework which uses Jinja2 as a template
+    engine instead of the default one that comes with Tornado.
     '''
 
     def __init__(self, *args, **kwargs):
@@ -39,11 +43,13 @@ class Controller(RequestHandler):
             return
 
         self.session_repo = ComponentRepository.get('session')
-        self.session_id   = self._can_use_secure_cookie() and self.get_secure_cookie('ssid') or self.get_cookie('ssid')
+        self.session_id   = self._can_use_secure_cookie()\
+            and self.get_secure_cookie('ssid')\
+            or self.get_cookie('ssid')
 
         if self.session_id:
             return
-        
+
         self.session_id = self.session_repo.generate()
 
         if self._can_use_secure_cookie():
@@ -52,23 +58,27 @@ class Controller(RequestHandler):
             Console.log('%s: Use unsecure session.' % self.__class__.__name__)
             self.set_cookie('ssid', self.session_id)
         # endif
-    
+
     def _can_use_secure_cookie(self):
-        return 'cookie_secret' in self.settings and self.settings['cookie_secret']
+        return 'cookie_secret' in self.settings\
+            and self.settings['cookie_secret']
 
     def component(self, name, fork_component=False):
         '''
-        Get the (re-usable) component from the initialized Imagination component locator service.
+        Get the (re-usable) component from the initialized Imagination
+        component locator service.
 
         :param `name`:           the name of the registered re-usable component.
         :param `fork_component`: the flag to fork the component
         :return:                 module, package registered or ``None``
         '''
-        
+
         if not ComponentRepository.has(name):
             return None
-        
-        return fork_component and ComponentRepository.fork(name) or ComponentRepository.get(name)
+
+        return fork_component\
+            and ComponentRepository.fork(name)\
+            or ComponentRepository.get(name)
 
     def session(self, key, new_content=None):
         '''
@@ -265,7 +275,7 @@ class ResourceService(RequestHandler):
 
         # Retrieve the plugins if registered.
         if not ResourceService._plugins_registered:
-            ResourceService._plugins = ComponentRepository.getListByTag(
+            ResourceService._plugins = ComponentRepository.get_list_by_tag(
                 ResourceService._plugins_tag_name
             )
 
