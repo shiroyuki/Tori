@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 
+'''
+:Author: Juti Noppornpitak
+
+..note::
+    The documentation of this module yet conforms with the standard documenting
+    style used by the official Python documenters.
+'''
+
 # Standard libraries
 import os
 import re
@@ -8,6 +16,8 @@ import sys
 # Third-party libraries
 from   imagination.entity import Entity  as ImaginationEntity
 from   imagination.loader import Loader  as ImaginationLoader
+from   imagination.helper.assembler import Assembler   as ImaginationAssembler
+from   imagination.helper.assembler import Transformer as ImaginationTransformer
 from   kotoba             import load_from_file
 from   tornado.autoreload import watch
 from   tornado.ioloop     import IOLoop
@@ -25,11 +35,13 @@ from .navigation import *
 
 class BaseApplication(object):
     '''
-    Interface to bootstrap a WSGI application with Tornado framework. This is the basic
-    application class which do nothing. Please don't use this directly.
+    Interface to bootstrap a WSGI application with Tornado Web Server/Framework.
+    This is the basic application class which practically does nothing. Please
+    do not use this directly.
 
-    `settings` is a dictionary of extra settings to Tornado engine. For more information,
-    please consult with Tornado documentation.
+    :param `settings`: variable key-value parameters for extra settings to
+    Tornado Web Server / Framework. Please read the web server documentation
+    for more details.
     '''
 
     def __init__(self, **settings):
@@ -108,6 +120,13 @@ class BaseApplication(object):
         return self._listening_port
 
 class Application(BaseApplication):
+    '''
+    Interface to bootstrap a WSGI application with Tornado Web Server.
+
+    `settings` is a dictionary of extra settings to Tornado engine. For more
+    information, please read Tornado documentation.
+    '''
+
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
     _default_services         = [
         ('finder', 'tori.common.Finder', [], {}),
@@ -115,12 +134,6 @@ class Application(BaseApplication):
     ]
 
     def __init__(self, configuration_location, **settings):
-        '''
-        Interface to bootstrap a WSGI application with Tornado built-in server.
-
-        `settings` is a dictionary of extra settings to Tornado engine. For more information,
-        please consult with Tornado documentation.
-        '''
         BaseApplication.__init__(self, **settings)
 
         self._config_main_path = os.path.join(self._base_path, configuration_location)
@@ -210,13 +223,15 @@ class Application(BaseApplication):
         ''' Register services. '''
         service_blocks = configuration.children('service')
 
+        assembler = ImaginationAssembler(ImaginationTransformer(AppServices))
+
         for service_block in service_blocks:
             service_config_path = service_block.data()
 
             if service_config_path[0] != '/':
                 config_filepath = os.path.join(base_path, service_config_path)
 
-            AppServices.load_xml(config_filepath)
+            assembler.load(config_filepath)
 
     def _map_routing_table(self, configuration):
         '''
@@ -266,14 +281,14 @@ class Application(BaseApplication):
         return self._routing_map.get(routing_pattern)
 
 class WSGIApplication(Application):
+    '''
+    Interface to bootstrap a WSGI application with Apache WSGI module.
+
+    This class is simply a clone to :class:`Application` except that it is
+    specially customized for deploying the application in the WSGI embedded mode.
+    '''
+
     def __init__(self, configuration_location, **settings):
-        '''
-        Interface to bootstrap a WSGI application with Apache WSGI module.
-
-        `settings` is a dictionary of extra settings to Tornado engine. For more information,
-        please consult with Tornado documentation.
-        '''
-
         Application.__init__(self, configuration_location, **settings)
 
     def _activate(self):

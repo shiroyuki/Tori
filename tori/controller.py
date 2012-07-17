@@ -274,8 +274,8 @@ class ResourceService(RequestHandler):
             raise HTTPError, 404
 
         # Retrieve the plugins if registered.
-        if not ResourceService._plugins_registered:
-            ResourceService._plugins = ComponentRepository.get_list_by_tag(
+        if not ResourceService._plugins and not ResourceService._plugins_registered:
+            ResourceService._plugins = ComponentRepository.find_by_tag(
                 ResourceService._plugins_tag_name
             )
 
