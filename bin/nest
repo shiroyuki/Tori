@@ -1,0 +1,277 @@
+#!/usr/bin/env python
+
+'''
+:Version: 0.1
+:Status:  Stable/Experimental
+:Author:  Juti Noppornpitak
+
+This is the utility command line interface (CLI). At this stage, the command is
+to just prepare the development environment and create a skeleton application.
+
+.. note::
+    Copyright (c) 2012 Juti Noppornpitak
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+    of the Software, and to permit persons to whom the Software is furnished to do
+    so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+    PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'''
+
+import os
+from sys import exit
+from sys import version_info as version
+from subprocess import call
+
+# General Dependencies
+dependencies = {
+    'mandatory': {
+        'tornado':     None,
+        'jinja2':      None,
+        'tori':        'git://github.com/shiroyuki/Tori.git',
+        'kotoba':      'git://github.com/shiroyuki/Kotoba.git',
+        'imagination': 'git://github.com/shiroyuki/Imagination.git'
+    },
+    'optional': {
+        'sqlalchemy': None
+    }
+}
+
+initial_folders = ['config', 'resources', 'resources/js', 'resources/css', 'resources/image']
+
+initial_app_code = {
+    'controller.py': '''# -*- coding: utf-8 -*-
+from tori.controller           import Controller
+from tori.decorator.controller import renderer
+
+@renderer('app.view')
+class Home(Controller):
+    def get(self):
+        self.render('index.html')
+''',
+    'view/index.html': '''<!doctype html>
+<html lang="en">
+<head>
+<title>My first Tori app</title>
+<style>body{font-family:'Helvetica','Arial',sans-serif;}</style>
+</head>
+<body>
+<h1>It just works!</h1>
+<p>Powered by Tori Framework</p>
+</body>
+</html>
+}
+'''
+}
+
+initial_static_data = {
+    'config/base.xml': '''<?xml version="1.0" encoding="utf-8"?>
+<application>
+    <server>
+        <!-- Secret salt for secure-cookie feature -->
+        <secret></secret>
+        <!-- Uncomment below to enable custom error controller -->
+        <!-- <error>app.web.controller.ErrorController</error> -->
+    </server>
+    <routes>
+        <!-- Example for routing. See the documentation for more information. -->
+        <!--
+            <controller class="app.web.controller.Home"    pattern="/"/>
+            <controller class="app.web.controller.Session" pattern="/(login|logout|session)"/>
+            <controller class="app.web.interface.Entity"   pattern="/api/v1/entity/(\d+)/([^\s]+)/(\d*)"/>
+        -->
+        <controller class="%(app_name)s.controller.Home" pattern="/"/>
+    </routes>
+</application>
+''',
+    'config/app.xml': '''<?xml version="1.0" encoding="utf-8"?>
+<application>
+    <include src="base.xml"/> <!-- include fromt other configuration files -->
+    <server>
+        <debug>true</debug>
+        <port>8000</port>
+    </server>
+    <routes>
+    </routes>
+    <service>service.xml</service>
+</application>
+
+''',
+    'config/service.xml': '''<?xml version="1.0" encoding="utf-8"?>
+<imagination>
+    <!-- See the documentation of Imagination at http://shiroyuki.com/work/project-imagination. -->
+    <!--
+    <entity id="css-compressor"
+            class="tori.service.data.compressor.CSSCompressor"
+            tags="resource-service-plugin"
+    />
+    -->
+</imagination>
+''',
+    'server.py': '''# -*- coding: utf-8 -*-
+
+from tori.application import Application
+
+application = Application('config/app.xml')
+application.start()
+'''
+}
+
+def console(context, marker=None):
+    if not marker:
+        print '      %s' % context
+        return
+
+    print '%s ... %s' % (marker, context)
+
+def fwrite(location, data=''):
+    f = None
+
+    try:
+        f = open(location, 'w')
+        f.write(data)
+    finally:
+        if f: f.close()
+
+def is_valid_answer(answer, expected_choices=[], default=None):
+    return (not answer and not default) or (expected_choices and answer.lower() not in expected_choices)
+
+def prompt(message, expected_choices=[], default=None):
+    threshold = 2
+    message   = '? ... %s' % message
+
+    if expected_choices:
+        message = '%s (%s)' % (message, '|'.join(expected_choices))
+
+    if default:
+        message = '%s [%s]' % (message, default)
+
+    message += ' '
+
+    try:
+        answer = raw_input(message) or default
+
+        while is_valid_answer(answer, expected_choices, default) and threshold > 0:
+            threshold -= 1
+
+            if threshold:
+                console('Please try again.')
+            else:
+                console('This is your last attempt.')
+
+            answer = raw_input(message) or default
+    except KeyboardInterrupt:
+        console('Cleanly exited', '\r\n!')
+        exit(0)
+
+    if is_valid_answer(answer, expected_choices, default):
+        console('Your answer is not valid.', 'E')
+        exit(1)
+
+    if not answer and default:
+        return default
+
+    return answer
+
+def detect_version():
+    if version < (2, 6, 6):
+        console('Tori requires at least Python 2.6.6.', 'X')
+        exit(1)
+
+    console('Using Python %s.%s.%s' % (version.major, version.minor, version.micro), 'O')
+
+def manage_dependencies():
+    for kind, table in dependencies.iteritems():
+        console('Looking for %s modules...' % kind, ':')
+
+        missing_dependencies = []
+
+        for name, url in table.iteritems():
+            output = 'Module "%s"'
+
+            result = False
+
+            try:
+                __import__(name)
+                result = True
+                #missing_dependencies.append(name)
+            except:
+                missing_dependencies.append(name)
+
+            console(output % name, result and 'O' or 'X')
+
+        if missing_dependencies:
+            message = 'Ready to install %d %s dependenc%s (%s)?' % (
+                    len(missing_dependencies),
+                    kind,
+                    len(missing_dependencies) == 1 and 'y' or 'ies',
+                    ', '.join(missing_dependencies)
+                )
+
+            answer = prompt(message, ['y', 'n'], 'y').lower()
+
+            if answer == 'y':
+                console('Installing...')
+                call('sudo /usr/bin/easy_install -q %s' % ' '.join(missing_dependencies), shell=True)
+                console('Done')
+
+def create_app():
+    prompt_message = 'What is the name of your application? For example, "glassquit"'
+
+    app_name = None
+
+    while True:
+        try:
+            app_name = prompt(prompt_message)
+
+            if os.path.exists(app_name):
+                console('The folder is already existed. Try again.', '!')
+                continue
+
+            try:
+                __import__(app_name)
+
+                console('"%s" conflicts with installed modules. Try again.' % app_name, '!')
+
+                continue
+            except ImportError:
+                break
+        except KeyboardInterrupt:
+            console('Cleanly exited', '\r\n!')
+            exit(0)
+
+    app_base_path = '%s/%s' % (app_name, app_name)
+
+    os.mkdir(app_name)
+    os.mkdir(app_base_path)
+    os.mkdir('%s/view' % app_base_path)
+
+    for folder_path in initial_folders:
+        os.mkdir('%s/%s' % (app_name, folder_path))
+
+    fwrite('%s/__init__.py' % app_base_path)
+
+    for path, data in initial_static_data.iteritems():
+        fwrite('%s/%s' % (app_name, path), data % {'app_name':app_name})
+
+    for path, data in initial_app_code.iteritems():
+        fwrite('%s/%s' % (app_base_path, path), data % {'app_name':app_name})
+
+detect_version()
+manage_dependencies()
+create_app()
+
+console('Now, may the force be with you.', '=')
+console('')
