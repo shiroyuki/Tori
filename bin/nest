@@ -2,11 +2,15 @@
 
 '''
 :Version: 0.1
-:Status:  Stable/Experimental
-:Author:  Juti Noppornpitak
+:Status: Stable/Experimental
+:Author: Juti Noppornpitak
+:OS Compatibility: Linux, FreeBSD, Mac OS X 10.7+
 
 This is the utility command line interface (CLI). At this stage, the command is
 to just prepare the development environment and create a skeleton application.
+
+To use this command, assuming that this file is in the your home path, you can
+just execute ``nest``.
 
 .. note::
     Copyright (c) 2012 Juti Noppornpitak
