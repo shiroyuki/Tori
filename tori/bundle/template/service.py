@@ -6,9 +6,9 @@
 This package contains the rendering service. This is a module automatically loaded by :class:`tori.application.Application`.
 '''
 
-from tori.exception        import *
-from tori.renderer         import Renderer
-from tori.template         import TemplateRepository
+from tori.exception           import *
+from tori.bundle.template.renderer   import Renderer
+from tori.bundle.template.repository import Repository
 
 class RenderingService(object):
     '''

@@ -9,7 +9,7 @@ The template repository used by Rendering Service (:class:`tori.renderer.Renderi
 
 from tori.exception import *
 
-class TemplateRepository(dict):
+class Repository(dict):
     def __init__(self, class_reference):
         self._class_reference = class_reference
 

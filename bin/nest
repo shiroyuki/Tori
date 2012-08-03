@@ -34,10 +34,19 @@ just execute ``nest``.
 
 '''
 
-import os
+import os, time
 from sys import exit
 from sys import version_info as version
 from subprocess import call
+
+nest_meta = {
+    'version': 0.1,
+    'license': 'MIT',
+    'author':  'Juti Noppornpitak',
+    'email':   'juti_n@yahoo.co.jp'
+}
+
+app_name = None
 
 # General Dependencies
 dependencies = {
@@ -50,6 +59,25 @@ dependencies = {
     },
     'optional': {
         'sqlalchemy': None
+    }
+}
+
+vendors = {
+    'bootstrap':  {
+        'url': 'http://twitter.github.com/bootstrap/assets/bootstrap.zip',
+        'inst': ['mv %(temp_path)s/bootstrap/* %(install_path)s']
+    },
+    'foundation': {
+        'url': 'http://foundation.zurb.com/files/foundation-3.0.7.zip',
+        'inst':['mv %(temp_path)s/* %(install_path)s']
+    },
+    'foundation/icon': {
+        'url': 'http://www.zurb.com/playground/playground/foundation-icons/downloads/foundation-icons-all.zip',
+        'inst':[
+            'find . -name .DS_Store -exec rm {} \\;',
+            'find . -name ._* -exec rm {} \\;',
+            'mv %(temp_path)s/foundation-icons-all/* %(install_path)s'
+        ]
     }
 }
 
@@ -108,6 +136,9 @@ initial_static_data = {
         <port>8000</port>
     </server>
     <routes>
+        <!-- VENDOR/BOOTSTRAP -->
+        <!-- VENDOR/FOUNDATION -->
+        <!-- VENDOR/FOUNDATION-ICON -->
     </routes>
     <service>service.xml</service>
 </application>
@@ -165,9 +196,9 @@ def prompt(message, expected_choices=[], default=None):
     message += ' '
 
     try:
-        answer = raw_input(message) or default
+        response = raw_input(message) or default
 
-        while is_valid_answer(answer, expected_choices, default) and threshold > 0:
+        while is_valid_answer(response, expected_choices, default) and threshold > 0:
             threshold -= 1
 
             if threshold:
@@ -175,19 +206,19 @@ def prompt(message, expected_choices=[], default=None):
             else:
                 console('This is your last attempt.')
 
-            answer = raw_input(message) or default
+            response = raw_input(message) or default
     except KeyboardInterrupt:
         console('Cleanly exited', '\r\n!')
         exit(0)
 
-    if is_valid_answer(answer, expected_choices, default):
-        console('Your answer is not valid.', 'E')
+    if is_valid_answer(response, expected_choices, default):
+        console('Your response is not valid.', 'E')
         exit(1)
 
-    if not answer and default:
+    if not response and default:
         return default
 
-    return answer
+    return response
 
 def detect_version():
     if version < (2, 6, 6):
@@ -210,7 +241,6 @@ def manage_dependencies():
             try:
                 __import__(name)
                 result = True
-                #missing_dependencies.append(name)
             except:
                 missing_dependencies.append(name)
 
@@ -232,17 +262,25 @@ def manage_dependencies():
                 console('Done')
 
 def create_app():
-    prompt_message = 'What is the name of your application? For example, "glassquit"'
+    global app_name
 
-    app_name = None
+    prompt_message = 'What is the name of your application? For example, "glassquit"'
 
     while True:
         try:
-            app_name = prompt(prompt_message)
+            app_name = prompt(prompt_message, default='web')
 
             if os.path.exists(app_name):
-                console('The folder is already existed. Try again.', '!')
-                continue
+                console('The folder is already existed.', '!')
+
+                response = prompt('Do you want to override?', ['y', 'n']).lower()
+
+                if response == 'y':
+                    call('rm -Rf %s' % app_name, shell=True)
+                    break
+
+                console('Please try again later. Exit amidst confusion.', '!')
+                exit(0)
 
             try:
                 __import__(app_name)
@@ -273,9 +311,67 @@ def create_app():
     for path, data in initial_app_code.iteritems():
         fwrite('%s/%s' % (app_base_path, path), data % {'app_name':app_name})
 
+def install_vendors():
+    want_to_install = prompt('Do you want to install third-party front-end libraries?', ['y', 'n'], 'y').lower() == 'y'
+
+    if not want_to_install:
+        return
+
+    temp_path = '%s/tmp' % app_name
+
+    call('mkdir -p %s' % temp_path, shell=True)
+
+    for name, data in vendors.iteritems():
+        ok = prompt('Do you want to install "%s"?' % name.capitalize(), ['y', 'n'], 'y').lower() == 'y'
+
+        if not ok:
+            continue
+
+        default_install_path = '%s/resources/vendor/%s' % (app_name, name)
+
+        options = {
+            'temp_path': temp_path,
+            'install_path': prompt('Where do you want to install?', default=default_install_path),
+            'url': data['url']
+        }
+
+        console('Installing')
+
+        call('mkdir -p %(temp_path)s' % options, shell=True)
+        call('mkdir -p %(install_path)s' % options, shell=True)
+        call('rm -Rf %(temp_path)s/*' % options, shell=True)
+        call('curl %(url)s -o %(temp_path)s/package.zip 2> /dev/null' % options, shell=True)
+        call('cd %(temp_path)s; unzip -q package.zip' % options, shell=True)
+        call('rm -f %(temp_path)s/package.zip' % options, shell=True)
+
+        for inst in data['inst']:
+            call(inst % options, shell=True)
+
+        console('Installed')
+
+    call('rm -Rf %s' % temp_path, shell=True)
+
+print 'Nest %(version)s by %(author)s <%(email)s>' % nest_meta
+print '''
+Nest is a utility tool which allows you to quickly start the development by
+generating necessary files into the app container (CURRENT_DIR/APP_NAME) and
+installing any necessary dependencies and front-end libraries (e.g., Zurb's
+Foundayion. Please note that the generated files and folders are not really
+enforced by Tori Framework. This means you are free to do whatever you want
+as long as you know what you are doing.
+
+Nest CLI and Tori Framework are both open-source and under MIT license. The
+source code is available at https://github.com/shiroyuki/Tori.
+'''
+
+if prompt('Now, are you ready?', ['y', 'n']).lower() == 'n':
+    console('Nice to meet you. I hope to see you soon.', '!')
+    exit(0)
+
 detect_version()
 manage_dependencies()
 create_app()
+install_vendors()
 
 console('Now, may the force be with you.', '=')
 console('')

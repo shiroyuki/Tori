@@ -12,7 +12,8 @@ from sqlalchemy.orm import sessionmaker
 
 from tori.common    import Console
 from tori.exception import *
-from tori.rdb       import Entity as BaseEntity
+
+from tori.bundle.db.entity import Entity as BaseEntity
 
 class RelationalDatabaseService(object):
     '''

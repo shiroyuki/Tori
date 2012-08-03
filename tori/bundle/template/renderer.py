@@ -6,13 +6,14 @@
 This package is used for rendering.
 '''
 
-from   os import path
+from os import path
 import re
 
-from   jinja2         import Environment, FileSystemLoader, PackageLoader
-from   tori.centre    import settings as AppSettings
-from   tori.exception import *
-from   tori.template  import TemplateRepository
+from jinja2         import Environment, FileSystemLoader, PackageLoader
+from tori.centre    import settings as AppSettings
+from tori.exception import *
+
+from tori.bundle.template.repository import Repository
 
 class Renderer(object):
     '''
@@ -38,13 +39,6 @@ class Renderer(object):
 
         '''
         raise FutureFeatureException, "Need to implement."
-
-'''
-class DefaultCacheStorage(BytecodeCache):
-    def __init__(self): pass
-    def load_bytecode(self, bucket): pass
-    def dump_bytecode(self, bucket): pass
-'''
 
 class DefaultRenderer(Renderer):
     '''

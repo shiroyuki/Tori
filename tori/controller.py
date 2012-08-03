@@ -19,8 +19,8 @@ from tori           import __version__
 from tori.centre    import services as ComponentRepository
 from tori.common    import Console, Enigma
 from tori.exception import *
-from tori.renderer  import DefaultRenderer
-from tori.service.data.base import ResourceEntity
+from tori.bundle.template.renderer import DefaultRenderer
+from tori.bundle.data.base import ResourceEntity
 
 class Controller(RequestHandler):
     '''
