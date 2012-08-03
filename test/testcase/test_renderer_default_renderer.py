@@ -4,7 +4,7 @@ import unittest
 
 from jinja2 import FileSystemLoader, PackageLoader
 
-from tori.bundle.template.renderer  import DefaultRenderer
+from tori.template.renderer  import DefaultRenderer
 from tori.exception import *
 
 class TestDefaultRenderer(unittest.TestCase):

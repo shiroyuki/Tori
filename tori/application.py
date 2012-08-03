@@ -130,7 +130,7 @@ class Application(BaseApplication):
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
     _default_services         = [
         ('finder', 'tori.common.Finder', [], {}),
-        ('renderer', 'tori.bundle.template.service.RenderingService', [], {})
+        ('renderer', 'tori.template.service.RenderingService', [], {})
     ]
 
     def __init__(self, configuration_location, **settings):

@@ -3,8 +3,8 @@
 import unittest
 
 from tori.exception               import *
-from tori.bundle.data.base       import ResourceEntity
-from tori.bundle.data.compressor import CSSCompressor
+from tori.data.base       import ResourceEntity
+from tori.data.compressor import CSSCompressor
 
 class TestDefaultRenderer(unittest.TestCase):
     ''' Test the CSS compressor '''
