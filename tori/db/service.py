@@ -19,24 +19,22 @@ class RelationalDatabaseService(object):
     '''
     Relational Database Service based on SQLAlchemy 0.7+
 
-    This service provides basic functionality to interact a relational database. It also
-    heavily uses lazy loading for the sake of faster startup and resource efficiency.
+    This service provides basic functionality to interact a relational database.
+    It also heavily uses lazy loading for the sake of faster startup and resource
+    efficiency.
 
-    :param url: a URL to the database, possibly including location, credential and name.\
-                  The default value is ``sqlite:///:memory:``.
-
-    .. warning::
-        This class is not thread-safe. If you use with Imagination's ``Locator``, strongly
-        recommend to use ``fork`` instead of ``get``. See the documentation for more details.
+    :param url: a URL to the database, possibly including location, credential
+                and name. The default value is ``sqlite:///:memory:``.
     '''
     def __init__(self, url='sqlite:///:memory:'):
-        Console.log('tori.service.rdb.RelationalDatabaseService: %s' % url)
+        Console.log('tori.db.service.RelationalDatabaseService: %s' % url)
 
         self._engine    = None
         self._url       = url
         self._reflected = False
         self._session   = None
 
+    @property
     def engine(self):
         '''
         Get the SQLAlchemy engine.
@@ -50,11 +48,9 @@ class RelationalDatabaseService(object):
         return self._engine
 
     def _configure_engine(self):
-        self._engine = create_engine(
-            self._url,
-            echo=False
-        )
+        self._engine = create_engine(self._url, echo=True)
 
+    @property
     def url(self, new_url=None):
         '''
         Get the connecting URL.
@@ -68,13 +64,14 @@ class RelationalDatabaseService(object):
 
         return new_url
 
+    @property
     def session(self):
         '''
         Get a SQLAlchemy session for the current connection.
 
         :return: an instance of :class:`sqlalchemy.orm.session.Session` for the current connection.
         '''
-        engine = self.engine()
+        engine = self.engine
 
         if not self._reflected:
             self._reflected = True
@@ -92,7 +89,7 @@ class RelationalDatabaseService(object):
 
         :param entities: a list of new entities.
         '''
-        session = self.session()
+        session = self.session
 
         for entity in entities:
             assert isinstance(entity, BaseEntity), 'Expected an entity based on BaseEntity or a declarative base entity.'
@@ -138,6 +135,7 @@ class EntityService(object):
         self._session  = None
         self._kind     = kind
 
+    @property
     def session(self):
         if not self._session:
             self._session = self._database.session()
@@ -201,6 +199,7 @@ class EntityService(object):
 
         session.commit()
 
+    @property
     def query(self):
         '''
         Retrieve the query object.

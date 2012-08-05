@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-:Author: Juti Noppornpitaks
+:Author: Juti Noppornpitak
 
 This package is used for rendering.
 '''
@@ -20,8 +20,9 @@ class Renderer(object):
     The abstract renderer for Tori framework.
 
     .. warning::
-        This is not a working renderer. To use the built-in renderer (using Jinja2), try :class:`DefaultRenderer`.
-        Otherwise, you should be expecting :class:`tori.exception.FutureFeatureException`.
+        This is a non-working renderer. To use the built-in renderer (with
+        Jinja2), try :class:`DefaultRenderer`. Otherwise, you should be
+        expecting :class:`tori.exception.FutureFeatureException`.
     '''
     def __init__(self, *args, **kwargs):
         raise FutureFeatureException, "Need to implement."
@@ -30,7 +31,10 @@ class Renderer(object):
         '''
         Render a template with context variables.
 
-        *contexts* is a dictionary of context variables.
+        :param template_path: a path to the template
+        :type template_path: string or unicode
+        :param contexts: a dictionary of context variables.
+        :rtype: string or unicode
 
         Example::
 
@@ -44,13 +48,15 @@ class DefaultRenderer(Renderer):
     '''
     The default renderer with Jinja2
 
-    `referers` is either the template module path or multiple base paths of Jinja templates (based on the current
-    working directory).
+    :param `referers`: the template module path (e.g., com.shiroyuki.view)
+                        or multiple base paths of Jinja templates based on the
+                        current working directory.
 
     For example::
 
         # Instantiate with the module path.
         renderer = DefaultRenderer('app.views')
+
         # Instantiate with multiple base paths of Jinja templates.
         renderer = DefaultRenderer('/opt/app/ui/template', '/usr/local/tori/module/template')
 
@@ -77,8 +83,7 @@ class DefaultRenderer(Renderer):
         '''
         Get the file-system loader for the renderer.
 
-        .. warning::
-            This is for internal use and only accessible for overriding purposes.
+        :rtype: FileSystemLoader
         '''
         for location in self.referers:
             if not path.exists(location):
@@ -90,8 +95,7 @@ class DefaultRenderer(Renderer):
         '''
         Get the package loader for the renderer.
 
-        .. warning::
-            This is for internal use and only accessible for overriding purposes.
+        :rtype: PackageLoader
         '''
 
         module_name_chunks       = re.split('\.', self.name)
@@ -104,7 +108,10 @@ class DefaultRenderer(Renderer):
         return PackageLoader(module_name, template_sub_module_name)
 
     def render(self, template_path, **contexts):
-        ''' See :meth:`Renderer.render` for more information. '''
+        '''
+        See :meth:`Renderer.render` for more information.
+        '''
+
         template = self.storage.get_template(template_path)
 
         return template.render(**contexts)

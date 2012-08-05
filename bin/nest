@@ -88,7 +88,7 @@ initial_app_code = {
 from tori.controller           import Controller
 from tori.decorator.controller import renderer
 
-@renderer('app.view')
+@renderer('%(app_name)s.view')
 class Home(Controller):
     def get(self):
         self.render('index.html')
@@ -130,7 +130,7 @@ initial_static_data = {
 ''',
     'config/app.xml': '''<?xml version="1.0" encoding="utf-8"?>
 <application>
-    <include src="base.xml"/> <!-- include fromt other configuration files -->
+    <include src="base.xml"/> <!-- include from other configuration files -->
     <server>
         <debug>true</debug>
         <port>8000</port>

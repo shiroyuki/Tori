@@ -13,11 +13,11 @@ from time import time
 from sqlalchemy       import Column
 from sqlalchemy.types import Integer, PickleType, String
 
-from .centre      import settings as AppSettings
-from .common      import Console, Enigma
-from .exception   import *
-from .rdb         import Entity
-from .service.rdb import EntityService, RelationalDatabaseService
+from .centre     import settings as AppSettings
+from .common     import Console, Enigma
+from .exception  import *
+from .db.entity  import Entity
+from .db.service import EntityService, RelationalDatabaseService
 
 class DbSessionEntity(Entity):
     '''
