@@ -213,7 +213,7 @@ class Application(BaseApplication):
 
         if delegate:
             Console.log('Custom Error Handler: %s' % delegate)
-            tornado.web.ErrorHandler = ImaginationLoader(delegate).package()
+            tornado.web.ErrorHandler = ImaginationLoader(delegate).package
 
     def _register_default_services(self):
         for id, package_path, args, kwargs in self._default_services:

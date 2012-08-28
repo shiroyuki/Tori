@@ -136,14 +136,15 @@ class DbSession(AbstractSession):
         self.entities   = EntityService(self.db, DbSessionEntity)
         self.db_session = None
 
+    @property
     def session(self):
         if not self.db_session:
-            self.db_session = self.db.session()
+            self.db_session = self.db.session
 
         return self.db_session
 
     def base_filter(self, id):
-        return self.session().\
+        return self.session.\
             query(DbSessionEntity).\
             filter(DbSessionEntity.session_id==id)
 
@@ -171,7 +172,7 @@ class DbSession(AbstractSession):
             self.close()
             return
 
-        self.session().delete(data)
+        self.session.delete(data)
         self.commit()
 
     def get(self, id, key):
@@ -197,7 +198,7 @@ class DbSession(AbstractSession):
 
         if not data:
             data = DbSessionEntity(id, key, content)
-            self.session().add(data)
+            self.session.add(data)
 
         data.content = content
 

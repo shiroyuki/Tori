@@ -6,8 +6,11 @@
 The default relational database service for Tori framework compatible with SQLAlchemy.
 '''
 
+from os        import getpid
+from threading import current_thread
+
 from sqlalchemy     import create_engine
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy.orm import sessionmaker
 
 from tori.common    import Console
@@ -26,13 +29,20 @@ class RelationalDatabaseService(object):
     :param url: a URL to the database, possibly including location, credential
                 and name. The default value is ``sqlite:///:memory:``.
     '''
-    def __init__(self, url='sqlite:///:memory:'):
-        Console.log('tori.db.service.RelationalDatabaseService: %s' % url)
 
-        self._engine    = None
-        self._url       = url
-        self._reflected = False
-        self._session   = None
+    def __init__(self, url='sqlite:///:memory:', echo=False):
+        Console.log('tori.db.service.RelationalDatabaseService: %s (echo: %s)' % (url, 'On' if echo else 'Off'))
+
+        self._echo          = echo
+        self._engine        = None
+        self._url           = url
+        self._reflected     = False
+        self._session_maker = None
+        self._sessions      = {}
+
+    @property
+    def session_key(self):
+        return '%s.%s' % (getpid(), current_thread().ident)
 
     @property
     def engine(self):
@@ -48,21 +58,28 @@ class RelationalDatabaseService(object):
         return self._engine
 
     def _configure_engine(self):
-        self._engine = create_engine(self._url, echo=True)
+        self._engine = create_engine(self._url, echo=self._echo)
 
     @property
-    def url(self, new_url=None):
+    def url(self):
         '''
         Get the connecting URL.
 
+        :return: the URL
+        :rtype: string|unicode
+        '''
+        return self._url
+
+    @url.setter
+    def url(self, new_url):
+        '''
+        Set the connecting URL.
+
         :param new_url: a new URL for the database connection.
         '''
-        if not new_url:
-            self._url = new_url
+        self._url = new_url
 
-            self._configure_engine()
-
-        return new_url
+        self._configure_engine()
 
     @property
     def session(self):
@@ -78,10 +95,17 @@ class RelationalDatabaseService(object):
 
             BaseEntity.metadata.create_all(engine)
 
-        if not self._session:
-            self._session = sessionmaker(bind=engine)
+        if not self._session_maker:
+            self._session_maker = sessionmaker(bind=engine)
 
-        return self._session()
+        session_key = self.session_key
+
+        if session_key not in self._sessions:
+            Console.log('Create new DB session: %s' % session_key)
+            
+            self._sessions[session_key] = self._session_maker()
+
+        return self._sessions[session_key]
 
     def post(self, *entities):
         '''
@@ -106,9 +130,7 @@ class RelationalDatabaseService(object):
         :param key:         the lookup key
         '''
 
-        session = self.session()
-
-        return self.query(entity_type).get(key)
+        return self.session.query(entity_type).get(key)
 
     def get_all(self, entity_type):
         '''
@@ -117,7 +139,7 @@ class RelationalDatabaseService(object):
         :param entity_type: the class reference of the entities being searched
         '''
 
-        return self.query(entity_type).all()
+        return self.session.query(entity_type).all()
 
 class EntityService(object):
     '''
@@ -132,15 +154,15 @@ class EntityService(object):
     '''
     def __init__(self, db, kind):
         self._database = db
-        self._session  = None
+        self._session_maker  = None
         self._kind     = kind
 
     @property
     def session(self):
-        if not self._session:
-            self._session = self._database.session()
+        if not self._session_maker:
+            self._session_maker = self._database.session
 
-        return self._session
+        return self._session_maker
 
     def make(self, **attributes):
         '''
@@ -160,7 +182,7 @@ class EntityService(object):
 
         :return: ``True`` if there is no error.
         '''
-        session = self.session()
+        session = self.session
 
         for entity in entities:
             assert isinstance(entity, self._kind),\
@@ -189,7 +211,7 @@ class EntityService(object):
 
         '''
 
-        session = self.session()
+        session = self.session
 
         for entity in entities:
             assert isinstance(entity, self._kind),\
@@ -206,7 +228,10 @@ class EntityService(object):
 
         :return: SQLAlchemy's `Query` object for the entity.
         '''
-        return self.session().query(self._kind)
+        try:
+            return self.session.query(self._kind)
+        except InvalidRequestError:
+            return None
 
     def get(self, key):
         '''
@@ -215,7 +240,7 @@ class EntityService(object):
         :param key: primary key
         :return:    an instance of the defined class or ``None``
         '''
-        return self.query().get(key)
+        return self.query.get(key)
 
     def get_all(self):
         '''
@@ -223,7 +248,7 @@ class EntityService(object):
 
         :return: the list of all entities of the defined entity class.
         '''
-        return self.query().all()
+        return self.query.all()
 
     def commit(self):
         '''
@@ -235,9 +260,9 @@ class EntityService(object):
         '''
 
         try:
-            self.session().commit()
+            self.session.commit()
         except IntegrityError:
-            self.session().rollback()
+            self.session.rollback()
 
             return False
 

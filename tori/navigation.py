@@ -132,7 +132,7 @@ class Route(object):
         Get the class reference for the route.
         '''
         if not self._class and self.source().attribute('class'):
-            self._class = Loader(self.source().attribute('class')).package()
+            self._class = Loader(self.source().attribute('class')).package
 
         return self._class
 
@@ -244,7 +244,7 @@ class StaticRoute(Route):
         ''' Get the resource service. '''
 
         if not self._default_service:
-            self._default_service = Loader('tori.controller.ResourceService').package()
+            self._default_service = Loader('tori.controller.ResourceService').package
 
         # Get an alternative service if specified.
         service = self.bean_class() or self._default_service
