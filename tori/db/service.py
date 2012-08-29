@@ -13,7 +13,7 @@ from sqlalchemy     import create_engine
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy.orm import sessionmaker
 
-from tori.common    import Console
+from tori.common    import getLogger
 from tori.exception import *
 
 from tori.db.entity import Entity as BaseEntity
@@ -31,7 +31,7 @@ class RelationalDatabaseService(object):
     '''
 
     def __init__(self, url='sqlite:///:memory:', echo=False):
-        Console.log('tori.db.service.RelationalDatabaseService: %s (echo: %s)' % (url, 'On' if echo else 'Off'))
+        self._logger = getLogger('%s.%s' % (__name__, self.__class__.__name__))
 
         self._echo          = echo
         self._engine        = None
@@ -101,8 +101,8 @@ class RelationalDatabaseService(object):
         session_key = self.session_key
 
         if session_key not in self._sessions:
-            Console.log('Create new DB session: %s' % session_key)
-            
+            self._logger.info('Create new DB session: %s' % session_key)
+
             self._sessions[session_key] = self._session_maker()
 
         return self._sessions[session_key]
@@ -121,6 +121,7 @@ class RelationalDatabaseService(object):
             session.add(entity)
 
         session.commit()
+        session.refresh(entity)
 
     def get(self, entity_type, key):
         '''
@@ -153,9 +154,9 @@ class EntityService(object):
         recommend to use ``fork`` instead of ``get``. See the documentation for more details.
     '''
     def __init__(self, db, kind):
-        self._database = db
-        self._session_maker  = None
-        self._kind     = kind
+        self._database      = db
+        self._session_maker = None
+        self._kind          = kind
 
     @property
     def session(self):

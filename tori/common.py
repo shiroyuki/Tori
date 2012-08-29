@@ -7,12 +7,31 @@ This package contains classes and functions for common use.
 '''
 import os
 import hashlib
+import logging
 import random
 import re
 import sys
 import time
 
 from .decorator.common import singleton
+
+def getLogger(name, level=logging.DEBUG, show_time=True):
+    logging_handler = logging.StreamHandler()
+    logging_handler.setLevel(level)
+    logging_handler.setFormatter(
+        logging.Formatter(
+            '%(levelname)s %(asctime)s %(name)s: %(message)s'
+            if show_time
+            else '%(levelname)s %(name)s: %(message)s',
+            datefmt='%Y.%m.%d %H:%M:%S %Z'
+        )
+    )
+
+    logger = logging.getLogger(name)
+    logger.addHandler(logging_handler)
+    logger.setLevel(level)
+
+    return logger
 
 @singleton
 class Enigma(object):

@@ -29,7 +29,7 @@ from   wsgiref            import handlers
 # Internal libraries
 from .centre     import settings as AppSettings
 from .centre     import services as AppServices
-from .common     import Console
+from .common     import getLogger
 from .exception  import *
 from .navigation import *
 
@@ -45,6 +45,8 @@ class BaseApplication(object):
     '''
 
     def __init__(self, **settings):
+        self._logger = getLogger('%s.%s' % (__name__, self.__class__.__name__))
+
         self._hierarchy_level = len(self.__class__.__mro__) - 1
 
         # Setting for the application.
@@ -97,7 +99,7 @@ class BaseApplication(object):
 
         self._listening_port = int(port_number)
 
-        Console.log("Listen on port %d." % self._listening_port)
+        self._logger.info("Listen on port %d." % self._listening_port)
 
         return self
 
@@ -108,10 +110,10 @@ class BaseApplication(object):
         try:
             self._backend_app.listen(self._listening_port)
 
-            Console.log("Start the application based at %s." % self._base_path)
+            self._logger.info("Start the application based at %s." % self._base_path)
             IOLoop.instance().start()
         except KeyboardInterrupt:
-            Console.log("\rCleanly stopped.")
+            self._logger.info("\rCleanly stopped.")
 
     def get_backbone(self):
         return self._backend_app
@@ -165,14 +167,14 @@ class Application(BaseApplication):
 
             watch(source_location)
 
-            Console.log('Included the configuration from %s' % source_location)
+            self._logger.info('Included the configuration from %s' % source_location)
 
         self._configure(self._config)
 
         # Override the properties with the parameters.
         if settings.has_key('port'):
             self._port = settings['port']
-            Console.log('Changed the listening port: %s' % self._port)
+            self._logger.info('Changed the listening port: %s' % self._port)
 
         # Normal procedure
         self._update_routes(self._routing_map.export())
@@ -212,7 +214,7 @@ class Application(BaseApplication):
         delegate = configuration.find('server error').data()
 
         if delegate:
-            Console.log('Custom Error Handler: %s' % delegate)
+            self._logger.info('Custom Error Handler: %s' % delegate)
             tornado.web.ErrorHandler = ImaginationLoader(delegate).package
 
     def _register_default_services(self):

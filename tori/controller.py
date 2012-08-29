@@ -7,9 +7,10 @@ This package contains an abstract controller (based on
 :class:`tornado.web.RequestHandler`) and built-in controllers.
 '''
 
+import logging
 from os        import path as p
 from mimetypes import guess_type as get_type
-from re        import match, sub
+from re        import match, search, sub
 from StringIO  import StringIO
 from time      import time
 
@@ -17,7 +18,7 @@ from tornado.web import HTTPError, ErrorHandler, RequestHandler
 
 from tori           import __version__
 from tori.centre    import services as ComponentRepository
-from tori.common    import Console, Enigma
+from tori.common    import Console, Enigma, getLogger
 from tori.exception import *
 from tori.template.renderer import DefaultRenderer
 from tori.data.base import ResourceEntity
@@ -55,7 +56,6 @@ class Controller(RequestHandler):
         if self._can_use_secure_cookie():
             self.set_secure_cookie('ssid', self.session_id)
         else:
-            Console.log('%s: Use unsecure session.' % self.__class__.__name__)
             self.set_cookie('ssid', self.session_id)
         # endif
 
@@ -216,7 +216,10 @@ class ErrorController(Controller):
 class ResourceService(RequestHandler):
     ''' Resource service is to serve a static resource via HTTP/S protocal. '''
 
+    _logger = getLogger('%s.ResourceService' % (__name__), logging.ERROR)
+
     _patterns      = {}
+    _pattern_order = []
     _cache_objects = {}
 
     _plugins            = {}
@@ -234,8 +237,9 @@ class ResourceService(RequestHandler):
 
         :param enabled_cache: a flag to indicate whether any loaded resources need to be cached on the first request.
         '''
-
+        ResourceService._logger.error('add URL pattern "%s" for "%s"' % (pattern, base_path))
         ResourceService._patterns[pattern] = base_path
+        ResourceService._pattern_order.append(pattern)
 
     def get(self, *path):
         '''
@@ -262,15 +266,17 @@ class ResourceService(RequestHandler):
 
         # When the resource is not loaded, try to get from the wildcard pattern.
         if not resource:
+            self._logger.error('Retrieving from the wildcard pattern')
+
             resource = self._get_resource_on_non_precalculated_pattern(path)
 
-        # Get the resource type.
-        resource_type = resource.type or 'text/plain'
-
-        self.set_header("Content-Type", resource_type)
+        # Get the content type.
+        self.set_header("Content-Type", resource.kind or 'text/plain')
 
         # Return HTTP 404 if the content is not found.
-        if not resource.exists():
+        if not resource.exists:
+            self._logger.error('%s could not be found.' % resource.path)
+
             raise HTTPError, 404
 
         # Retrieve the plugins if registered.
@@ -287,7 +293,7 @@ class ResourceService(RequestHandler):
 
         # Return the content.
         try:
-            self.finish(resource.content())
+            self.finish(resource.content)
         except Exception, e:
             print 'Failed on resource distribution.'
             print e, type(e)
@@ -298,15 +304,23 @@ class ResourceService(RequestHandler):
     def _get_resource_on_non_precalculated_pattern(self, path_to_resource):
         request_uri = self.request.uri
 
-        for pattern in ResourceService._patterns:
-            if not match(pattern, request_uri):
+        for pattern in ResourceService._pattern_order:
+            base_path = ResourceService._patterns[pattern]
+
+            self._logger.debug('Comparing Pattern: %s' % pattern)
+
+            matches = match(pattern, request_uri)
+
+            if not matches:
                 continue
 
             used_pattern = pattern
             real_path    = p.abspath(p.join(
-                ResourceService._patterns[pattern],
-                path_to_resource
+                base_path,
+                matches.groups()[0]
             ))
+
+            self._logger.info('Real path: %s' % real_path)
 
             return self._get_resource_entity(real_path)
 
