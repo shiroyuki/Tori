@@ -36,6 +36,6 @@ class CSSCompressor(ResourceServiceMiddleware):
         content = sub('\s*,\s*', ',', content)
         content = sub(' +', ' ', content)
 
-        data.set_content(content)
+        data.content = content
 
         return data
