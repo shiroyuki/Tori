@@ -7,7 +7,7 @@ class CSSCompressor(ResourceServiceMiddleware):
         ResourceServiceMiddleware.__init__(self, 'text/css')
 
     def execute(self, data):
-        content = sub('\n+', ' ', data.content())
+        content = sub('\n+', ' ', data.content)
 
         # Get rid of comment blocks
         raw_blocks = split('\*\/', content)
