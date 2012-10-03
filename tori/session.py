@@ -14,14 +14,14 @@ from sqlalchemy       import Column
 from sqlalchemy.types import Integer, PickleType, String
 
 from .centre     import settings as AppSettings
-from .common     import Console, Enigma
+from .common     import Enigma
 from .exception  import *
 from .db.entity  import Entity
 from .db.service import EntityService, RelationalDatabaseService
 
-class DbSessionEntity(Entity):
+class SessionEntity(object):
     '''
-    DB Session Entity is made to be compatible with any
+    Session Entity is made to be compatible with any
     SQLAlchemy-based database session controller.
     '''
 

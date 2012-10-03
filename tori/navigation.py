@@ -21,7 +21,6 @@ from kotoba.kotoba      import Kotoba
 from tornado.web        import RedirectHandler
 
 # Internal libraries
-from .common    import Console
 from .exception import *
 
 class RoutingMap(object):

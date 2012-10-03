@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+1# -*- coding: utf-8 -*-
 
 '''
 :Author: Juti Noppornpitak
@@ -18,7 +18,7 @@ from tornado.web import HTTPError, ErrorHandler, RequestHandler
 
 from tori           import __version__
 from tori.centre    import services as ComponentRepository
-from tori.common    import Console, Enigma, getLogger
+from tori.common    import Enigma, getLogger
 from tori.exception import *
 from tori.template.renderer import DefaultRenderer
 from tori.data.base import ResourceEntity

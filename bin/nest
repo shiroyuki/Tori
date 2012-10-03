@@ -166,10 +166,10 @@ application.start()
 
 def console(context, marker=None):
     if not marker:
-        print '      %s' % context
+        print('      %s' % context)
         return
 
-    print '%s ... %s' % (marker, context)
+    print('%s ... %s' % (marker, context))
 
 def fwrite(location, data=''):
     f = None
