@@ -17,7 +17,7 @@ from .centre     import settings as AppSettings
 from .common     import Enigma
 from .exception  import *
 from .db.entity  import Entity
-from .db.service import EntityService, RelationalDatabaseService
+from .db.service import RelationalDatabaseService as db
 
 class SessionEntity(object):
     '''
@@ -114,6 +114,36 @@ class AbstractSession(object):
         .. note:: This method is not implemented in :class:`AbstractSession`.
         '''
         raise FutureFeature
+    
+class MemorySession(AbstractSession):
+    ''' In-memory Session Controller '''
+
+    def __init__(self):
+        self._storage = {}
+
+    def delete(self, id, key):
+        if not self.has(id, key):
+            return
+        
+        del self._storage[id][key]
+
+    def get(self, id, key, auto_close=True):
+        if not self.has(id, key):
+            return None
+        
+        raise FutureFeature
+
+    def has(self, id, key):
+        return id in self._storage and key in self._storage[id]
+
+    def registered(self, id):
+        return id in self._storage
+
+    def set(self, id, key, content):
+        if not self.registered(id):
+            self._storage[id] = {}
+        
+        self._storage[id][key] = content
 
 class DbSession(AbstractSession):
     '''
@@ -132,36 +162,18 @@ class DbSession(AbstractSession):
     def __init__(self, url='sqlite:///:memory:'):
         Console.log('tori.session.DbSession: %s' % url)
 
-        self.db         = RelationalDatabaseService(url)
-        self.entities   = EntityService(self.db, DbSessionEntity)
-        self.db_session = None
-
-    @property
-    def session(self):
-        if not self.db_session:
-            self.db_session = self.db.session
-
-        return self.db_session
+        self.db = db(url)
 
     def base_filter(self, id):
-        return self.session.\
+        return self.db.\
             query(DbSessionEntity).\
             filter(DbSessionEntity.session_id==id)
 
     def commit(self):
-        if not self.db_session:
+        if not self.db.session:
             return
 
         self.db_session.commit()
-        self.close()
-
-    def close(self):
-        if not self.db_session:
-            return
-
-        self.db_session.close()
-
-        self.db_session = None
 
     def delete(self, id, key):
         data = self.base_filter(id).\
@@ -169,7 +181,6 @@ class DbSession(AbstractSession):
             first()
 
         if not data:
-            self.close()
             return
 
         self.session.delete(data)
@@ -180,14 +191,10 @@ class DbSession(AbstractSession):
             filter(DbSessionEntity.key==key).\
             first()
 
-        self.close()
-
         return data and data.content or None
 
     def registered(self, id):
         data = self.base_filter(id).all()
-
-        self.close()
 
         return len(data) > 0
 
