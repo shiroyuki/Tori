@@ -29,7 +29,7 @@ from   wsgiref            import handlers
 # Internal libraries
 from .centre     import settings as AppSettings
 from .centre     import services as AppServices
-from .common     import getLogger
+from .common     import get_logger
 from .exception  import *
 from .navigation import *
 
@@ -45,7 +45,7 @@ class BaseApplication(object):
     '''
 
     def __init__(self, **settings):
-        self._logger = getLogger('%s.%s' % (__name__, self.__class__.__name__))
+        self._logger = get_logger('%s.%s' % (__name__, self.__class__.__name__))
 
         self._hierarchy_level = len(self.__class__.__mro__) - 1
 
@@ -183,10 +183,10 @@ class Application(BaseApplication):
 
     def _configure(self, configuration, config_path=None):
         if len(configuration.children('server')) > 1:
-            raise InvalidConfigurationError, 'Too many server configuration.'
+            raise InvalidConfigurationError('Too many server configuration.')
 
         if len(configuration.children('routes')) > 1:
-            raise InvalidConfigurationError, 'Too many routing configuration.'
+            raise InvalidConfigurationError('Too many routing configuration.')
 
         # Set the cookie secret for secure cookies.
         client_secret = configuration.find('server secret')
@@ -197,7 +197,7 @@ class Application(BaseApplication):
         port = configuration.find('server port')
 
         if len(port) > 1:
-            raise DuplicatedPortError
+            raise DuplicatedPortError()
         elif port:
             self._port = port.data()
 

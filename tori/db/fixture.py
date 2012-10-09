@@ -7,6 +7,7 @@ import re
 from imagination.loader    import Loader
 from tori.centre           import services
 from tori.decorator.common import singleton
+from tori.exception        import LoadedFixtureException
 
 class Fixture(object):
     '''
@@ -16,10 +17,11 @@ class Fixture(object):
 
     .. warn:: this class is not tested.
     '''
-    def __init__(self):
+    def __init__(self, repository):
+        self.__repository   = repository
         self.__loaded_kinds = {}
         self.__fixture_map  = {}
-        self.__graphs = {}
+        self.__graphs       = {}
 
         self.__re_proxy = re.compile('^proxy/(?P<kind>[^/]+)/(?P<alias>.+)$')
 
@@ -63,17 +65,9 @@ class Fixture(object):
 
     @property
     def db(self):
-        return services.get('council.db')
+        return self.__repository
 
     def load(self):
-        hasCredential = self.db.session.query(
-            Loader('council.security.model.Credential').package
-        ).first() is not None
-
-        if not hasCredential:
-            self.load_fixture_map()
-
-    def load_fixture_map(self):
         for kind in self.__fixture_map.keys():
             self.load_fixtures(kind)
 
@@ -88,8 +82,8 @@ class Fixture(object):
         self.__graphs[kind]       = []
 
         for id, fixture in fixtures.iteritems():
-            fixture      = self._prepare_fixture(fixture)
-            entity       = loader.package(**fixture)
+            fixture = self._prepare_fixture(fixture)
+            entity  = loader.package(**fixture)
 
             self.db.post(entity)
             self.db.session.refresh(entity)

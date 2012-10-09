@@ -17,11 +17,13 @@ from time      import time
 from tornado.web import HTTPError, ErrorHandler, RequestHandler
 
 from tori           import __version__
-from tori.centre    import services as ComponentRepository
-from tori.common    import Enigma, getLogger
-from tori.exception import *
-from tori.template.renderer import DefaultRenderer
+from tori.centre    import services as ServiceRepository
+from tori.common    import Enigma, get_logger
 from tori.data.base import ResourceEntity
+from tori.exception import *
+from tori.session.generator  import GuidGenerator
+from tori.session.controller import Controller as SessionController
+from tori.template.renderer  import DefaultRenderer
 
 class Controller(RequestHandler):
     '''
@@ -29,35 +31,38 @@ class Controller(RequestHandler):
     engine instead of the default one that comes with Tornado.
     '''
 
+    _guid_generator = GuidGenerator()
+
     def __init__(self, *args, **kwargs):
         RequestHandler.__init__(self, *args, **kwargs)
 
-        self.session_id   = None
-        self.session_repo = None
+        self._session = None
 
-        # Start the session if the session component is registered.
-        self.start_session()
+    @property
+    def session(self):
+        if not self.component('session'):
+            return None
 
-    def start_session(self):
-        ''' Start the session. '''
-        if not ComponentRepository.has('session'):
-            return
+        if self._session:
+            return self._session
 
-        self.session_repo = ComponentRepository.get('session')
-        self.session_id   = self._can_use_secure_cookie()\
-            and self.get_secure_cookie('ssid')\
-            or self.get_cookie('ssid')
+        cookie_key = 'ssid'
 
-        if self.session_id:
-            return
+        ssid = self.get_secure_cookie(cookie_key)\
+            if   self._can_use_secure_cookie()\
+            else self.get_cookie(cookie_key)
 
-        self.session_id = self.session_repo.generate()
+        if not ssid:
+            ssid = self._guid_generator.generate()
 
-        if self._can_use_secure_cookie():
-            self.set_secure_cookie('ssid', self.session_id)
-        else:
-            self.set_cookie('ssid', self.session_id)
-        # endif
+            if self._can_use_secure_cookie():
+                self.set_secure_cookie(cookie_key, ssid)
+            else:
+                self.set_cookie(cookie_key, ssid)
+
+        self._session = SessionController(self.component('session'), ssid)
+
+        return self._session
 
     def _can_use_secure_cookie(self):
         return 'cookie_secret' in self.settings\
@@ -73,35 +78,12 @@ class Controller(RequestHandler):
         :return:                 module, package registered or ``None``
         '''
 
-        if not ComponentRepository.has(name):
+        if not ServiceRepository.has(name):
             return None
 
-        return fork_component\
-            and ComponentRepository.fork(name)\
-            or ComponentRepository.get(name)
-
-    def session(self, key, new_content=None):
-        '''
-        Get the session or set it if ``new_content`` is set.
-
-        :param `key`:         Session data key
-        :param `new_content`: Session data content
-
-        :return: the data stored in the session or ``None``
-        '''
-        if not self.session_repo:
-            raise SessionError, 'This session component is not initialized.'
-
-        if new_content:
-            self.session_repo.set(self.session_id, key, new_content)
-            return new_content
-
-        session = self.session_repo.get(self.session_id, key)
-
-        return session
-
-    def delete_session(self, key):
-        self.component('session').delete(self.session_id, key)
+        return ServiceRepository.fork(name)\
+            if   fork_component\
+            else ServiceRepository.get(name)
 
     def render_template(self, template_name, **contexts):
         '''
@@ -120,6 +102,10 @@ class Controller(RequestHandler):
 
         output = None
 
+        contexts['app'] = {
+            'request': self.request
+        }
+
         try:
             output = self.component('renderer').render(
                 self._rendering_source,
@@ -137,7 +123,7 @@ class Controller(RequestHandler):
             )
 
         if not output:
-            raise UnexpectedComputationError, 'Detected the rendering service malfunctioning.'
+            raise UnexpectedComputationError('Detected the rendering service malfunctioning.')
 
         return output
 
@@ -216,7 +202,7 @@ class ErrorController(Controller):
 class ResourceService(RequestHandler):
     ''' Resource service is to serve a static resource via HTTP/S protocal. '''
 
-    _logger = getLogger('%s.ResourceService' % (__name__), logging.ERROR)
+    _logger = get_logger('%s.ResourceService' % (__name__), logging.ERROR)
 
     _patterns      = {}
     _pattern_order = []
@@ -237,7 +223,7 @@ class ResourceService(RequestHandler):
 
         :param enabled_cache: a flag to indicate whether any loaded resources need to be cached on the first request.
         '''
-        ResourceService._logger.error('add URL pattern "%s" for "%s"' % (pattern, base_path))
+        ResourceService._logger.debug('add URL pattern "%s" for "%s"' % (pattern, base_path))
         ResourceService._patterns[pattern] = base_path
         ResourceService._pattern_order.append(pattern)
 
@@ -281,7 +267,7 @@ class ResourceService(RequestHandler):
 
         # Retrieve the plugins if registered.
         if not ResourceService._plugins and not ResourceService._plugins_registered:
-            ResourceService._plugins = ComponentRepository.find_by_tag(
+            ResourceService._plugins = ServiceRepository.find_by_tag(
                 ResourceService._plugins_tag_name
             )
 

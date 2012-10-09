@@ -65,4 +65,4 @@ class ResourceServiceMiddleware(object):
             and entity.kind in self._intercepting_mimetypes
 
     def execute(self, data):
-        raise FutureFeatureException, 'This method must be implemented.'
+        raise FutureFeatureException('This method must be implemented.')

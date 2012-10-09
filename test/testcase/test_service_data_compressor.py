@@ -2,7 +2,7 @@
 
 import unittest
 
-from tori.exception               import *
+from tori.exception       import *
 from tori.data.base       import ResourceEntity
 from tori.data.compressor import CSSCompressor
 
@@ -15,8 +15,8 @@ class TestDefaultRenderer(unittest.TestCase):
         entity     = ResourceEntity('data/test.css')
         compressor = CSSCompressor()
 
-        original_content = entity.content()
-        updated_content  = compressor.execute(entity).content()
+        original_content = entity.content
+        updated_content  = compressor.execute(entity).content
 
         original_size = len(original_content)
         updated_size  = len(updated_content)

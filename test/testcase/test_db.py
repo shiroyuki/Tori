@@ -3,7 +3,7 @@ import unittest
 from sqlalchemy import Column, Integer, String
 
 from tori.db.entity  import Entity as BaseEntity
-from tori.db.service import EntityService, RelationalDatabaseService as RDB
+from tori.db.service import DatabaseRepository as RDB
 
 class Dummy(BaseEntity):
     __tablename__ = 'dummy'
@@ -22,11 +22,11 @@ class TestDb(unittest.TestCase):
 
     def test_assembly(self):
         db = RDB()
-        es = EntityService(db, Dummy)
+        db.reflect()
 
-        session = es.session
+        session = db.session
 
         a = Dummy(name='a')
         b = Dummy(name='b')
 
-        es.post(a, b)
+        db.post(a, b)

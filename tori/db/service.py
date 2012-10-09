@@ -10,15 +10,29 @@ from os        import getpid
 from threading import current_thread
 
 from sqlalchemy     import create_engine
-from sqlalchemy.exc import IntegrityError, InvalidRequestError
+from sqlalchemy.exc import IntegrityError, InvalidRequestError, OperationalError
 from sqlalchemy.orm import sessionmaker
 
-from tori.common    import getLogger
+from tori.common    import get_logger
 from tori.exception import *
 
 from tori.db.entity import Entity as BaseEntity
 
-class RelationalDatabaseService(object):
+class Repository(object):
+    '''
+    Abstract Database Service
+
+    This service is served as an abstract of any
+    '''
+
+class DocumentRepository(Repository):
+    '''
+    Document-oriented Database Repository
+
+    This service supports MongoDB (2.2+) via PyMongo (2.3+).
+    '''
+
+class DatabaseRepository(Repository):
     '''
     Relational Database Service based on SQLAlchemy 0.7+
 
@@ -28,17 +42,21 @@ class RelationalDatabaseService(object):
 
     :param url: a URL to the database, possibly including location, credential
                 and name. The default value is ``sqlite:///:memory:``.
+
+    .. warn:: There is problem with reflecting and
     '''
 
     def __init__(self, url='sqlite:///:memory:', echo=False):
-        self._logger = getLogger('%s.%s' % (__name__, self.__class__.__name__))
+        self._logger = get_logger('%s.%s' % (__name__, self.__class__.__name__))
 
-        self._echo          = echo
-        self._engine        = None
-        self._url           = url
-        self._reflected     = False
-        self._session_maker = None
-        self._sessions      = {}
+        self._echo   = echo
+        self._url    = url
+        self._engine = None
+
+        self._session_maker      = None
+        self._sessions           = {}
+        self._batch_reflected    = False
+        self._reflected_entities = []
 
     @property
     def session_key(self):
@@ -49,16 +67,13 @@ class RelationalDatabaseService(object):
         '''
         Get the SQLAlchemy engine.
 
-        .. note::
-            With the service, it is not recommended to directly use this method.
+        .. note:: With the service, it is not recommended to directly use this method.
         '''
+
         if not self._engine:
-            self._configure_engine()
+            self._engine = create_engine(self._url, echo=self._echo)
 
         return self._engine
-
-    def _configure_engine(self):
-        self._engine = create_engine(self._url, echo=self._echo)
 
     @property
     def url(self):
@@ -77,9 +92,38 @@ class RelationalDatabaseService(object):
 
         :param new_url: a new URL for the database connection.
         '''
-        self._url = new_url
+        self._url    = new_url
+        self._engine = None
 
-        self._configure_engine()
+    def reflect(self, entity_type=None):
+        '''
+        Create the table if necessary.
+
+        :rtype: True if the reflection is made.
+        '''
+        if not self._batch_reflected and not entity_type:
+            self._batch_reflected = True
+
+            BaseEntity.metadata.create_all(self.engine)
+
+            return True
+
+        if self.reflected(entity_type):
+            return False
+
+        self._reflected_entities.append(entity_type.__name__)
+
+        try:
+            entity_type.__table__.create(self.engine)
+        except OperationalError:
+            return False
+
+        return True
+
+    def reflected(self, entity_type=None):
+        return entity_type.__name__ in self._reflected_entities\
+            if entity_type\
+            else self._batch_reflected
 
     @property
     def session(self):
@@ -89,11 +133,6 @@ class RelationalDatabaseService(object):
         :return: an instance of :class:`sqlalchemy.orm.session.Session` for the current connection.
         '''
         engine = self.engine
-
-        if not self._reflected:
-            self._reflected = True
-
-            BaseEntity.metadata.create_all(engine)
 
         if not self._session_maker:
             self._session_maker = sessionmaker(bind=engine)
@@ -108,6 +147,10 @@ class RelationalDatabaseService(object):
         return self._sessions[session_key]
 
     def query(self, entity_type):
+        if entity_type.__name__ not in self._entity_map:
+            self._entity_map[entity_type.__name__] = True
+            entity_type.__table__.create(self.engine)
+
         return self.session.query(entity_type)
 
     def post(self, *entities):

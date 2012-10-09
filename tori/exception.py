@@ -18,7 +18,7 @@ class InvalidInput(Exception):
 class UnsupportObjectTypeError(Exception):
     '''
     Exception used when the unsupported object type is used in an inappropriate place.
-    
+
     Please note that this is a general exception.
     '''
 
@@ -35,14 +35,17 @@ class InvalidConfigurationError(Exception):
     Exception thrown only when the configuration is invalid.
     '''
 
+# XML Configuration
+class DuplicatedPortError(Exception):
+    '''
+    Exception thrown only when the port config is duplicated within the
+    same configuration file.
+    '''
+
+# Routes
 class DuplicatedRouteError(Exception):
     '''
     Exception used when the routing pattern is already registered.
-    '''
-
-class InvalidControllerDirectiveError(Exception):
-    '''
-    Exception used when the controller directive is incomplete due to missing parameter
     '''
 
 class RoutingPatternNotFoundError(Exception):
@@ -60,24 +63,32 @@ class UnknownRoutingTypeError(Exception):
     Exception used when the routing type is not unknown.
     '''
 
+# Controller Directive
+class InvalidControllerDirectiveError(Exception):
+    '''
+    Exception used when the controller directive is incomplete due to missing parameter
+    '''
+
+# Redirection Directive
 class InvalidRedirectionDirectiveError(Exception):
     '''
     Exception used when the redirection directive is incomplete because some parameters aren't provided or incompatible.
     '''
 
-class DuplicatedPortError(Exception):
-    ''' Exception thrown only when the port config is duplicated within the same configuration file. '''
+# Fixtures
+class LoadedFixtureException(Exception):
+    ''' Exception raised when the fixture is loaded. '''
 
-# Controllers
+# Session
+class SessionError(Exception):
+    ''' Exception thrown when there is an error with session component. '''
+
+# Template Repository and Rendering Service
 class RenderingSourceMissingError(Exception):
     '''
     Exception used when the rendering source is not set.
     '''
 
-class SessionError(Exception):
-    ''' Exception thrown when there is an error with session component. '''
-
-# Template Repository and Rendering Service
 class UnsupportedRendererError(Exception):
     '''
     Exception thrown when the unsupported renderer is being registered.

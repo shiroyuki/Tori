@@ -1,9 +1,11 @@
+import logging
 import unittest
+
 import bootstrap
 
-from tori.common import Console
+from tori import common
 
-Console.disable_logging()
+common.default_logging_level = logging.ERROR
 
 suite = unittest.TestLoader().discover(
     bootstrap.testing_base_path,

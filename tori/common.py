@@ -15,7 +15,14 @@ import time
 
 from .decorator.common import singleton
 
-def getLogger(name, level=logging.DEBUG, show_time=True):
+default_logging_level = logging.DEBUG
+
+def get_default_logging_level():
+    return default_logging_level
+
+def get_logger(name, level=None, show_time=True):
+    level = get_default_logging_level()
+
     logging_handler = logging.StreamHandler()
     logging_handler.setLevel(level)
     logging_handler.setFormatter(
