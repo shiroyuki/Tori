@@ -1,4 +1,4 @@
-from tori.exception import ODMDocumentIdLocked
+from tori.db.odm.exception import LockedIdException, ReservedAttributeException
 
 class Document(object):
     '''
@@ -24,9 +24,9 @@ class Document(object):
         :param id: the ID of the document.
         '''
         if '_id' in self.__dict__ and self.__dict__['_id']:
-            raise ODMDocumentIdLocked('The ID is locked and cannot be changed.')
+            raise LockedIdException('The ID is locked and cannot be changed.')
 
-        self.__setattr__('_id', id)
+        self.__dict__['_id'] = id
 
     @property
     def collection_name(self):
@@ -39,8 +39,12 @@ class Document(object):
         return name in self._dirty_attributes
 
     def __setattr__(self, name, value):
-        if name == '_id':
-            raise ODMDocumentIdLocked('"_id" is a reserved attribute.');
+        if name[0] == '_'\
+            or (
+                name in dir(self)\
+                and callable(self.__getattribute__(name))
+            ):
+            raise ReservedAttributeException('"%s" is a reserved attribute.' % name)
 
         if name not in self.__dict__['_dirty_attributes']:
             self.__dict__['_dirty_attributes'].append(name)

@@ -1,7 +1,7 @@
 import unittest
 
-from tori.exception   import ODMDocumentIdLocked
-from tori.db.document import Document
+from tori.db.odm.exception import LockedIdException, ReservedAttributeException
+from tori.db.odm.document  import Document
 
 class Person(Document): pass
 
@@ -26,7 +26,7 @@ class TestDocument(unittest.TestCase):
 
         self.assertEquals(1, person.id)
 
-        with self.assertRaises(ODMDocumentIdLocked):
+        with self.assertRaises(LockedIdException):
             person._id = 2
 
     def test_old_document_on_updating_existing_attribute(self):
@@ -39,6 +39,12 @@ class TestDocument(unittest.TestCase):
 
         self.assertEquals('Obiwan', person.name)
         self.assertTrue(person.is_dirty('name'))
+
+        with self.assertRaises(ReservedAttributeException):
+            person.is_dirty = 2
+
+        with self.assertRaises(AttributeError):
+            self.assertFalse(person.is_dirty('is_dirty'))
 
     def test_old_document(self):
         person = Person(_id=1, name='Juti', occupation='Software Developer')
