@@ -1,3 +1,6 @@
+class ODMDocumentIdLocked(Exception):
+    ''' Exception raised when the document ID is already locked. '''
+
 # Common / Unexpected Computation
 class UnexpectedComputationError(Exception):
     ''' Exception used when the code runs mistakenly unexpectedly. '''

@@ -44,17 +44,18 @@ def get_logger(name, level=None, show_time=True):
 class Enigma(object):
     ''' Hashlib wrapper '''
 
-    def hash(self, value):
+    def hash(self, *data_list):
         '''
         Make a hash out of the given ``value``.
 
-        :param `value`: the data being encoded.
-        :return:        the hashed data string
+        :param `data_list`: the list of the data being hashed.
+        :type  `data_list`: list of string
+        :return:            the hashed data string
         '''
 
         hash_engine = hashlib.new('sha512')
 
-        hash_engine.update(unicode(value))
+        hash_engine.update(''.join(data_list))
 
         return hash_engine.hexdigest()
 
