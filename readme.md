@@ -18,33 +18,46 @@ See [the official documentation](http://readthedocs.org/docs/tori-framework/) fo
 
 ## Dependencies
 
-First, this requires Python 2.7. It may work with the older version of Python but it isn't tested at this point.
+First, this requires **Python 2.7**. It may work with the older version of Python but it isn't tested at this point.
+It may work in **Python 3.3** but some required libraries don't support that version at the moment.
 
 <table>
 	<tr><th>Package</th><th>Minimum version</th><th>Note</th></tr>
 	<tr>
 		<td>jinja2</td>
-		<td>the latest version</td>
-		<td>The default template system.</td>
+		<td>2.6+</td>
+		<td>
+			The default template system. (Incompatible with Python 3.3)
+		</td>
 	</tr>
 	<tr>
 		<td>Tornado Framework (tornado)</td>
-		<td>2.2</td>
+		<td>2.4+</td>
 		<td>The base framework</td>
 	</tr>
-    <tr>
+	<tr>
 		<td>Kotoba (kotoba)</td>
 		<td>3.0</td>
 		<td>XML parser for `tori.application.Application`. Currently available from https://github.com/shiroyuki/Kotoba.</td>
 	</tr>
-    <tr>
+	<tr>
 		<td>Imagination (imagination)</td>
-		<td>1.1</td>
+		<td>1.5+</td>
 		<td>Component Controller. The current prerequisite is only available from https://github.com/shiroyuki/Imagination.</td>
 	</tr>
-    <tr>
+	<tr>
 		<td>SQLAlchemy (sqlalchemy)</td>
-		<td>0.7.7+</td>
-		<td>For session management.</td>
+		<td>0.7.x</td>
+		<td>Used by any relational database components if required. (optional)</td>
+	</tr>
+	<tr>
+		<td>PyMongo (pymongo)</td>
+		<td>2.3.x</td>
+		<td>Used by MongoDB database components if required. (optional)</td>
+	</tr>
+	<tr>
+		<td>Redis (redis-py)</td>
+		<td>2.7.x</td>
+		<td>Used by relational database components if required. (optional)</td>
 	</tr>
 </table>
