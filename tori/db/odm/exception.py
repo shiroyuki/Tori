@@ -1,3 +1,6 @@
+class CollectionUnavailable(Exception):
+    ''' Exception thrown when the collection is not available. '''
+
 class LockedIdException(Exception):
     ''' Exception thrown when the ID is tempted to change. '''
 
