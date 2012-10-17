@@ -37,7 +37,6 @@ class TestDbOdmDocument(unittest.TestCase):
         self.assertEquals(None, person.id)
         self.assertEquals('Juti', person.name)
         self.assertTrue(person.is_dirty('name'))
-        self.assertEquals('test_db_odm_document.Person', person.get_class_name())
 
     def test_new_document_changeset(self):
         person = Person(**self.test_attributes)

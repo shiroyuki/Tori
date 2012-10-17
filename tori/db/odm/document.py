@@ -1,3 +1,8 @@
+'''
+:Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
+:Availability: DEV
+:Stability: Stable
+'''
 from tori.db.odm.exception import LockedIdException, ReservedAttributeException
 
 def document(cls):
@@ -34,12 +39,11 @@ def document(cls):
             if self.__is_reserved_attribute__(name):
                 continue
 
-            changeset[name] = self.__dict__[name]
+            changeset[name] = self.__dict__[name] if name in self.__dict__ else None
 
         if changeset:
             changeset.update({
-                '_id':   self.id,
-                '_type': self.get_class_name()
+                '_id':   self.id
             })
 
         return changeset
@@ -55,15 +59,15 @@ def document(cls):
 
     def __is_method__(self, name):
         return (
-                name in dir(self)\
-                and callable(self.__getattribute__(name))
-            )
+            name in dir(self)\
+            and callable(self.__getattribute__(name))
+        )
 
     def __is_reserved_attribute__(self, name):
         return (
-                name in ['_id']\
-                and '_id' in self.__dict__
-            ) or self.__is_method__(name)
+            name in ['_id']\
+            and '_id' in self.__dict__
+        ) or self.__is_method__(name)
 
     def __in_dirty_bit__(self, name):
         try:
@@ -88,6 +92,7 @@ def document(cls):
 
         if (
             name != '_id'\
+            and name != 'id'\
             and name[0:2] != '__'\
             and not self.__in_dirty_bit__(name)\
             and not self.__is_method__(name)
