@@ -6,15 +6,18 @@
 
 from time import time
 
+from tori.db.odm.util import GuidGenerator
+
 class Collection(object):
     '''
     :type database: :class:`tori.db.odm.database.Database`
     '''
-    def __init__(self, database, name, document_class):
+    def __init__(self, database, name, document_class, guid_generator=None):
         self._collection = None
         self._name       = name
         self._database   = database
         self._class      = document_class
+        self._guid_generator = GuidGenerator()
 
     @property
     def api(self):
@@ -22,6 +25,9 @@ class Collection(object):
             self._collection = self._database.collection(self._name)
 
         return self._collection
+
+    def set_guid_generator(self, guid_generator):
+        self._guid_generator = guid_generator
 
     def new_document(self, **attributes):
         return self._class(**attributes)
@@ -35,7 +41,9 @@ class Collection(object):
     def get(self, id):
         raw_data = self.api.find_one({'_id': id})
 
-        return self._convert_to_object(**raw_data)
+        return self._convert_to_object(**raw_data)\
+            if   raw_data\
+            else None
 
     def filter(self, **criteria):
         raw_data_list = self.api.find(criteria)
@@ -45,18 +53,18 @@ class Collection(object):
             else []
 
     def filter_one(self, **criteria):
-        raw_data_list = self.api.find_one(criteria)
+        raw_data = self.api.find_one(criteria)
 
-        return [self._convert_to_object(**raw_data) for raw_data in raw_data_list]\
-            if   raw_data_list.count()\
-            else []
+        return self._convert_to_object(**raw_data)\
+            if   raw_data\
+            else None
 
     def post(self, document):
+        if not document.id:
+            document.id = self._guid_generator.generate()
+
         cs = document.get_changeset()
         id = self.api.insert(cs, safe=True)
-
-        if not document.id:
-            document.id = id
 
         document.reset_bits()
 

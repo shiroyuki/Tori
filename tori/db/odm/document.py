@@ -65,8 +65,9 @@ def document(cls):
 
     def __is_reserved_attribute__(self, name):
         return (
-            name in ['_id']\
-            and '_id' in self.__dict__
+            name == '_id'\
+            and name in self.__dict__
+            and self.__dict__[name]
         ) or self.__is_method__(name)
 
     def __in_dirty_bit__(self, name):

@@ -12,6 +12,6 @@ class Database(object):
             self._connection = Connection()
 
         if not self._database:
-            self._database = self._connection[name]
+            self._database = self._connection[self._name]
 
         return self._database[name]
