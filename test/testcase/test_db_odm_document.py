@@ -43,8 +43,11 @@ class TestDbOdmDocument(unittest.TestCase):
 
         changeset = person.get_changeset()
 
-        for name in self.test_attributes:
-            self.assertTrue(name in changeset)
+        for name in changeset:
+            self.assertTrue(name in self.test_attributes or name == '_id', name)
+
+            if name == '_id': continue
+
             self.assertEquals(self.test_attributes[name], changeset[name])
 
         self.assertTrue(changeset)

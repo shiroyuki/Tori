@@ -32,11 +32,14 @@ def document(cls):
     def get_collection_name(self):
         return self.__collection_name__
 
-    def get_changeset(self):
-        changeset = {}
+    def get_changeset(self, get_everything=False):
+        changeset      = {}
+        changeset_keys = self.__dict__.keys()\
+            if   get_everything\
+            else self.__dirty_attributes__
 
-        for name in self.__dirty_attributes__:
-            if self.__is_reserved_attribute__(name):
+        for name in changeset_keys:
+            if self.__is_reserved_attribute__(name) or name[:2] == '__':
                 continue
 
             changeset[name] = self.__dict__[name] if name in self.__dict__ else None
@@ -65,10 +68,11 @@ def document(cls):
 
     def __is_reserved_attribute__(self, name):
         return (
-            name == '_id'\
-            and name in self.__dict__
-            and self.__dict__[name]
-        ) or self.__is_method__(name)
+                name == '_id'\
+                and name in self.__dict__
+                and self.__dict__[name]
+            )\
+            or self.__is_method__(name)
 
     def __in_dirty_bit__(self, name):
         try:

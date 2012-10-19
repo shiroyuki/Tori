@@ -70,8 +70,17 @@ class Collection(object):
 
         return document
 
-    def put(self, document, upsert=False):
-        self.api.update(document.get_changeset(), upsert=upsert)
+    def put(self, document, upsert=False, replace=False):
+        changeset = document.get_changeset(not replace)
+
+        if replace:
+            update_instruction = changeset
+        else:
+            del changeset['_id']
+
+            update_instruction = {'$set': changeset}
+
+        self.api.update({'_id': document.id}, changeset, upsert=upsert)
 
         document.reset_bits()
 
