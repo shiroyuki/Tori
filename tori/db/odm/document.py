@@ -39,7 +39,7 @@ def document(cls):
             else self.__dirty_attributes__
 
         for name in changeset_keys:
-            if self.__is_reserved_attribute__(name) or name[:2] == '__':
+            if self.__is_reserved_attribute__(name) or name[0] == '_':
                 continue
 
             changeset[name] = self.__dict__[name] if name in self.__dict__ else None

@@ -1,4 +1,10 @@
+'''
+:Author: Juti Noppornpitak
+:Status: Testing/Unstable
+'''
+
 from tori.db.service              import DatabaseRepository
+from tori.session.entity.database import Database as Entity
 from tori.session.repository.base import Base
 
 class Database(Base):
@@ -23,15 +29,15 @@ class Database(Base):
 
     def base_filter(self, id):
         return self.db.\
-            query(DbEntity).\
-            filter(DbEntity.session_id==id)
+            query(Entity).\
+            filter(Entity.session_id==id)
 
     def commit(self):
         self.db.session.commit()
 
     def delete(self, id, key):
         data = self.base_filter(id).\
-            filter(DbEntity.key==key).\
+            filter(Entity.key==key).\
             first()
 
         if not data:
@@ -42,7 +48,7 @@ class Database(Base):
 
     def get(self, id, key):
         data = self.base_filter(id).\
-            filter(DbEntity.key==key).\
+            filter(Entity.key==key).\
             first()
 
         return data and data.content or None
@@ -62,13 +68,14 @@ class Database(Base):
 
     def set(self, id, key, content):
         data = self.base_filter(id).\
-            filter(DbEntity.key==key).\
+            filter(Entity.key==key).\
             first()
 
         if not data:
-            data = DbEntity(id, key, content)
-            self.session.add(data)
+            data = Entity(id, key, content)
 
-        data.content = content
+            self.session.add(data)
+        else:
+            data.content = content
 
         self.commit()

@@ -1,7 +1,6 @@
 '''
 :Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
-:Availability: DEV
-:Stability: Experimental
+:Status: Experimental
 '''
 
 from time import time
