@@ -21,69 +21,18 @@ from tori.centre    import services as ServiceRepository
 from tori.common    import Enigma, get_logger
 from tori.data.base import ResourceEntity
 from tori.exception import *
-from tori.session.generator  import GuidGenerator
-from tori.session.controller import Controller as SessionController
-from tori.template.renderer  import DefaultRenderer
+from tori.handler   import Handler
+from tori.template.renderer import DefaultRenderer
 
-class Controller(RequestHandler):
+class Controller(RequestHandler, Handler):
     '''
     The abstract controller for Tori framework which uses Jinja2 as a template
     engine instead of the default one that comes with Tornado.
     '''
 
-    _guid_generator = GuidGenerator()
-
     def __init__(self, *args, **kwargs):
+        Handler.__init__(self)
         RequestHandler.__init__(self, *args, **kwargs)
-
-        self._session = None
-
-    @property
-    def session(self):
-        if not self.component('session'):
-            return None
-
-        if self._session:
-            return self._session
-
-        cookie_key = 'ssid'
-
-        ssid = self.get_secure_cookie(cookie_key)\
-            if   self._can_use_secure_cookie()\
-            else self.get_cookie(cookie_key)
-
-        if not ssid:
-            ssid = self._guid_generator.generate()
-
-            if self._can_use_secure_cookie():
-                self.set_secure_cookie(cookie_key, ssid)
-            else:
-                self.set_cookie(cookie_key, ssid)
-
-        self._session = SessionController(self.component('session'), ssid)
-
-        return self._session
-
-    def _can_use_secure_cookie(self):
-        return 'cookie_secret' in self.settings\
-            and self.settings['cookie_secret']
-
-    def component(self, name, fork_component=False):
-        '''
-        Get the (re-usable) component from the initialized Imagination
-        component locator service.
-
-        :param `name`:           the name of the registered re-usable component.
-        :param `fork_component`: the flag to fork the component
-        :return:                 module, package registered or ``None``
-        '''
-
-        if not ServiceRepository.has(name):
-            return None
-
-        return ServiceRepository.fork(name)\
-            if   fork_component\
-            else ServiceRepository.get(name)
 
     def render_template(self, template_name, **contexts):
         '''
