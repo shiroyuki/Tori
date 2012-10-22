@@ -15,30 +15,38 @@ import time
 
 from .decorator.common import singleton
 
-default_logging_level = logging.DEBUG
+@singleton
+class LoggerFactory(object):
+    def __init__(self, default_level=None):
+        __default_level = default_level or logging.DEBUG
 
-def get_default_logging_level():
-    return default_logging_level
+    def set_default_level(self, default_level):
+        self.__default_level = default_level
+
+        return self
+
+    def make(self, name, level=None, show_time=True):
+        level = level or self.__default_level
+
+        logging_handler = logging.StreamHandler()
+        logging_handler.setLevel(level)
+        logging_handler.setFormatter(
+            logging.Formatter(
+                '%(levelname)s %(asctime)s %(name)s: %(message)s'
+                if show_time
+                else '%(levelname)s %(name)s: %(message)s',
+                datefmt='%Y.%m.%d %H:%M:%S %Z'
+            )
+        )
+
+        logger = logging.getLogger(name)
+        logger.addHandler(logging_handler)
+        logger.setLevel(level)
+
+        return logger
 
 def get_logger(name, level=None, show_time=True):
-    level = get_default_logging_level()
-
-    logging_handler = logging.StreamHandler()
-    logging_handler.setLevel(level)
-    logging_handler.setFormatter(
-        logging.Formatter(
-            '%(levelname)s %(asctime)s %(name)s: %(message)s'
-            if show_time
-            else '%(levelname)s %(name)s: %(message)s',
-            datefmt='%Y.%m.%d %H:%M:%S %Z'
-        )
-    )
-
-    logger = logging.getLogger(name)
-    logger.addHandler(logging_handler)
-    logger.setLevel(level)
-
-    return logger
+    return LoggerFactory.instance().make(name, level, show_time)
 
 @singleton
 class Enigma(object):

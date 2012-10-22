@@ -201,7 +201,7 @@ class ResourceService(RequestHandler):
 
         # When the resource is not loaded, try to get from the wildcard pattern.
         if not resource:
-            self._logger.error('Retrieving from the wildcard pattern')
+            self._logger.debug('Retrieving from the wildcard pattern.')
 
             resource = self._get_resource_on_non_precalculated_pattern(path)
 
