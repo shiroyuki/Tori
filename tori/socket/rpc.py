@@ -14,14 +14,14 @@ from tori.data.converter   import ArrayConverter
 from tori.socket.websocket import WebSocket
 
 class Remote(object):
-    def __init__(self, command, id=None, data=None, service=None):
+    def __init__(self, method, id=None, data=None, service=None):
         self.id      = id or time.time()
-        self.command = command
         self.data    = data or None
+        self.method  = method
         self.service = service or None
 
     def call(self):
-        remote_call = self.service.__getattr__(self.command)
+        remote_call = self.service.__getattr__(self.method)
 
         return remote_call(**data) if self.data else remote_call
 
@@ -32,6 +32,21 @@ class Response(object):
 
 class RemoteInterface(WebSocket):
     def on_message(self, message):
+        '''
+        :type message: str or unicode
+
+        The parameter ``message`` is supposed to be in JSON format:
+
+        .. code-block:: javascript
+
+            {
+                "id":      unique_id,
+                "service": service_name,
+                "data":    parameter_object,
+                "method":  method_name
+            }
+
+        '''
         remote = RemoteCall(**(json.loads(message)))
 
         if not remote.service:
