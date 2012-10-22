@@ -2,21 +2,46 @@ from tori.decorator.common import singleton
 
 @singleton
 class ArrayConverter(object):
-    def convert(self, data):
-        if isinstance(data, object):
+    def __init__(self):
+        self._max_depth = 2
+        self._permitive_types = []
+
+    def set_max_depth(self, max_depth):
+        self._max_depth = max_depth
+
+    def convert(self, data, stack_depth=0):
+        if not isinstance(data, object):
             raise TypeError('The provided data must be an object');
 
         returnee = {}
 
         for name in dir(data):
-            value = data.__getattr__(name)
-
-            if callable(value):
+            if name[0] == '_':
                 continue
 
-            if isinstance(value, object):
-                value = self.convert(value)
+            value = data.__getattribute__(name)
+
+            if not value or callable(value):
+                continue
+
+            if not self._is_permitive(value):
+                if stack_depth == self._max_depth:
+                    value = u'%s' % value
+                else:
+                    value = self.convert(value, stack_depth + 1)
 
             returnee[name] = value
 
         return returnee
+
+    def _is_permitive(self, value):
+        if not self._permitive_types:
+            self._permitive_types = [int, float, str, list, dict, tuple, set]
+
+            # Prevent the code from raising exceptions due to Python 3 backward compatibility break.
+            try:
+                self._permitive_types.extend([unicode, long])
+            except:
+                pass
+
+        return type(value) in self._permitive_types

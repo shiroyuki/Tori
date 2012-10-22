@@ -23,7 +23,7 @@ class WebSocket(BaseWebSocket, Handler):
 
         self._channel_table[self.__hash__()] = self
 
-    def broadcast(self, message):
+    def broadcast(self, message, scopes=[]):
         current_session_id = self.session.id
 
         for object_hash in self._channel_table:

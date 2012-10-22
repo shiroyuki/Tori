@@ -21,16 +21,16 @@ class Remote(object):
         self.service = service or None
 
     def call(self):
-        remote_call = self.service.__getattr__(self.method)
+        remote_call = self.service.__getattribute__(self.method)
 
-        return remote_call(**data) if self.data else remote_call
+        return remote_call(**self.data) if self.data else remote_call
 
 class Response(object):
     def __init__(self, result, id):
         self.id     = id
         self.result = result
 
-class RemoteInterface(WebSocket):
+class Interface(WebSocket):
     def on_message(self, message):
         '''
         :type message: str or unicode
@@ -47,7 +47,8 @@ class RemoteInterface(WebSocket):
             }
 
         '''
-        remote = RemoteCall(**(json.loads(message)))
+
+        remote = Remote(**(json.loads(message)))
 
         if not remote.service:
             remote.service = self
