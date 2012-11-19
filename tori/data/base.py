@@ -12,6 +12,9 @@ class ResourceEntity(object):
         This is for internal use only.
     '''
     def __init__(self, path):
+        if p.isdir(path):
+            path = p.join(path, 'index.html')
+
         self._path    = path
         self._content = None
 

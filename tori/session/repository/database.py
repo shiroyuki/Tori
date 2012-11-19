@@ -3,7 +3,6 @@
 :Status: Testing/Unstable
 '''
 
-from tori.db.service              import DatabaseRepository
 from tori.session.entity.database import Database as Entity
 from tori.session.repository.base import Base
 
@@ -21,7 +20,6 @@ class Database(Base):
 
     '''
 
-    @restrict_type(DatabaseRepository)
     def __init__(self, db):
         Base.__init__(self)
 

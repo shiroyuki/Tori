@@ -3,7 +3,7 @@ Common Handler
 ==============
 
 :Author: Juti Noppornpitak
-:Status: Stable
+:Status: Stable, obsolete
 :Last Update: |today|
 
 This module contains code commonly used by request handlers and web socket handlers.

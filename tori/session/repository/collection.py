@@ -3,8 +3,6 @@
 :Status: Testing
 '''
 
-from tori.db.odm.collection       import Collection
-
 from tori.session.entity.document import Document
 from tori.session.repository.base import Base
 
@@ -22,7 +20,6 @@ class Collection(Base):
 
     '''
 
-    @restrict_type(Collection)
     def __init__(self, collection):
         Base.__init__(self)
 

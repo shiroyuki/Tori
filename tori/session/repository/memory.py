@@ -16,7 +16,7 @@ class Memory(Base):
         if not self.has(id, key):
             return None
 
-        raise FutureFeature
+        return self._storage[id][key]
 
     def has(self, id, key):
         return id in self._storage and key in self._storage[id]

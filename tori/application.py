@@ -188,6 +188,9 @@ class Application(BaseApplication):
         if len(configuration.children('routes')) > 1:
             raise InvalidConfigurationError('Too many routing configuration.')
 
+        if len(configuration.children('settings')) > 1:
+            raise InvalidConfigurationError('Too many setting groups (limited to 1).')
+
         # Set the cookie secret for secure cookies.
         client_secret = configuration.find('server secret')
         if client_secret:
@@ -203,6 +206,14 @@ class Application(BaseApplication):
 
         # Find the debugging flag
         self._settings['debug'] = configuration.find('server debug').data().lower() == 'true'
+
+        for setting in configuration.children('settings').children('setting'):
+            setting_name = setting.attr('name')
+
+            if not setting_name:
+                raise InvalidConfigurationError('A setting block does not specify the name. ({})'.format(config_path or 'primary configuration'))
+
+            self._settings[setting_name] = setting.data()
 
         # Exclusive procedures
         self._register_imagination_services(configuration, config_path or self._config_base_path)

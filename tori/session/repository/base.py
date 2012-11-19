@@ -1,3 +1,5 @@
+from tori.exception import *
+
 class Base(object):
     ''' The Base Repository '''
 
@@ -13,7 +15,7 @@ class Base(object):
 
         .. note:: This method is not implemented in :class:`tori.session.repository.base.Base`.
         '''
-        raise FutureFeature
+        raise FutureFeatureException
 
     def generate(self):
         '''
@@ -41,7 +43,7 @@ class Base(object):
 
         .. note:: This method is not implemented in :class:`tori.session.repository.base.Base`.
         '''
-        raise FutureFeature
+        raise FutureFeatureException
 
     def has(self, id, key):
         '''
@@ -62,7 +64,7 @@ class Base(object):
 
         .. note:: This method is not implemented in :class:`tori.session.repository.base.Base`.
         '''
-        raise FutureFeature
+        raise FutureFeatureException
 
     def reset(self, id):
         '''
@@ -72,7 +74,7 @@ class Base(object):
 
         .. note:: This method is not implemented in :class:`tori.session.repository.base.Base`.
         '''
-        raise FutureFeature
+        raise FutureFeatureException
 
     def set(self, id, key, content):
         '''
@@ -85,4 +87,4 @@ class Base(object):
 
         .. note:: This method is not implemented in :class:`tori.session.repository.base.Base`.
         '''
-        raise FutureFeature
+        raise FutureFeatureException
