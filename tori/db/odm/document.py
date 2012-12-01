@@ -104,6 +104,22 @@ def document(cls):
         ):
             self.__mark_dirty_bit__(name)
 
+    def to_dict(self):
+        propertyMap = {
+            'id': self.__dict__['_id']
+        }
+
+        for name in self.__dict__:
+            if name[0] == '_':
+                continue
+
+            if callable(self.__dict__[name]):
+                continue
+
+            propertyMap[name] = self.__dict__[name]
+
+        return propertyMap
+
     cls.__setattr__               = __setattr__
     cls.__in_dirty_bit__          = __in_dirty_bit__
     cls.__is_method__             = __is_method__
@@ -119,6 +135,7 @@ def document(cls):
     cls.get_changeset       = get_changeset
     cls.is_dirty            = is_dirty
     cls.reset_bits          = reset_bits
+    cls.to_dict             = to_dict
 
     return cls
 

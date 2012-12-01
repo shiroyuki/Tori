@@ -1,0 +1,1 @@
+class DirectoryException(Exception): pass

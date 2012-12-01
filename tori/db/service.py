@@ -25,13 +25,6 @@ class Repository(object):
     This service is served as an abstract of any
     '''
 
-class DocumentRepository(Repository):
-    '''
-    Document-oriented Database Repository
-
-    This service supports MongoDB (2.2+) via PyMongo (2.3+).
-    '''
-
 class DatabaseRepository(Repository):
     '''
     Relational Database Service based on SQLAlchemy 0.7+
@@ -66,6 +59,8 @@ class DatabaseRepository(Repository):
     def engine(self):
         '''
         Get the SQLAlchemy engine.
+
+        :rtype: sqlalchemy.engine.base.Engine
 
         .. note:: With the service, it is not recommended to directly use this method.
         '''
@@ -130,7 +125,8 @@ class DatabaseRepository(Repository):
         '''
         Get a SQLAlchemy session for the current connection.
 
-        :return: an instance of :class:`sqlalchemy.orm.session.Session` for the current connection.
+        :rtype:  sqlalchemy.orm.session.Session
+        :return: a session for the connection.
         '''
         engine = self.engine
 
@@ -146,12 +142,24 @@ class DatabaseRepository(Repository):
 
         return self._sessions[session_key]
 
-    def query(self, entity_type):
-        if entity_type.__name__ not in self._entity_map:
+    def query(self, *entity_types):
+        '''
+        Retrieve the query object for the given type of entities.
+
+        :param entity_type: the type of entity
+        :type entity_type:  list
+
+        :rtype:  sqlalchemy.orm.query.Query
+        :return: The query object for the given type of entities.
+        '''
+        for entity_type in entity_types:
+            if entity_type.__name__ in self._entity_map:
+                continue
+
             self._entity_map[entity_type.__name__] = True
             entity_type.__table__.create(self.engine)
 
-        return self.session.query(entity_type)
+        return self.session.query(*entity_types)
 
     def post(self, *entities):
         '''

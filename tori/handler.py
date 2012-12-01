@@ -3,7 +3,7 @@ Common Handler
 ==============
 
 :Author: Juti Noppornpitak
-:Status: Stable, obsolete
+:Status: Stable, Internal Only
 :Last Update: |today|
 
 This module contains code commonly used by request handlers and web socket handlers.
@@ -17,6 +17,11 @@ class Handler(object):
     _guid_generator = GuidGenerator()
 
     def __init__(self):
+        '''
+        Handler Decorator Class used with Tornado's Handler-based classes
+
+        .. note:: This should be moved to Controller and WebSocket.
+        '''
         self._session = None
 
     def component(self, name, fork_component=False):
@@ -54,9 +59,9 @@ class Handler(object):
             ssid = self._guid_generator.generate()
 
             if self._can_use_secure_cookie():
-                self.set_secure_cookie(cookie_key, ssid)
+                self.set_secure_cookie(cookie_key, ssid, expires_days=1)
             else:
-                self.set_cookie(cookie_key, ssid)
+                self.set_cookie(cookie_key, ssid, expires_days=1)
 
         self._session = Controller(self.component('session'), ssid)
 

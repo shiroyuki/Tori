@@ -8,31 +8,89 @@ This package contains an abstract controller (based on
 '''
 
 import logging
-from os        import path as p
-from mimetypes import guess_type as get_type
-from re        import match, search, sub
-from StringIO  import StringIO
-from time      import time
 
-from tornado.web import HTTPError, ErrorHandler, RequestHandler
+from os import path as p
+from re import match, sub
 
-from tori           import __version__
-from tori.centre    import services as ServiceRepository
-from tori.common    import Enigma, get_logger
-from tori.data.base import ResourceEntity
-from tori.exception import *
-from tori.handler   import Handler
-from tori.template.renderer import DefaultRenderer
+from tornado.web import HTTPError, RequestHandler
 
-class Controller(RequestHandler, Handler):
+from tori.centre             import services
+from tori.common             import get_logger
+from tori.data.base          import ResourceEntity
+from tori.exception          import *
+from tori.template.renderer  import DefaultRenderer
+from tori.session.generator  import GuidGenerator
+from tori.session.controller import Controller as SessionController
+
+class Controller(RequestHandler):
     '''
     The abstract controller for Tori framework which uses Jinja2 as a template
     engine instead of the default one that comes with Tornado.
     '''
 
+    _guid_generator = GuidGenerator()
+
     def __init__(self, *args, **kwargs):
-        Handler.__init__(self)
         RequestHandler.__init__(self, *args, **kwargs)
+
+        self._session = None
+
+    def component(self, name, fork_component=False):
+        '''
+        Get the (re-usable) component from the initialized Imagination
+        component locator service.
+
+        :param `name`:           the name of the registered re-usable component.
+        :param `fork_component`: the flag to fork the component
+        :return:                 module, package registered or ``None``
+        '''
+
+        if not services.has(name):
+            return None
+
+        return services.fork(name)\
+            if   fork_component\
+            else services.get(name)
+
+    @property
+    def session(self):
+        if not self.component('session'):
+            return None
+
+        if self._session:
+            return self._session
+
+        cookie_key = 'ssid'
+
+        ssid = self.get_secure_cookie(cookie_key)\
+            if   self._can_use_secure_cookie()\
+            else self.get_cookie(cookie_key)
+
+        if not ssid:
+            ssid = self._guid_generator.generate()
+
+            if self._can_use_secure_cookie():
+                self.set_secure_cookie(cookie_key, ssid)
+            else:
+                self.set_cookie(cookie_key, ssid)
+
+        self._session = SessionController(self.component('session'), ssid)
+
+        return self._session
+
+    def _can_use_secure_cookie(self):
+        '''
+        Check if the secure cookie is enabled.
+
+        :rtype: boolean
+
+        .. note::
+            This only works with any classes based from :class:`tornado.webRequestHandler`
+            and :class:`tornado.websocket.WebSocketHandler`.
+
+        '''
+        return 'cookie_secret' in self.settings\
+        and self.settings['cookie_secret']
 
     def render_template(self, template_name, **contexts):
         '''
@@ -52,7 +110,8 @@ class Controller(RequestHandler, Handler):
         output = None
 
         contexts['app'] = {
-            'request': self.request
+            'request': self.request,
+            'session': self.session.get
         }
 
         try:
@@ -216,7 +275,7 @@ class ResourceService(RequestHandler):
 
         # Retrieve the plugins if registered.
         if not ResourceService._plugins and not ResourceService._plugins_registered:
-            ResourceService._plugins = ServiceRepository.find_by_tag(
+            ResourceService._plugins = services.find_by_tag(
                 ResourceService._plugins_tag_name
             )
 
@@ -230,8 +289,7 @@ class ResourceService(RequestHandler):
         try:
             self.finish(resource.content)
         except Exception, e:
-            print 'Failed on resource distribution.'
-            print e, type(e)
+            print('Failed on resource distribution.')
 
     def _get_resource_entity(self, real_path):
         return ResourceEntity(real_path)

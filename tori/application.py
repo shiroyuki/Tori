@@ -132,7 +132,8 @@ class Application(BaseApplication):
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
     _default_services         = [
         ('finder', 'tori.common.Finder', [], {}),
-        ('renderer', 'tori.template.service.RenderingService', [], {})
+        ('renderer', 'tori.template.service.RenderingService', [], {}),
+        ('session', 'tori.session.repository.memory.Memory', [], {})
     ]
 
     def __init__(self, configuration_location, **settings):
@@ -205,7 +206,9 @@ class Application(BaseApplication):
             self._port = port.data()
 
         # Find the debugging flag
-        self._settings['debug'] = configuration.find('server debug').data().lower() == 'true'
+        if (configuration.find('server debug')):
+            self._settings['debug'] = configuration.find('server debug').data().lower() == 'true'
+            self._logger.info('Debug Mode: {}'.format('On' if self._settings['debug'] else 'Off'))
 
         for setting in configuration.children('settings').children('setting'):
             setting_name = setting.attr('name')

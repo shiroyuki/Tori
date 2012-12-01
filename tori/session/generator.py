@@ -7,6 +7,8 @@ from tori.common import Enigma
 @singleton
 class GuidGenerator(object):
     def generate(self):
-        return Enigma.instance().hash(
-            '%s/%s' % (AppSettings['cookie_secret'], time())
-        )
+        key = '%s/%s' % (AppSettings['cookie_secret'], time())\
+            if 'cookie_secret' in AppSettings\
+            else str(time())
+
+        return Enigma.instance().hash(key)
