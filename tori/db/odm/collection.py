@@ -16,7 +16,7 @@ class Collection(object):
         self._name       = name
         self._database   = database
         self._class      = document_class
-        self._guid_generator = GuidGenerator()
+        self._guid_generator = guid_generator or GuidGenerator()
 
     @property
     def api(self):

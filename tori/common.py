@@ -18,7 +18,7 @@ from .decorator.common import singleton
 @singleton
 class LoggerFactory(object):
     def __init__(self, default_level=None):
-        self.__default_level = default_level or logging.DEBUG
+        self.__default_level = default_level or logging.WARNING
 
     def set_default_level(self, default_level):
         self.__default_level = default_level

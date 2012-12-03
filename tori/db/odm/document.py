@@ -93,6 +93,9 @@ def document(cls):
         if self.__is_reserved_attribute__(name):
             raise ReservedAttributeException('"%s" is a reserved attribute.' % name)
 
+        if name in self.__dict__ and self.__dict__[name] == value:
+            return
+
         object.__setattr__(self, name, value)
 
         if (

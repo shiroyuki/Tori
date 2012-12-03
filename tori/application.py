@@ -10,7 +10,6 @@
 
 # Standard libraries
 import os
-import re
 import sys
 
 # Third-party libraries
@@ -99,7 +98,7 @@ class BaseApplication(object):
 
         self._listening_port = int(port_number)
 
-        self._logger.info("Listen on port %d." % self._listening_port)
+        self._logger.debug("Listen on port %d." % self._listening_port)
 
         return self
 
@@ -113,7 +112,7 @@ class BaseApplication(object):
             self._logger.info("Start the application based at %s." % self._base_path)
             IOLoop.instance().start()
         except KeyboardInterrupt:
-            self._logger.info("\rCleanly stopped.")
+            self._logger.debug("Cleanly stopped.")
 
     def get_backbone(self):
         return self._backend_app

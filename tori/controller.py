@@ -173,7 +173,7 @@ class RestController(Controller):
             self.list()
             return
 
-        self.retrieve(int(id))
+        self.retrieve(id)
 
     def post(self, id=None):
         ''' Handle POST requests. '''
@@ -189,7 +189,7 @@ class RestController(Controller):
             self.set_status(405)
             return
 
-        self.update(int(id))
+        self.update(id)
 
     def delete(self, id=None):
         ''' Handle DELETE requests. '''
@@ -197,7 +197,7 @@ class RestController(Controller):
             self.set_status(405)
             return
 
-        self.remove(int(id))
+        self.remove(id)
 
 class ErrorController(Controller):
     """Generates an error response with status_code for all requests."""

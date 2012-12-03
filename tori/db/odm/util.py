@@ -8,7 +8,7 @@ class GuidGenerator(object):
     def generate(self):
         self.counter = self.counter + 1
 
-        guid = '{}:{}'.format(
+        guid = '{}.{}'.format(
             time(),
             self.counter
         )
@@ -20,7 +20,7 @@ class HashGuidGenerator(object):
         self.enigma = Enigma.instance()
 
     def generate(self):
-        guid = self.enigma.hash('{}:{}'.format(
+        guid = self.enigma.hash('{}.{}'.format(
             time(),
             self.enigma.random_number() % 1024
         ))

@@ -75,7 +75,18 @@ class TestDbOdmDocument(unittest.TestCase):
         self.assertTrue(person.is_awesome)
         self.assertTrue(person.is_dirty('is_awesome'))
 
-    def test_old_document_on_updating_existing_attribute(self):
+    def test_old_document_on_updating_existing_attribute_with_same_value(self):
+        person = Person(_id=1, **self.test_attributes)
+        person.reset_bits()
+
+        self.assertFalse(person.is_dirty('name'))
+
+        person.name = self.test_attributes['name']
+
+        self.assertEquals(self.test_attributes['name'], person.name)
+        self.assertFalse(person.is_dirty('name'))
+
+    def test_old_document_on_updating_existing_attribute_with_different_value(self):
         person = Person(_id=1, **self.test_attributes)
         person.reset_bits()
 
