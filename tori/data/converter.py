@@ -21,7 +21,7 @@ class ArrayConverter(object):
 
             value = data.__getattribute__(name)
 
-            if not value or callable(value):
+            if callable(value):
                 continue
 
             if not self._is_permitive(value):
@@ -36,7 +36,7 @@ class ArrayConverter(object):
 
     def _is_permitive(self, value):
         if not self._permitive_types:
-            self._permitive_types = [int, float, str, list, dict, tuple, set]
+            self._permitive_types = [int, float, str, list, dict, tuple, set, bool]
 
             # Prevent the code from raising exceptions due to Python 3 backward compatibility break.
             try:

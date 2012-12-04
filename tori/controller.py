@@ -186,15 +186,15 @@ class RestController(Controller):
     def put(self, id=None):
         ''' Handle PUT requests. '''
         if not id:
-            self.set_status(405)
+            self.set_status(400)
             return
 
         self.update(id)
 
     def delete(self, id=None):
         ''' Handle DELETE requests. '''
-        if id:
-            self.set_status(405)
+        if not id:
+            self.set_status(400)
             return
 
         self.remove(id)

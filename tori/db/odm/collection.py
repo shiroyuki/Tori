@@ -79,7 +79,7 @@ class Collection(object):
 
             update_instruction = {'$set': changeset}
 
-        self.api.update({'_id': document.id}, changeset, upsert=upsert)
+        self.api.update({'_id': document.id}, update_instruction, upsert=upsert)
 
         document.reset_bits()
 
