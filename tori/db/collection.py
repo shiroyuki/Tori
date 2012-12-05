@@ -1,15 +1,19 @@
 '''
 :Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
-:Status: Experimental
+:Status: Stable
 '''
 
-from time import time
-
-from tori.db.odm.util import GuidGenerator
+from tori.db.common import GuidGenerator
 
 class Collection(object):
     '''
-    :type database: :class:`tori.db.odm.database.Database`
+    Collection (Entity Repository) for Mongo DB
+
+    :type database: tori.db.database.Database
+    :type name: str
+    :type document_class: type
+    :type guid_generator: tori.db.common.GuidGenerator
+
     '''
     def __init__(self, database, name, document_class, guid_generator=None):
         self._collection = None

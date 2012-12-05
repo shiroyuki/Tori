@@ -3,7 +3,7 @@
 :Availability: DEV
 :Stability: Stable
 '''
-from tori.db.odm.exception import LockedIdException, ReservedAttributeException
+from tori.db.exception import LockedIdException, ReservedAttributeException
 
 def document(cls):
     '''

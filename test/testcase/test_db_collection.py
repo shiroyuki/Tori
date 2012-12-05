@@ -1,11 +1,8 @@
 import unittest
 
-from pymongo.connection import Connection
-
-from tori.db.odm.exception  import *
-from tori.db.odm.database   import Database
-from tori.db.odm.collection import Collection
-from tori.db.odm.document   import document, Document as BaseDocument
+from tori.db.document  import document, Document as BaseDocument
+from tori.db.database   import Database
+from tori.db.collection import Collection
 
 @document
 class Document(BaseDocument): pass
