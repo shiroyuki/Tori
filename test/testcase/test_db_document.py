@@ -1,11 +1,11 @@
 import unittest
 
 from tori.db.exception import LockedIdException, ReservedAttributeException
-from tori.db.document  import Document
+from tori.db.document  import BaseDocument
 from tori.db.document  import document
 
 @document
-class Person(Document): pass
+class Person(BaseDocument): pass
 
 @document
 class Organization(object):

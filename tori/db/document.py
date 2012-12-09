@@ -142,7 +142,7 @@ def document(cls):
 
     return cls
 
-class Document(object):
+class BaseDocument(object):
     '''
     Basic document with built-in attribute mapper.
     '''
