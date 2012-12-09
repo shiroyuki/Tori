@@ -86,7 +86,6 @@ def document(cls):
         try:
             self.__dirty_attributes__.append(name)
         except AttributeError:
-            print 'B'
             self.__dirty_attributes__ = [name]
 
     def __setattr__(self, name, value):
