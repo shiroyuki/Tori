@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 :Author: Juti Noppornpitak
 
 ..note::
     The documentation of this module yet conforms with the standard documenting
     style used by the official Python documenters.
-'''
+"""
 
 # Standard libraries
 import os
@@ -33,7 +33,7 @@ from .exception  import *
 from .navigation import *
 
 class BaseApplication(object):
-    '''
+    """
     Interface to bootstrap a WSGI application with Tornado Web Server/Framework.
     This is the basic application class which practically does nothing. Please
     do not use this directly.
@@ -41,7 +41,7 @@ class BaseApplication(object):
     :param `settings`: variable key-value parameters for extra settings to
     Tornado Web Server / Framework. Please read the web server documentation
     for more details.
-    '''
+    """
 
     def __init__(self, **settings):
         self._logger = get_logger('%s.%s' % (__name__, self.__class__.__name__))
@@ -70,17 +70,17 @@ class BaseApplication(object):
         self._routes = []
 
     def _update_routes(self, routes):
-        '''
+        """
         Update the routes.
 
         `routes` is the list of routes. See Tornado documentation on `tornado.web.Application` for more detail.
-        '''
+        """
         self._routes = routes
 
     def _activate(self):
-        '''
+        """
         Activate the backend application.
-        '''
+        """
 
         # Update the global settings.
         AppSettings.update(self._settings)
@@ -89,12 +89,12 @@ class BaseApplication(object):
         self._backend_app = TornadoNormalApplication(self._routes, **self._settings)
 
     def listen(self, port_number=8888):
-        '''
+        """
         Tell the app to listen on the given port number.
 
         `port_number` is an integer to indicate which port the application should be listen to.
         This setting is however only used in a standalone mode.
-        '''
+        """
 
         self._listening_port = int(port_number)
 
@@ -103,9 +103,9 @@ class BaseApplication(object):
         return self
 
     def start(self):
-        '''
+        """
         Start a server/service.
-        '''
+        """
         try:
             self._backend_app.listen(self._listening_port)
 
@@ -121,12 +121,12 @@ class BaseApplication(object):
         return self._listening_port
 
 class Application(BaseApplication):
-    '''
+    """
     Interface to bootstrap a WSGI application with Tornado Web Server.
 
     `settings` is a dictionary of extra settings to Tornado engine. For more
     information, please read Tornado documentation.
-    '''
+    """
 
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
     _default_services         = [
@@ -223,7 +223,7 @@ class Application(BaseApplication):
         self._set_error_delegate(configuration)
 
     def _set_error_delegate(self, configuration):
-        ''' Set a new error delegate based on the given configuration file if specified. '''
+        """ Set a new error delegate based on the given configuration file if specified. """
         delegate = configuration.find('server error').data()
 
         if delegate:
@@ -235,7 +235,7 @@ class Application(BaseApplication):
             self._set_service_entity(id, package_path, *args, **kwargs)
 
     def _register_imagination_services(self, configuration, base_path):
-        ''' Register services. '''
+        """ Register services. """
         service_blocks = configuration.children('service')
 
         assembler = ImaginationAssembler(ImaginationTransformer(AppServices))
@@ -249,9 +249,9 @@ class Application(BaseApplication):
             assembler.load(config_filepath)
 
     def _map_routing_table(self, configuration):
-        '''
+        """
         Update a routing table based on the configuration.
-        '''
+        """
         routing_sequences = configuration.children('routes')
 
         if not routing_sequences:
@@ -264,7 +264,7 @@ class Application(BaseApplication):
             self._routing_map.update(new_routing_map)
 
     def _make_service_entity(self, id, package_path, *args, **kwargs):
-        '''
+        """
         Make and return a service entity.
 
         *id* is the ID of a new service entity.
@@ -272,14 +272,14 @@ class Application(BaseApplication):
         *package_path* is the package path.
 
         *args* and *kwargs* are parameters used to instantiate the service.
-        '''
+        """
         loader = ImaginationLoader(package_path)
         entity = ImaginationEntity(id, loader, *args, **kwargs)
 
         return entity
 
     def _set_service_entity(self, id, package_path, *args, **kwargs):
-        '''
+        """
         Set the given service entity.
 
         *id* is the ID of a new service entity.
@@ -287,29 +287,29 @@ class Application(BaseApplication):
         *package_path* is the package path.
 
         *args* and *kwargs* are parameters used to instantiate the service.
-        '''
+        """
 
         AppServices.set(id, self._make_service_entity(id, package_path, *args, **kwargs))
 
     def get_route(self, routing_pattern):
-        ''' Get the route. '''
+        """ Get the route. """
         return self._routing_map.get(routing_pattern)
 
 class WSGIApplication(Application):
-    '''
+    """
     Interface to bootstrap a WSGI application with Apache WSGI module.
 
     This class is simply a clone to :class:`Application` except that it is
     specially customized for deploying the application in the WSGI embedded mode.
-    '''
+    """
 
     def __init__(self, configuration_location, **settings):
         Application.__init__(self, configuration_location, **settings)
 
     def _activate(self):
-        '''
+        """
         Activate the backend application.
-        '''
+        """
 
         # Update the global settings.
         AppSettings.update(self._settings)
@@ -318,9 +318,9 @@ class WSGIApplication(Application):
         self._backend_app = TornadoWSGIApplication(self._routes, **self._settings)
 
     def start(self):
-        '''
+        """
         Start the process.
 
-        .. warn:: This method is only necessary for a Google App Engine.
-        '''
+        .. warning:: This method is only necessary for a Google App Engine.
+        """
         handlers.CGIHandler().run(self.get_backbone())

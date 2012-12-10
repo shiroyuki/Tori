@@ -3,14 +3,14 @@ from os        import path as p
 from tori.exception import *
 
 class ResourceEntity(object):
-    '''
+    """
     Static resource entity representing the real static resource which is already loaded to the memory.
 
     :param path: the path to the static resource.
 
     .. note::
         This is for internal use only.
-    '''
+    """
     def __init__(self, path):
         if p.isdir(path):
             path = p.join(path, 'index.html')
@@ -35,7 +35,7 @@ class ResourceEntity(object):
 
     @property
     def content(self):
-        ''' Get the content of the entity. '''
+        """ Get the content of the entity. """
         if self._content:
             return self._content
 
@@ -51,11 +51,11 @@ class ResourceEntity(object):
 
     @content.setter
     def content(self, new_content):
-        '''
+        """
         Set the content of the entity.
 
         :param `new_content`: the new content
-        '''
+        """
         self._content = new_content
 
 

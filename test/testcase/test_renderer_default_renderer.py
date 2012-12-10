@@ -8,7 +8,7 @@ from tori.template.renderer  import DefaultRenderer
 from tori.exception import *
 
 class TestDefaultRenderer(unittest.TestCase):
-    ''' Test default renderer '''
+    """ Test default renderer """
 
     def setUp(self):
         pass

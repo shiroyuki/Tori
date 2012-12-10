@@ -1,11 +1,11 @@
-'''
+"""
 Remote Procedure Call Module
 ============================
 
 :Author: Juti Noppornpitak
 :Status: Stable/Testing
 :Last Update: |today|
-'''
+"""
 
 import json
 import time
@@ -32,7 +32,7 @@ class Response(object):
 
 class Interface(WebSocket):
     def on_message(self, message):
-        '''
+        """
         :type message: str or unicode
 
         The parameter ``message`` is supposed to be in JSON format:
@@ -46,7 +46,7 @@ class Interface(WebSocket):
                 "method":  method_name
             }
 
-        '''
+        """
 
         remote = Remote(**(json.loads(message)))
 

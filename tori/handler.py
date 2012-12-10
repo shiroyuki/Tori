@@ -1,4 +1,4 @@
-'''
+"""
 Common Handler
 ==============
 
@@ -7,7 +7,7 @@ Common Handler
 :Last Update: |today|
 
 This module contains code commonly used by request handlers and web socket handlers.
-'''
+"""
 
 from tori.centre             import services
 from tori.session.generator  import GuidGenerator
@@ -17,22 +17,22 @@ class Handler(object):
     _guid_generator = GuidGenerator()
 
     def __init__(self):
-        '''
+        """
         Handler Decorator Class used with Tornado's Handler-based classes
 
         .. note:: This should be moved to Controller and WebSocket.
-        '''
+        """
         self._session = None
 
     def component(self, name, fork_component=False):
-        '''
+        """
         Get the (re-usable) component from the initialized Imagination
         component locator service.
 
         :param `name`:           the name of the registered re-usable component.
         :param `fork_component`: the flag to fork the component
         :return:                 module, package registered or ``None``
-        '''
+        """
 
         if not services.has(name):
             return None
@@ -68,7 +68,7 @@ class Handler(object):
         return self._session
 
     def _can_use_secure_cookie(self):
-        '''
+        """
         Check if the secure cookie is enabled.
 
         :rtype: boolean
@@ -77,6 +77,6 @@ class Handler(object):
             This only works with any classes based from :class:`tornado.webRequestHandler`
             and :class:`tornado.websocket.WebSocketHandler`.
 
-        '''
+        """
         return 'cookie_secret' in self.settings\
             and self.settings['cookie_secret']

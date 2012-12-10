@@ -1,28 +1,51 @@
+"""
+Common Module
+=============
+
+:Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
+:Stability: Stable
+"""
+
 from time import time
 
 from tori.common import Enigma
 
 class GuidGenerator(object):
-    counter = 0
+    """Simply GUID Generator"""
+    def __init__(self):
+        self.counter     = 0
+        self.known_guids = []
 
     def generate(self):
+        """Generate the GUID
+
+        :return: Global unique identifier within the scope of the generator
+        :rtype: str
+        """
         self.counter = self.counter + 1
 
-        guid = '{}.{}'.format(
-            time(),
-            self.counter
-        )
+        guid = None
+
+        while guid in self.known_guids or not guid:
+            guid = self._generate()
 
         return guid
 
-class HashGuidGenerator(object):
+    def _generate(self):
+        """Generate an identifier
+
+        :return: Global unique identifier within the scope of the generator
+        :rtype: str
+        """
+        return u'{}.{}'.format(time(), HashGuidGenerator.counter)
+
+class HashGuidGenerator(GuidGenerator):
+    """Hash-type GUID Generator"""
+
     def __init__(self):
+        GuidGenerator.__init__(self)
+
         self.enigma = Enigma.instance()
 
-    def generate(self):
-        guid = self.enigma.hash('{}.{}'.format(
-            time(),
-            self.enigma.random_number() % 1024
-        ))
-
-        return guid
+    def _generate(self):
+        return self.enigma.hash(super(self, GuidGenerator)._generate())

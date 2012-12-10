@@ -1,12 +1,17 @@
-'''
+"""
+Collection
+==========
+
 :Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
 :Status: Stable
-'''
+
+
+"""
 
 from tori.db.common import GuidGenerator
 
 class Collection(object):
-    '''
+    """
     Collection (Entity Repository) for Mongo DB
 
     :type database: tori.db.database.Database
@@ -14,7 +19,7 @@ class Collection(object):
     :type document_class: type
     :type guid_generator: tori.db.common.GuidGenerator
 
-    '''
+    """
     def __init__(self, database, name, document_class, guid_generator=None):
         self._collection = None
         self._name       = name

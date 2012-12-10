@@ -1,11 +1,11 @@
 1# -*- coding: utf-8 -*-
 
-'''
+"""
 :Author: Juti Noppornpitak
 
 This package contains an abstract controller (based on
 :class:`tornado.web.RequestHandler`) and built-in controllers.
-'''
+"""
 
 import logging
 
@@ -23,10 +23,10 @@ from tori.session.generator  import GuidGenerator
 from tori.session.controller import Controller as SessionController
 
 class Controller(RequestHandler):
-    '''
+    """
     The abstract controller for Tori framework which uses Jinja2 as a template
     engine instead of the default one that comes with Tornado.
-    '''
+    """
 
     _guid_generator = GuidGenerator()
 
@@ -36,14 +36,14 @@ class Controller(RequestHandler):
         self._session = None
 
     def component(self, name, fork_component=False):
-        '''
+        """
         Get the (re-usable) component from the initialized Imagination
         component locator service.
 
         :param `name`:           the name of the registered re-usable component.
         :param `fork_component`: the flag to fork the component
         :return:                 module, package registered or ``None``
-        '''
+        """
 
         if not services.has(name):
             return None
@@ -79,7 +79,7 @@ class Controller(RequestHandler):
         return self._session
 
     def _can_use_secure_cookie(self):
-        '''
+        """
         Check if the secure cookie is enabled.
 
         :rtype: boolean
@@ -88,16 +88,16 @@ class Controller(RequestHandler):
             This only works with any classes based from :class:`tornado.webRequestHandler`
             and :class:`tornado.websocket.WebSocketHandler`.
 
-        '''
+        """
         return 'cookie_secret' in self.settings\
         and self.settings['cookie_secret']
 
     def render_template(self, template_name, **contexts):
-        '''
+        """
         Render the template with the given contexts.
 
         See :meth:`tori.renderer.Renderer.render` for more information.
-        '''
+        """
 
         # If the rendering source isn't set, break the code.
         if not self._rendering_source:
@@ -136,39 +136,39 @@ class Controller(RequestHandler):
         return output
 
     def render(self, template_name, **contexts):
-        '''
+        """
         Render the template with the given contexts and push the output buffer.
 
         See :meth:`tori.renderer.Renderer.render` for more information.
-        '''
+        """
         self.write(self.render_template(template_name, **contexts))
 
 class RestController(Controller):
-    '''
+    """
     Abstract REST-capable controller based on a single primary key.
-    '''
+    """
     def list(self):
-        ''' Retrieve the list of all entities. '''
+        """ Retrieve the list of all entities. """
         self.set_status(405)
 
     def retrieve(self, id):
-        ''' Retrieve an entity with `id`. '''
+        """ Retrieve an entity with `id`. """
         self.set_status(405)
 
     def create(self):
-        ''' Create an entity. '''
+        """ Create an entity. """
         self.set_status(405)
 
     def remove(self, id):
-        ''' Remove an entity with `id`. '''
+        """ Remove an entity with `id`. """
         self.set_status(405)
 
     def update(self, id):
-        ''' Update an entity with `id`. '''
+        """ Update an entity with `id`. """
         self.set_status(405)
 
     def get(self, id=None):
-        ''' Handle GET requests. '''
+        """ Handle GET requests. """
         if not id:
             self.list()
             return
@@ -176,7 +176,7 @@ class RestController(Controller):
         self.retrieve(id)
 
     def post(self, id=None):
-        ''' Handle POST requests. '''
+        """ Handle POST requests. """
         if id:
             self.set_status(405)
             return
@@ -184,7 +184,7 @@ class RestController(Controller):
         self.create()
 
     def put(self, id=None):
-        ''' Handle PUT requests. '''
+        """ Handle PUT requests. """
         if not id:
             self.set_status(400)
             return
@@ -192,7 +192,7 @@ class RestController(Controller):
         self.update(id)
 
     def delete(self, id=None):
-        ''' Handle DELETE requests. '''
+        """ Handle DELETE requests. """
         if not id:
             self.set_status(400)
             return
@@ -208,7 +208,7 @@ class ErrorController(Controller):
         raise HTTPError(self._status_code)
 
 class ResourceService(RequestHandler):
-    ''' Resource service is to serve a static resource via HTTP/S protocal. '''
+    """ Resource service is to serve a static resource via HTTP/S protocal. """
 
     _logger = get_logger('%s.ResourceService' % (__name__), logging.ERROR)
 
@@ -222,7 +222,7 @@ class ResourceService(RequestHandler):
 
     @staticmethod
     def add_pattern(pattern, base_path, enabled_cache=False):
-        '''
+        """
         Add the routing pattern for the resource path prefix.
 
         :param pattern: a routing pattern. It can be a Python-compatible regular expression.
@@ -230,20 +230,20 @@ class ResourceService(RequestHandler):
         :param base_path: a path prefix of the resource corresponding to the routing pattern.
 
         :param enabled_cache: a flag to indicate whether any loaded resources need to be cached on the first request.
-        '''
+        """
         ResourceService._logger.debug('add URL pattern "%s" for "%s"' % (pattern, base_path))
         ResourceService._patterns[pattern] = base_path
         ResourceService._pattern_order.append(pattern)
 
     def get(self, *path):
-        '''
+        """
         Get a particular resource.
 
         :param path: blocks of path used to composite an actual path.
 
         .. note::
             This method requires refactoring.
-        '''
+        """
         base_path    = None
         resource     = None
         used_pattern = None

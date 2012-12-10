@@ -1,12 +1,13 @@
-Application Programming Interface
-=================================
+API Reference
+=============
 
-:Author: Juti Noppornpitak
+:Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
 
 This section is all about the reference for Tori API.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :glob:
-   
+
    *
+   */index

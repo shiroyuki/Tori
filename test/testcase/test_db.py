@@ -3,7 +3,7 @@ import unittest
 from sqlalchemy import Column, Integer, String
 
 from tori.db.entity  import Entity as BaseEntity
-from tori.db.service import DatabaseRepository as RDB
+from tori.db.repository import DatabaseRepository as RDB
 
 class Dummy(BaseEntity):
     __tablename__ = 'dummy'
@@ -12,7 +12,7 @@ class Dummy(BaseEntity):
     name = Column(String)
 
 class TestDb(unittest.TestCase):
-    ''' Test DB APIs '''
+    """ Test DB APIs """
 
     def setUp(self):
         pass

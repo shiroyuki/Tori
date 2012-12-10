@@ -1,8 +1,8 @@
-'''
+"""
 A sample application using Application.
 
 :author: Juti Noppornpitak <juti_n@yahoo.co.jp>
-'''
+"""
 
 from time import time
 

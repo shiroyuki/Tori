@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
+Entity Repository for Relational Database
+
 :Author: Juti Noppornpitak
 
 The default relational database service for Tori framework compatible with SQLAlchemy.
-'''
+"""
 
 from os        import getpid
 from threading import current_thread
@@ -19,15 +21,15 @@ from tori.exception import *
 from tori.db.entity import Entity as BaseEntity
 
 class Repository(object):
-    '''
-    Abstract Database Service
+    """Abstract Database Service
 
     This service is served as an abstract of any
-    '''
+    """
 
 class DatabaseRepository(Repository):
-    '''
-    Relational Database Service based on SQLAlchemy 0.7+
+    """Relational Database Service
+
+    This is based on based on SQLAlchemy 0.7.
 
     This service provides basic functionality to interact a relational database.
     It also heavily uses lazy loading for the sake of faster startup and resource
@@ -35,9 +37,10 @@ class DatabaseRepository(Repository):
 
     :param url: a URL to the database, possibly including location, credential
                 and name. The default value is ``sqlite:///:memory:``.
-
-    .. warn:: There is problem with reflecting and
-    '''
+    :type url: str
+    :param echo: the flag to echo database operation. The default value is ``False``
+    :type echo: bool
+    """
 
     def __init__(self, url='sqlite:///:memory:', echo=False):
         self._logger = get_logger('%s.%s' % (__name__, self.__class__.__name__))
@@ -57,13 +60,13 @@ class DatabaseRepository(Repository):
 
     @property
     def engine(self):
-        '''
+        """
         Get the SQLAlchemy engine.
 
         :rtype: sqlalchemy.engine.base.Engine
 
         .. note:: With the service, it is not recommended to directly use this method.
-        '''
+        """
 
         if not self._engine:
             self._engine = create_engine(self._url, echo=self._echo)
@@ -72,30 +75,30 @@ class DatabaseRepository(Repository):
 
     @property
     def url(self):
-        '''
+        """
         Get the connecting URL.
 
         :return: the URL
         :rtype: string|unicode
-        '''
+        """
         return self._url
 
     @url.setter
     def url(self, new_url):
-        '''
+        """
         Set the connecting URL.
 
         :param new_url: a new URL for the database connection.
-        '''
+        """
         self._url    = new_url
         self._engine = None
 
     def reflect(self, entity_type=None):
-        '''
+        """
         Create the table if necessary.
 
         :rtype: True if the reflection is made.
-        '''
+        """
         if not self._batch_reflected and not entity_type:
             self._batch_reflected = True
 
@@ -122,12 +125,12 @@ class DatabaseRepository(Repository):
 
     @property
     def session(self):
-        '''
+        """
         Get a SQLAlchemy session for the current connection.
 
         :rtype:  sqlalchemy.orm.session.Session
         :return: a session for the connection.
-        '''
+        """
         engine = self.engine
 
         if not self._session_maker:
@@ -143,7 +146,7 @@ class DatabaseRepository(Repository):
         return self._sessions[session_key]
 
     def query(self, *entity_types):
-        '''
+        """
         Retrieve the query object for the given type of entities.
 
         :param entity_type: the type of entity
@@ -151,7 +154,7 @@ class DatabaseRepository(Repository):
 
         :rtype:  sqlalchemy.orm.query.Query
         :return: The query object for the given type of entities.
-        '''
+        """
         for entity_type in entity_types:
             if entity_type.__name__ in self._entity_map:
                 continue
@@ -162,11 +165,11 @@ class DatabaseRepository(Repository):
         return self.session.query(*entity_types)
 
     def post(self, *entities):
-        '''
+        """
         Insert new `entities` into the database.
 
         :param entities: a list of new entities.
-        '''
+        """
         session = self.session
 
         for entity in entities:
@@ -178,20 +181,20 @@ class DatabaseRepository(Repository):
         session.refresh(entity)
 
     def get(self, entity_type, key):
-        '''
+        """
         Get an entity of type *entity_type*.
 
         :param entity_type: the class reference of the entities being searched
         :param key:         the lookup key
-        '''
+        """
 
         return self.query(entity_type).get(key)
 
     def get_all(self, entity_type):
-        '''
+        """
         Get all entities of type *entity_type*.
 
         :param entity_type: the class reference of the entities being searched
-        '''
+        """
 
         return self.query(entity_type).all()

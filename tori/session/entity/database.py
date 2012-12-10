@@ -5,9 +5,9 @@ from tori.db.entity           import Entity
 from tori.session.entity.base import Base
 
 class Database(Base, Entity):
-    '''
+    """
     DB Session Entity is made to use with a DB session repository.
-    '''
+    """
 
     __tablename__ = 'tori_session'
 

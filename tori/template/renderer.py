@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 :Author: Juti Noppornpitak
 
 This package is used for rendering.
-'''
+"""
 
 from os import path
 import re
@@ -16,19 +16,19 @@ from tori.exception import *
 from tori.template.repository import Repository
 
 class Renderer(object):
-    '''
+    """
     The abstract renderer for Tori framework.
 
     .. warning::
         This is a non-working renderer. To use the built-in renderer (with
         Jinja2), try :class:`DefaultRenderer`. Otherwise, you should be
         expecting :class:`tori.exception.FutureFeatureException`.
-    '''
+    """
     def __init__(self, *args, **kwargs):
         raise FutureFeatureException, "Need to implement."
 
     def render(self, template_path, **contexts):
-        '''
+        """
         Render a template with context variables.
 
         :param template_path: a path to the template
@@ -41,11 +41,11 @@ class Renderer(object):
             renderer = Renderer()
             renderer.render('dummy.html', appname='ikayaki', version=1.0)
 
-        '''
+        """
         raise FutureFeatureException, "Need to implement."
 
 class DefaultRenderer(Renderer):
-    '''
+    """
     The default renderer with Jinja2
 
     :param `referers`: the template module path (e.g., com.shiroyuki.view)
@@ -60,7 +60,7 @@ class DefaultRenderer(Renderer):
         # Instantiate with multiple base paths of Jinja templates.
         renderer = DefaultRenderer('/opt/app/ui/template', '/usr/local/tori/module/template')
 
-    '''
+    """
 
     def __init__(self, *referers):
         if len(referers) == 0:
@@ -80,11 +80,11 @@ class DefaultRenderer(Renderer):
         )
 
     def _get_filesystem_loader(self):
-        '''
+        """
         Get the file-system loader for the renderer.
 
         :rtype: FileSystemLoader
-        '''
+        """
         for location in self.referers:
             if not path.exists(location):
                 raise RendererSetupError, '%s is not found on this system.' % location
@@ -92,11 +92,11 @@ class DefaultRenderer(Renderer):
         return FileSystemLoader(self.referers)
 
     def _get_package_loader(self):
-        '''
+        """
         Get the package loader for the renderer.
 
         :rtype: PackageLoader
-        '''
+        """
 
         module_name_chunks       = re.split('\.', self.name)
         module_name              = '.'.join(module_name_chunks[:-1])
@@ -108,9 +108,9 @@ class DefaultRenderer(Renderer):
         return PackageLoader(module_name, template_sub_module_name)
 
     def render(self, template_path, **contexts):
-        '''
+        """
         See :meth:`Renderer.render` for more information.
-        '''
+        """
 
         template = self.storage.get_template(template_path)
 

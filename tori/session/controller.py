@@ -2,9 +2,9 @@ from imagination.decorator.validator import restrict_type
 from tori.session.repository.base    import Base
 
 class Controller(object):
-    '''
+    """
     A session controller for the controller (request handler).
-    '''
+    """
     @restrict_type(Base)
     def __init__(self, session_repository, id):
         self._repository = session_repository
@@ -24,5 +24,5 @@ class Controller(object):
         self._repository.set(self._id, key, content)
 
     def reset(self):
-        ''' Clear out all data of the specified session. '''
+        """ Clear out all data of the specified session. """
         self._repository.reset(self._id)

@@ -1,13 +1,13 @@
-'''
+"""
 :Author: Juti Noppornpitak
 :Status: Testing
-'''
+"""
 
 from tori.session.entity.document import Document
 from tori.session.repository.base import Base
 
 class Collection(Base):
-    '''
+    """
     Session Controller using MongoDB
 
     :param `collection`: :class:`tori.db.odm.collection.Collection`
@@ -18,7 +18,7 @@ class Collection(Base):
         non-implementing methods in the parent class are implemented. This is
         only compatible with :class:`tori.session.entity.document.BaseDocument`.
 
-    '''
+    """
 
     def __init__(self, collection):
         Base.__init__(self)

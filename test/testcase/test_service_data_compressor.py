@@ -7,7 +7,7 @@ from tori.data.base       import ResourceEntity
 from tori.data.compressor import CSSCompressor
 
 class TestDefaultRenderer(unittest.TestCase):
-    ''' Test the CSS compressor '''
+    """ Test the CSS compressor """
     def setUp(self):    pass
     def tearDown(self): pass
 

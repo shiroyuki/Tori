@@ -1,15 +1,15 @@
-'''
+"""
 :Author: Juti Noppornpitak
 
 This package contains decorators for enhancing controllers.
-'''
+"""
 import httplib
 import traceback
 
 from tori.exception import *
 
 def _assign_renderer(class_reference, *args, **kwargs):
-    '''
+    """
     Assign the renderer to the given controller-type class.
     
     `class_reference` is a reference to a class type, not an instance of a class.
@@ -26,18 +26,18 @@ def _assign_renderer(class_reference, *args, **kwargs):
     configuration file only via `tori.application.Application`.
     
     Additionally, the arguments might be different if the renderer is not the default one.
-    '''
+    """
     class_reference._rendering_source = args[0]
     class_reference._rendering_engine = len(args) > 1 and args[1] or None
     
     return class_reference
 
 def renderer(*args, **kwargs):
-    '''
+    """
     Set up the renderer of a controller (``class_reference``).
     
     See :class:`tori.renderer.Renderer` for more information.
-    '''
+    """
     def inner_decorator(class_reference):
         if len(args) == 0:
             raise InvalidInput

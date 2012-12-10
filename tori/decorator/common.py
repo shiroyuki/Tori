@@ -1,29 +1,29 @@
-'''
+"""
 :Author: Juti Noppornpitak
 
 This package contains decorators for common use.
-'''
+"""
 
 import inspect
 from   tori.exception import *
 
 class BaseDecoratorForCallableObject(object):
-    '''
+    """
     Base decorator based from an example at http://www.artima.com/weblogs/viewpost.jsp?thread=240808.
-    '''
+    """
     def __init__(self, reference):
-        ''' On the initialization of the given ``function``. '''
+        """ On the initialization of the given ``function``. """
         self._reference = reference
 
     def reference(self):
         return self._reference
 
     def __call__(self, *args, **kwargs):
-        ''' On the execution of the function. '''
+        """ On the execution of the function. """
         pass
 
 def make_singleton_class(class_reference, *args, **kwargs):
-    '''
+    """
     Make the given class a singleton class.
 
     *class_reference* is a reference to a class type, not an instance of a class.
@@ -35,18 +35,18 @@ def make_singleton_class(class_reference, *args, **kwargs):
     will be ``DummyClass``, not ``dummy_instance``.
 
     Note that this method is not for direct use. Always use ``@singleton`` or ``@singleton_with``.
-    '''
+    """
     # Name of the attribute that store the singleton instance
     singleton_attr_name = '_singleton_instance'
 
     # The statice method to get the singleton instance of the reference class
     @staticmethod
     def instance():
-        '''
+        """
         Get a singleton instance.
 
         .. note:: This class is capable to act as a singleton class by invoking this method.
-        '''
+        """
         return class_reference._singleton_instance
 
     # Intercept if the class has already been a singleton class.
@@ -63,7 +63,7 @@ def make_singleton_class(class_reference, *args, **kwargs):
     return class_reference
 
 def singleton_with(*args, **kwargs):
-    '''
+    """
     Decorator to make a class to be a singleton class with given parameters
     for the constructor.
 
@@ -90,7 +90,7 @@ def singleton_with(*args, **kwargs):
         MyClass.instance().take_action() # expecting the message on the console.
 
     The end result is that the console will show the number from 1 to 10.
-    '''
+    """
     # Only use the closure to handle the instatiation of the singleton of the instance.
     def inner_decorator(class_reference):
         return make_singleton_class(class_reference, *args, **kwargs)
@@ -99,7 +99,7 @@ def singleton_with(*args, **kwargs):
 
 
 def singleton(*args, **kwargs):
-    '''
+    """
     Decorator to make a class to be a singleton class. This decorator is
     designed to be able to take parameters for the construction of the
     singleton instance.
@@ -136,7 +136,7 @@ def singleton(*args, **kwargs):
         # Expecting 11-20 to be printed on the console.
 
     The end result is that the console will show the number from 1 to 10.
-    '''
+    """
     # Get the first parameter.
     first_param = args[0]
 

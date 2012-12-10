@@ -1,7 +1,7 @@
 from tori.session.repository.base import Base
 
 class Memory(Base):
-    ''' In-memory Session Repository '''
+    """ In-memory Session Repository """
 
     def __init__(self):
         self._storage = {}

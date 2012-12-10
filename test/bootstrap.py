@@ -1,4 +1,4 @@
-''' Testing bootstrap '''
+""" Testing bootstrap """
 
 from os.path import abspath, dirname, join
 from sys     import path

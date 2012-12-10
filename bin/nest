@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''
+"""
 :Version: 0.1
 :Status: Stable/Experimental
 :Author: Juti Noppornpitak
@@ -32,7 +32,7 @@ just execute ``nest``.
     OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-'''
+"""
 
 import os, time
 from sys import exit
@@ -84,7 +84,7 @@ vendors = {
 initial_folders = ['config', 'resources', 'resources/js', 'resources/css', 'resources/image']
 
 initial_app_code = {
-    'controller.py': '''# -*- coding: utf-8 -*-
+    'controller.py': """# -*- coding: utf-8 -*-
 from tori.controller           import Controller
 from tori.decorator.controller import renderer
 
@@ -92,8 +92,8 @@ from tori.decorator.controller import renderer
 class Home(Controller):
     def get(self):
         self.render('index.html')
-''',
-    'view/index.html': '''<!doctype html>
+""",
+    'view/index.html': """<!doctype html>
 <html lang="en">
 <head>
 <title>My first Tori app</title>
@@ -105,11 +105,11 @@ class Home(Controller):
 </body>
 </html>
 }
-'''
+"""
 }
 
 initial_static_data = {
-    'config/base.xml': '''<?xml version="1.0" encoding="utf-8"?>
+    'config/base.xml': """<?xml version="1.0" encoding="utf-8"?>
 <application>
     <server>
         <!-- Secret salt for secure-cookie feature -->
@@ -127,8 +127,8 @@ initial_static_data = {
         <controller class="%(app_name)s.controller.Home" pattern="/"/>
     </routes>
 </application>
-''',
-    'config/app.xml': '''<?xml version="1.0" encoding="utf-8"?>
+""",
+    'config/app.xml': """<?xml version="1.0" encoding="utf-8"?>
 <application>
     <include src="base.xml"/> <!-- include from other configuration files -->
     <server>
@@ -143,8 +143,8 @@ initial_static_data = {
     <service>service.xml</service>
 </application>
 
-''',
-    'config/service.xml': '''<?xml version="1.0" encoding="utf-8"?>
+""",
+    'config/service.xml': """<?xml version="1.0" encoding="utf-8"?>
 <imagination>
     <!-- See the documentation of Imagination at http://shiroyuki.com/work/project-imagination. -->
     <!--
@@ -154,14 +154,14 @@ initial_static_data = {
     />
     -->
 </imagination>
-''',
-    'server.py': '''# -*- coding: utf-8 -*-
+""",
+    'server.py': """# -*- coding: utf-8 -*-
 
 from tori.application import Application
 
 application = Application('config/app.xml')
 application.start()
-'''
+"""
 }
 
 def console(context, marker=None):
@@ -352,7 +352,7 @@ def install_vendors():
     call('rm -Rf %s' % temp_path, shell=True)
 
 print 'Nest %(version)s by %(author)s <%(email)s>' % nest_meta
-print '''
+print """
 Nest is a utility tool which allows you to quickly start the development by
 generating necessary files into the app container (CURRENT_DIR/APP_NAME) and
 installing any necessary dependencies and front-end libraries (e.g., Zurb's
@@ -362,7 +362,7 @@ as long as you know what you are doing.
 
 Nest CLI and Tori Framework are both open-source and under MIT license. The
 source code is available at https://github.com/shiroyuki/Tori.
-'''
+"""
 
 if prompt('Now, are you ready?', ['y', 'n']).lower() == 'n':
     console('Nice to meet you. I hope to see you soon.', '!')

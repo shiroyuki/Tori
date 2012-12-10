@@ -1,13 +1,13 @@
-'''
+"""
 :Author: Juti Noppornpitak
 :Status: Testing/Unstable
-'''
+"""
 
 from tori.session.entity.database import Database as Entity
 from tori.session.repository.base import Base
 
 class Database(Base):
-    '''
+    """
     Session Controller using SQLAlchemy's ORM
 
     :param `url`: SQLAlchemy-compatible connection URL
@@ -18,7 +18,7 @@ class Database(Base):
         in the parent class are implemented. This is only compatible with
         :class:`DbEntity`.
 
-    '''
+    """
 
     def __init__(self, db):
         Base.__init__(self)

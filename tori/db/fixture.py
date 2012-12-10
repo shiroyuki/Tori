@@ -1,6 +1,6 @@
-'''
+"""
 :Author: Juti Noppornpitak
-'''
+"""
 
 import re
 
@@ -10,13 +10,13 @@ from tori.decorator.common import singleton
 from tori.exception        import LoadedFixtureException
 
 class Fixture(object):
-    '''
+    """
     Foundation of the council
 
     .. note:: this must be used at most once.
 
-    .. warn:: this class is not tested.
-    '''
+    .. warning:: this class is not tested.
+    """
     def __init__(self, repository):
         self.__repository   = repository
         self.__loaded_kinds = {}
@@ -26,7 +26,7 @@ class Fixture(object):
         self.__re_proxy = re.compile('^proxy/(?P<kind>[^/]+)/(?P<alias>.+)$')
 
     def set(self, kind, fixtures):
-        '''
+        """
         Define the fixtures.
 
         :param kind: a string represent the kind
@@ -60,7 +60,7 @@ class Fixture(object):
                 }
             )
 
-        '''
+        """
         self.__fixture_map[kind] = fixtures
 
     @property

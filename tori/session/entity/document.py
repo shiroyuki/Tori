@@ -3,9 +3,9 @@ from tori.db.odm.document import document
 
 @document
 class Document(Base):
-    '''
+    """
     BaseDocument Session Entity is made to use with a Collection session repository (MongoDB).
-    '''
+    """
     def __init__(self, session_id, key, content, _id=None):
         Base.__init__(self, session_id, key, content)
 
