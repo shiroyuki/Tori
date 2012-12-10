@@ -5,7 +5,7 @@ Collection
 :Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
 :Status: Stable
 
-
+The module provides a simple wrapper to work with MongoDB and Tori ORM.
 """
 
 from tori.db.common import GuidGenerator
@@ -20,9 +20,9 @@ class Collection(object):
     :type guid_generator: tori.db.common.GuidGenerator
 
     """
-    def __init__(self, database, name, document_class, guid_generator=None):
+    def __init__(self, database, document_class, name=None, guid_generator=None):
         self._collection = None
-        self._name       = name
+        self._name       = name or document_class.__collection_name__
         self._database   = database
         self._class      = document_class
         self._guid_generator = guid_generator or GuidGenerator()

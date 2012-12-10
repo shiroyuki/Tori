@@ -5,6 +5,7 @@ class Manager(object):
         :type database: tori.db.database.Database
         """
         self._database = database
+        self._collections = {}
 
     @property
     def database(self):
@@ -13,3 +14,11 @@ class Manager(object):
         :rtype: tori.db.database.Database
         """
         return self._database
+
+    def register(self, document_class):
+        key = str(document_class)
+
+        if key in self._collections:
+            return
+
+        self._collections[key] = None

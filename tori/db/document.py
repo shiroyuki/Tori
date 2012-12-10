@@ -7,10 +7,35 @@ Document
 
 This module contains the abstract of documents in MongoDB.
 """
+import inspect
 from tori.db.exception import LockedIdException, ReservedAttributeException
 
-def document(cls):
+def document(*args, **kwargs):
     """Document decorator
+
+    :param collection_name: the name of the collection
+    :type collection_name: str
+    :return: the decorated object
+    :rtype: str
+    """
+    # Get the first parameter.
+    first_param = args[0]
+
+    # If the first parameter is really a reference to a class, then instantiate
+    # the singleton instance.
+    if len(args) == 1 and inspect.isclass(first_param) and isinstance(first_param, type):
+        class_reference = first_param
+
+        return make_document_class(class_reference)
+
+    # Otherwise, use the closure to handle the parameter.
+    def decorator(class_reference):
+        return make_document_class(class_reference, *args, **kwargs)
+
+    return decorator
+
+def make_document_class(cls, collection_name):
+    """Create a document-type class
 
     :param cls: the document class
     :type cls: object
@@ -177,7 +202,7 @@ def document(cls):
     cls.__is_reserved_attribute__ = __is_reserved_attribute__
     cls.__mark_dirty_bit__        = __mark_dirty_bit__
 
-    cls.__collection_name__  = cls.__name__.lower()
+    cls.__collection_name__  = collection_name or cls.__name__.lower()
     cls.__dirty_attributes__ = None
 
     cls.id                  = property(get_id, set_id)

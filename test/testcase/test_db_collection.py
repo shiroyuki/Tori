@@ -1,10 +1,10 @@
 import unittest
 
-from tori.db.document  import document, BaseDocument as BaseDocument
+from tori.db.document  import pure_document, BaseDocument as BaseDocument
 from tori.db.database   import Database
 from tori.db.collection import Collection
 
-@document
+@pure_document
 class Document(BaseDocument): pass
 
 class TestDbOdmCollection(unittest.TestCase):

@@ -2,12 +2,12 @@ import unittest
 
 from tori.db.exception import LockedIdException, ReservedAttributeException
 from tori.db.document  import BaseDocument
-from tori.db.document  import document
+from tori.db.document  import pure_document
 
-@document
+@pure_document
 class Person(BaseDocument): pass
 
-@document
+@pure_document
 class Organization(object):
     def __init__(self, name):
         self.name = name.capitalize()
