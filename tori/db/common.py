@@ -37,7 +37,7 @@ class GuidGenerator(object):
         :return: Global unique identifier within the scope of the generator
         :rtype: str
         """
-        return u'{}.{}'.format(time(), HashGuidGenerator.counter)
+        return u'{}.{}'.format(time(), self.counter)
 
 class HashGuidGenerator(GuidGenerator):
     """Hash-type GUID Generator"""

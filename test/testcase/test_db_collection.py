@@ -1,13 +1,13 @@
 import unittest
 
-from tori.db.document  import pure_document, BaseDocument as BaseDocument
+from tori.db.document  import document, BaseDocument as BaseDocument
 from tori.db.database   import Database
 from tori.db.collection import Collection
 
-@pure_document
+@document
 class Document(BaseDocument): pass
 
-class TestDbOdmCollection(unittest.TestCase):
+class TestDbCollection(unittest.TestCase):
     test_data_set = [
         {
             '_id':   1,
@@ -42,8 +42,8 @@ class TestDbOdmCollection(unittest.TestCase):
     def setUp(self):
         self.collection = self.collection or Collection(
             self.db,
-            'test_orm_collection',
-            Document
+            Document,
+            'test_orm_collection'
         )
 
         self.collection.delete_by_criteria()

@@ -2,17 +2,20 @@ import unittest
 
 from tori.db.exception import LockedIdException, ReservedAttributeException
 from tori.db.document  import BaseDocument
-from tori.db.document  import pure_document
+from tori.db.document  import document
 
-@pure_document
+@document('PowerfulPeople')
+class Boss(BaseDocument): pass
+
+@document
 class Person(BaseDocument): pass
 
-@pure_document
+@document
 class Organization(object):
     def __init__(self, name):
         self.name = name.capitalize()
 
-class TestDbOdmDocument(unittest.TestCase):
+class TestDbDocument(unittest.TestCase):
     test_attributes = {
         'name': 'Juti',
         'occupation': 'Developer'
@@ -23,6 +26,11 @@ class TestDbOdmDocument(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def test_custom_collection_name(self):
+        boss = Boss()
+
+        self.assertEqual('PowerfulPeople', boss.get_collection_name())
 
     def test_new_document_with_custom_init(self):
         organization = Organization('shiroyuki studio')

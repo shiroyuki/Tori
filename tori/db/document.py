@@ -34,7 +34,7 @@ def document(*args, **kwargs):
 
     return decorator
 
-def make_document_class(cls, collection_name):
+def make_document_class(cls, collection_name=None):
     """Create a document-type class
 
     :param cls: the document class

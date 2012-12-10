@@ -14,9 +14,13 @@ class Collection(object):
     """
     Collection (Entity Repository) for Mongo DB
 
+    :param database: the database connection
     :type database: tori.db.database.Database
-    :type name: str
+    :param document_class: the document class
     :type document_class: type
+    :param name: the name of the collection (default: use class's collection name)
+    :type name: str
+    :param guid_generator: the GUID generator (default: use the generic built-in generator)
     :type guid_generator: tori.db.common.GuidGenerator
 
     """
@@ -33,6 +37,10 @@ class Collection(object):
             self._collection = self._database.collection(self._name)
 
         return self._collection
+
+    @property
+    def name(self):
+        return self._name
 
     def set_guid_generator(self, guid_generator):
         self._guid_generator = guid_generator
