@@ -97,6 +97,21 @@ def make_document_class(cls, collection_name=None):
 
         self._id = id
 
+    def __is_reserved_attribute__(self, name):
+        is_identifier_defined = (
+            name == '_id'\
+            and name in self.__dict__
+            and self.__dict__[name]
+            )
+
+        return is_identifier_defined or self.__is_method__(name)
+
+    def __is_observable_property__(self, name):
+        is_not_identifier = name not in ['_id', 'id']
+        is_readonly       = name[0:2] != '__' and not self.__is_method__(name)
+
+        return is_not_identifier and is_readonly and not self.__in_dirty_bit__(name)
+
     def get_class_name(self):
         """
         Retrieve the full type name, include
@@ -120,8 +135,11 @@ def make_document_class(cls, collection_name=None):
 
         if changeset:
             changeset.update({
-                '_id':   self.id
+                '_id': self.id
             })
+
+        if not self.id:
+            del changeset['_id']
 
         return changeset
 
@@ -139,14 +157,6 @@ def make_document_class(cls, collection_name=None):
             name in dir(self)\
             and callable(self.__getattribute__(name))
         )
-
-    def __is_reserved_attribute__(self, name):
-        return (
-                name == '_id'\
-                and name in self.__dict__
-                and self.__dict__[name]
-            )\
-            or self.__is_method__(name)
 
     def __in_dirty_bit__(self, name):
         try:
@@ -171,39 +181,21 @@ def make_document_class(cls, collection_name=None):
 
         object.__setattr__(self, name, value)
 
-        if (
-            name != '_id'\
-            and name != 'id'\
-            and name[0:2] != '__'\
-            and not self.__in_dirty_bit__(name)\
-            and not self.__is_method__(name)
-        ):
+        if self.__is_observable_property__(name):
             self.__mark_dirty_bit__(name)
 
-    def to_dict(self):
-        propertyMap = {
-            'id': self.__dict__['_id']
-        }
-
-        for name in self.__dict__:
-            if name[0] == '_':
-                continue
-
-            if callable(self.__dict__[name]):
-                continue
-
-            propertyMap[name] = self.__dict__[name]
-
-        return propertyMap
-
-    cls.__setattr__               = __setattr__
-    cls.__in_dirty_bit__          = __in_dirty_bit__
-    cls.__is_method__             = __is_method__
-    cls.__is_reserved_attribute__ = __is_reserved_attribute__
-    cls.__mark_dirty_bit__        = __mark_dirty_bit__
+    cls.__setattr__                = __setattr__
+    cls.__in_dirty_bit__           = __in_dirty_bit__
+    cls.__is_method__              = __is_method__
+    cls.__is_reserved_attribute__  = __is_reserved_attribute__
+    cls.__mark_dirty_bit__         = __mark_dirty_bit__
+    cls.__is_observable_property__ = __is_observable_property__
 
     cls.__collection_name__  = collection_name or cls.__name__.lower()
     cls.__dirty_attributes__ = None
+
+    if '__relational_map__' not in cls.__dict__:
+        cls.__relational_map__ = {}
 
     cls.id                  = property(get_id, set_id)
     cls.get_collection_name = get_collection_name
@@ -211,7 +203,6 @@ def make_document_class(cls, collection_name=None):
     cls.get_changeset       = get_changeset
     cls.is_dirty            = is_dirty
     cls.reset_bits          = reset_bits
-    cls.to_dict             = to_dict
 
     return cls
 

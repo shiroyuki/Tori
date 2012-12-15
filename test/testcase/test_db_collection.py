@@ -40,7 +40,7 @@ class TestDbCollection(unittest.TestCase):
     collection = None
 
     def setUp(self):
-        self.collection = self.collection or Collection(
+        self.collection = Collection(
             self.db,
             Document,
             'test_orm_collection'
@@ -53,7 +53,7 @@ class TestDbCollection(unittest.TestCase):
             self.collection.post(d)
 
     def tearDown(self):
-        pass
+        del self.collection
 
     def test_get_document(self):
         self.assertEquals(None, self.collection.get(50))
@@ -65,13 +65,18 @@ class TestDbCollection(unittest.TestCase):
         self.assertEquals('extra', d.id)
         self.assertEquals(5, len(self.collection))
 
-    def test_insert_document_without_predefined_id(self):
-        # Part of the data fixtures
-        d = self.collection.filter_one(title='C')
+    def test_insert_document_with_builtin_guid_generator_but_no_predefined_id(self):
+        self.collection.set_guid_generator(None)
 
-        self.assertNotEquals(None, d.id)
-        self.assertTrue(type(d.id) != int)
-        self.assertEquals(4, len(self.collection))
+        data = dict(self.test_new_data)
+
+        del data['_id']
+
+        doc = Document(**data)
+
+        self.assertEquals(doc, self.collection.post(doc))
+        self.assertNotEquals('extra', doc.id)
+        self.assertEquals(5, len(self.collection))
 
     def test_delete_document_by_id(self):
         # First delete

@@ -29,7 +29,7 @@ class Collection(object):
         self._name       = name or document_class.__collection_name__
         self._database   = database
         self._class      = document_class
-        self._guid_generator = guid_generator or GuidGenerator()
+        self._guid_generator = guid_generator
 
     @property
     def api(self):
@@ -76,11 +76,14 @@ class Collection(object):
             else None
 
     def post(self, document):
-        if not document.id:
+        if not document.id and self._guid_generator:
             document.id = self._guid_generator.generate()
 
         cs = document.get_changeset()
         id = self.api.insert(cs, safe=True)
+
+        if not document.id:
+            document.id = id
 
         document.reset_bits()
 

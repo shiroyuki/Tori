@@ -1,4 +1,7 @@
-class CollectionUnavailable(Exception):
+class DuplicatedRelationalMapping(Exception):
+    """ Exception thrown when the property is already mapped. """
+
+class UnavailableCollectionException(Exception):
     """ Exception thrown when the collection is not available. """
 
 class LockedIdException(Exception):
