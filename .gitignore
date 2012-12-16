@@ -1,4 +1,5 @@
+.idea
 .DS_Store
 *.pyc
 docs/build/*
-Project Tori.komodoproject
+*.komodoproject
