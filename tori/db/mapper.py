@@ -11,16 +11,19 @@ class AssociationType(object):
     def known_type(t):
         return AssociationType.AUTO_DETECT <= t <= AssociationType.MANY_TO_MANY
 
-class EmbeddingGuide(object):
+class BaseGuide(object):
     def __init__(self, target, association_type):
-        self.target           = target
+        self.target = target
         self.association_type = association_type
 
-class RelatingGuide(object):
+class EmbeddingGuide(BaseGuide):
+    pass
+
+class RelatingGuide(BaseGuide):
     def __init__(self, target, target_property, association_type):
-        self.target           = target
-        self.target_property  = target_property
-        self.association_type = association_type
+        BaseGuide.__init__(self, target, association_type)
+
+        self.target_property = target_property
 
 def __prevent_duplicated_mapping(cls, property_name):
     if '__relational_map__' not in cls.__dict__:
@@ -34,10 +37,11 @@ def __prevent_duplicated_mapping(cls, property_name):
 def __map_property(cls, property_name, guide):
     cls.__relational_map__[property_name] = guide
 
-def embed(property_name, target, association_type=AssociationType.AUTO_DETECT):
+def embed(property, target, association_type=AssociationType.AUTO_DETECT):
     def decorator(cls):
-        __prevent_duplicated_mapping(cls, property_name)
-        __map_property(cls, property_name, EmbeddingGuide(target, association_type))
+        __prevent_duplicated_mapping(cls, property)
+        __map_property(cls, property, EmbeddingGuide(target, association_type))
+        return cls
 
     return decorator
 

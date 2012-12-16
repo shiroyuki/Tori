@@ -49,7 +49,17 @@ class Collection(object):
         return self._class(**attributes)
 
     def _convert_to_object(self, **raw_data):
-        document = self.new_document(**raw_data)
+        data = dict(raw_data)
+        id   = None
+
+        if '_id' in data:
+            id = data['_id']
+
+            del data['_id']
+
+        document    = self.new_document(**data)
+        document.id = id
+
         document.reset_bits()
 
         return document

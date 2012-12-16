@@ -8,7 +8,9 @@ Document
 This module contains the abstract of documents in MongoDB.
 """
 import inspect
+
 from tori.db.exception import LockedIdException, ReservedAttributeException
+from tori.db.mapper import AssociationType, EmbeddingGuide
 
 def document(*args, **kwargs):
     """Document decorator
@@ -178,6 +180,30 @@ def make_document_class(cls, collection_name=None):
 
         if name in self.__dict__ and self.__dict__[name] == value:
             return
+
+        relationship = self.__relational_map__[name] if name in self.__relational_map__ else None
+        """ :type: tori.db.mapper.BaseGuide """
+
+        # Automatically convert the data for embedded-object-mapped property.
+        if relationship and type(relationship) is EmbeddingGuide:
+            association_type = relationship.association_type
+
+            if association_type == AssociationType.AUTO_DETECT:
+                if type(value) is dict:
+                    association_type = AssociationType.ONE_TO_ONE
+                elif type(value) is list:
+                    association_type = AssociationType.ONE_TO_MANY
+
+            if association_type == AssociationType.ONE_TO_ONE:
+                value = value if isinstance(value, relationship.target) else relationship.target(**value)
+            elif association_type == AssociationType.ONE_TO_MANY:
+                data_list = list(value)
+                value     = []
+
+                for data in data_list:
+                    embedded_object = data if isinstance(data, relationship.target) else relationship.target(**data)
+
+                    value.append(embedded_object)
 
         object.__setattr__(self, name, value)
 
