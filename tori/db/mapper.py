@@ -1,4 +1,4 @@
-from exception import DuplicatedRelationalMapping
+from tori.db.exception import DuplicatedRelationalMapping
 
 class AssociationType(object):
     AUTO_DETECT  = 1

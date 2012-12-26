@@ -37,11 +37,11 @@ class Repository(dict):
     def set(self, renderer):
         """
         Register the renderer.
-        
+
         :return: self
         """
         if not isinstance(renderer, self._class_reference):
-            raise UnsupportedRendererError, 'Expected an instance of %s but received %s.' % (self._class_reference, type(renderer))
+            raise UnsupportedRendererError('Expected an instance of %s but received %s.' % (self._class_reference, type(renderer)))
 
         self[renderer.name] = renderer
 

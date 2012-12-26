@@ -87,6 +87,17 @@ class TestDbDocument(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_changeset(self):
+        character = self.collection.new_document(**self.test_stub[0])
+
+        print(character.get_changeset())
+
+        character.reset_bits()
+
+        print(character.get_changeset())
+
+
+
     def test_create_document_with_dict(self):
         character = self.collection.new_document(**self.test_stub[0])
 
@@ -103,6 +114,22 @@ class TestDbDocument(unittest.TestCase):
         self.assertEqual('Sword', character.right_hand.name)
 
     def test_create_document_with_object(self):
+        character = self.collection.new_document(
+            name='Kenshin',
+            level=99,
+            job=Job('Samurai', 10, [Skill('Attack'), Skill('Quick Draw')]),
+            left_hand=None,
+            right_hand=Weapon('Katana', 600, 0)
+        )
+
+        self.assertIsInstance(character, Character)
+        self.assertIsInstance(character.job, Job)
+        self.assertIsNone(character.left_hand)
+        self.assertIsInstance(character.right_hand, Weapon)
+
+        self.assertEqual('Katana', character.right_hand.name)
+
+    def test_create_document_then_push_to(self):
         character = self.collection.new_document(
             name='Kenshin',
             level=99,

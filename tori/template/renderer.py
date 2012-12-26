@@ -25,7 +25,7 @@ class Renderer(object):
         expecting :class:`tori.exception.FutureFeatureException`.
     """
     def __init__(self, *args, **kwargs):
-        raise FutureFeatureException, "Need to implement."
+        raise FutureFeatureException("Need to implement.")
 
     def render(self, template_path, **contexts):
         """
@@ -42,7 +42,7 @@ class Renderer(object):
             renderer.render('dummy.html', appname='ikayaki', version=1.0)
 
         """
-        raise FutureFeatureException, "Need to implement."
+        raise FutureFeatureException("Need to implement.")
 
 class DefaultRenderer(Renderer):
     """
@@ -64,7 +64,7 @@ class DefaultRenderer(Renderer):
 
     def __init__(self, *referers):
         if len(referers) == 0:
-            raise RendererSetupError, 'Require either one resource module or multiple file paths to the templates.'
+            raise RendererSetupError('Require either one resource module or multiple file paths to the templates.')
 
         debug_mode = 'debug' in AppSettings and AppSettings['debug'] or False
 
@@ -87,7 +87,7 @@ class DefaultRenderer(Renderer):
         """
         for location in self.referers:
             if not path.exists(location):
-                raise RendererSetupError, '%s is not found on this system.' % location
+                raise RendererSetupError('%s is not found on this system.' % location)
 
         return FileSystemLoader(self.referers)
 
@@ -103,7 +103,7 @@ class DefaultRenderer(Renderer):
         template_sub_module_name = module_name_chunks[-1]
 
         if len(module_name_chunks) <= 1:
-            raise RendererSetupError, 'Could not instantiate the package loader. (%s)' % module_name_chunks
+            raise RendererSetupError('Could not instantiate the package loader. (%s)' % '.'.join(module_name_chunks))
 
         return PackageLoader(module_name, template_sub_module_name)
 

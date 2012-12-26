@@ -24,7 +24,7 @@ class Base(object):
         :return: Session ID as a string
         """
         if 'cookie_secret' not in AppSettings:
-            raise SessionError, 'This session component could not not be initialized.'
+            raise SessionError('This session component could not not be initialized.')
 
         session_id = None
 

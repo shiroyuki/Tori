@@ -145,7 +145,7 @@ class Application(BaseApplication):
         self._routing_map = RoutingMap()
 
         # Default properties
-        self._scope = settings.has_key('scope') and settings['scope'] or None
+        self._scope = settings['scope'] if 'scope' in settings else None
         self._port  = 8000
 
         # Register the default services.
@@ -172,7 +172,7 @@ class Application(BaseApplication):
         self._configure(self._config)
 
         # Override the properties with the parameters.
-        if settings.has_key('port'):
+        if 'port' in settings:
             self._port = settings['port']
             self._logger.info('Changed the listening port: %s' % self._port)
 

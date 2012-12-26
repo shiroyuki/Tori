@@ -133,7 +133,20 @@ def make_document_class(cls, collection_name=None):
             if self.__is_reserved_attribute__(name) or name[0] == '_':
                 continue
 
-            changeset[name] = self.__dict__[name] if name in self.__dict__ else None
+            new_value = self.__dict__[name] if name in self.__dict__ else None
+
+            # Recursively
+            if 'get_changeset' in dir(new_value):
+                new_value = new_value.get_changeset()
+            elif type(new_value) is list:
+                items     = new_value
+                new_value = []
+
+                for item in items:
+                    if 'get_changeset' in dir(item):
+                        new_value.append(item.get_changeset())
+
+            changeset[name] = new_value
 
         if changeset:
             changeset.update({

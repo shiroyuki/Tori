@@ -38,11 +38,11 @@ class RoutingMap(object):
         """ Register a *route*. """
 
         if not isinstance(route, Route):
-            raise InvalidInput, "Expected a route."
+            raise InvalidInput("Expected a route.")
 
         # Register the pattern to prevent the duplicate routing.
         if not force_action and route.pattern() in self._sequence:
-            raise DuplicatedRouteError
+            raise DuplicatedRouteError('')
 
         if route.pattern() not in self._sequence:
             self._sequence.append(route.pattern())
@@ -59,7 +59,7 @@ class RoutingMap(object):
         try:
             return self._map[routing_pattern]
         except KeyError:
-            raise RoutingPatternNotFoundError
+            raise RoutingPatternNotFoundError('')
 
     def export(self):
         """ Export the route map as a list of tuple representatives. """
@@ -138,7 +138,7 @@ class Route(object):
     @staticmethod
     def make(route_data, base_path=None):
         if not isinstance(route_data, Kotoba):
-            raise InvalidInput
+            raise InvalidInput('')
 
         route = None
         kind  = Route.get_type(route_data)
@@ -149,14 +149,14 @@ class Route(object):
         elif kind == 'resource' and base_path:
             route = StaticRoute(route_data, base_path)
         elif kind == 'resource' and not base_path:
-            raise InvalidInput, 'base_path is not provided.'
+            raise InvalidInput('base_path is not provided.')
         elif kind == 'redirection':
             route = RelayRoute(route_data)
         elif kind == 'proxy':
-            raise FutureFeatureException, 'Routing a proxy is yet supported at the moment.'
+            raise FutureFeatureException('Routing a proxy is yet supported at the moment.')
 
         if not route:
-            raise UnknownRoutingTypeError, kind
+            raise UnknownRoutingTypeError(kind)
 
         return route
 
@@ -164,7 +164,7 @@ class Route(object):
     def get_type(route_data):
         """ Get the routing type for a given *route*. """
         if route_data.name() not in Route._registered_routing_types:
-            raise RoutingTypeNotFoundError
+            raise RoutingTypeNotFoundError('')
 
         return route_data.name()
 
@@ -172,7 +172,7 @@ class Route(object):
     def get_pattern(route_data):
         """ Get the routing pattern for a given *route*. """
         if not route_data.attribute('pattern'):
-            raise RoutingPatternNotFoundError
+            raise RoutingPatternNotFoundError('')
 
         return route_data.attribute('pattern')
 
@@ -219,7 +219,7 @@ class StaticRoute(Route):
         """ Get the location of the static resource/content. """
 
         if not self.source().attribute('location'):
-            raise InvalidControllerDirectiveError, "The location of the resource is missing."
+            raise InvalidControllerDirectiveError('The location of the resource is missing.')
 
         if not self._location:
             self._location = self.source().attribute('location')
@@ -274,7 +274,7 @@ class RelayRoute(Route):
             self._destination = self.source().attribute('destination')
 
         if not self._destination:
-            raise InvalidControllerDirectiveError, "The destination is missing."
+            raise InvalidControllerDirectiveError('The destination is missing.')
 
         return self._destination
 

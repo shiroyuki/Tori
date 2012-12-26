@@ -101,7 +101,7 @@ class Controller(RequestHandler):
 
         # If the rendering source isn't set, break the code.
         if not self._rendering_source:
-            raise RenderingSourceMissingError, 'The source of template is not identified. This method is disabled.'
+            raise RenderingSourceMissingError('The source of template is not identified. This method is disabled.')
 
         # If the rendering engine is not specified, use the default one.
         if not self._rendering_engine:
@@ -271,7 +271,7 @@ class ResourceService(RequestHandler):
         if not resource.exists:
             self._logger.error('%s could not be found.' % resource.path)
 
-            raise HTTPError, 404
+            raise HTTPError(404)
 
         # Retrieve the plugins if registered.
         if not ResourceService._plugins and not ResourceService._plugins_registered:
@@ -288,7 +288,7 @@ class ResourceService(RequestHandler):
         # Return the content.
         try:
             self.finish(resource.content)
-        except Exception, e:
+        except Exception as e:
             print('Failed on resource distribution.')
 
     def _get_resource_entity(self, real_path):
@@ -317,4 +317,4 @@ class ResourceService(RequestHandler):
 
             return self._get_resource_entity(real_path)
 
-        raise HTTPError, 404
+        raise HTTPError(404)
