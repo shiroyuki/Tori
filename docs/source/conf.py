@@ -341,6 +341,9 @@ MOCK_MODULES = [
     'imagination.loader.Loader',
     'imagination.entity',
     'imagination.entity.Entity',
+    'imagination.decorator',
+    'imagination.decorator.validator',
+    'imagination.decorator.validator.restrict_type',
     'sqlalchemy',
     'sqlalchemy.Column',
     'sqlalchemy.create_engine',
@@ -353,11 +356,12 @@ MOCK_MODULES = [
     'sqlalchemy.types',
     'sqlalchemy.types.Integer',
     'sqlalchemy.types.PickleType',
-    'sqlalchemy.types.String'
+    'sqlalchemy.types.String',
+    'pymongo'
 ]
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-if on_rtd:
-#if True:
+#if on_rtd:
+if True:
     for mod_name in MOCK_MODULES:
         sys.modules[mod_name] = Mock()

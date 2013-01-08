@@ -1,5 +1,5 @@
-tori.session
+Session API
 ============
 
-.. automodule:: tori.session
+.. automodule:: tori.session.controller
     :members:
