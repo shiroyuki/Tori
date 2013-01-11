@@ -12,8 +12,9 @@ from tori.template.renderer   import Renderer
 from tori.template.repository import Repository
 
 class RenderingService(object):
-    """
-    The rendering service allows the access to all template repositories.
+    """ The rendering service allows the access to all template repositories.
+
+    This acts as a controller.
 
     :param renderer_class: a class reference of a renderer
     :type renderer_class: tori.template.renderer.Renderer
@@ -36,13 +37,21 @@ class RenderingService(object):
 
         return self
 
-    def render(self, repository_name, template_path, **contexts):
-        """
-        Render a template from a repository *repository_name*.
+    def use(self, repository_name):
+        """ Retrieve the renderer by name
 
-        As this method acts as a wrapper to the actual renderer for the given repository,
+        :param repository_name: the name of the repository
+        :type  repository_name: str
+        :rtype: tori.template.renderer.Renderer
+        """
+        return self._repository.get(repository_name)
+
+    def render(self, repository_name, template_path, **contexts):
+        """ Render a template from a repository *repository_name*.
+
+        As this method acts as a shortcut and wrapper to the actual renderer for the given repository,
         see :meth:`tori.template.renderer.Renderer.render` for more information.
 
         :rtype: string
         """
-        return self._repository.get(repository_name).render(template_path, **contexts)
+        return self.use(repository_name).render(template_path, **contexts)

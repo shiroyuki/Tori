@@ -48,6 +48,12 @@ First, the decorator ``tori.decorator.controller.renderer`` (or ``@renderer`` fo
 where the only parameter of ``@renderer`` is either the name of the package (``web.views``) or the file path
 (**web/views**). In this example, we use the package.
 
+.. code-block:: python
+
+    @renderer('web.views')
+    class HomeController(Controller):
+        pass
+
 .. note::
 
     The file path can be either relative with regard of the current working directory or absolute. However,
@@ -109,22 +115,27 @@ where ``web.controller.BlogEntryRestController`` is
         def list(self):
             # GET /blog/rest/entry/
             # query the list of entries
+            pass
 
         def create(self):
             # POST /blog/rest/entry/
             # create a new entry
+            pass
 
         def retrieve(self, id):
             # GET /blog/rest/entry/ID
             # retrieve the entry by ID
+            pass
 
         def update(self, id):
             # PUT /blog/rest/entry/ID
             # update the entry by ID
+            pass
 
         def remove(self, id)
             # DELETE /blog/rest/entry/ID
             # delete the entry by ID
+            pass
 
 .. note::
 
@@ -147,6 +158,8 @@ is necessary. For example,
 
 The error template ``web/views/error.html`` will receive three variables: ``message``, ``code`` (HTTP Response Code) and
 ``debug_info`` (the text version of stack trace).
+
+For more information on how to
 
 References
 ==========

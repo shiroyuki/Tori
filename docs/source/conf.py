@@ -15,15 +15,15 @@ import sys, os
 
 extra_paths = [
     '../../',
-    '../../../Kotoba',
-    '../../../Imagination'
+#    '../../../Kotoba',
+#    '../../../Imagination'
 ]
 
 base_path = os.path.dirname(__file__)
 
 for extra_path in extra_paths:
     new_included_path = os.path.abspath(os.path.join(os.path.dirname(__file__), extra_path))
-    print new_included_path
+#    print new_included_path
     sys.path.append(new_included_path)
 
 # If extensions (or modules to document with autodoc) are in another directory,

@@ -28,7 +28,9 @@ class Controller(RequestHandler):
     engine instead of the default one that comes with Tornado.
     """
 
-    _guid_generator = GuidGenerator()
+    _guid_generator  = GuidGenerator()
+    _template_engine = None
+
 
     def __init__(self, *args, **kwargs):
         RequestHandler.__init__(self, *args, **kwargs)
@@ -89,8 +91,7 @@ class Controller(RequestHandler):
             and :class:`tornado.websocket.WebSocketHandler`.
 
         """
-        return 'cookie_secret' in self.settings\
-        and self.settings['cookie_secret']
+        return 'cookie_secret' in self.settings and self.settings['cookie_secret']
 
     def render_template(self, template_name, **contexts):
         """
@@ -100,35 +101,19 @@ class Controller(RequestHandler):
         """
 
         # If the rendering source isn't set, break the code.
-        if not self._rendering_source:
+        if not self._template_base_path:
             raise RenderingSourceMissingError('The source of template is not identified. This method is disabled.')
 
         # If the rendering engine is not specified, use the default one.
-        if not self._rendering_engine:
-            self._rendering_engine = DefaultRenderer
-
-        output = None
+        if not self._template_engine:
+            self._template_engine = DefaultRenderer
 
         contexts['app'] = {
             'request': self.request,
             'session': self.session.get
         }
 
-        try:
-            output = self.component('renderer').render(
-                self._rendering_source,
-                template_name,
-                **contexts
-            )
-        except RendererNotFoundError:
-            # When the renderer is not found. It is possible that the renderer is not yet
-            # instantiated. This block of the code will do the lazy loading.
-            renderer = self._rendering_engine(self._rendering_source)
-            output   = self.component('renderer').register(renderer).render(
-                self._rendering_source,
-                template_name,
-                **contexts
-            )
+        output = self.template_engine.render(template_name, **contexts)
 
         if not output:
             raise UnexpectedComputationError('Detected the rendering service malfunctioning.')
@@ -142,6 +127,28 @@ class Controller(RequestHandler):
         See :meth:`tori.renderer.Renderer.render` for more information.
         """
         self.write(self.render_template(template_name, **contexts))
+
+    @property
+    def template_engine(self):
+        """ Template Engine
+
+        :rtype: tori.template.renderer.Renderer
+        """
+
+        # If the rendering engine is not specified, use the default one.
+        if not self._template_engine:
+            self._template_engine = DefaultRenderer
+
+        try:
+            return self.component('renderer').use(self._template_base_path)
+        except RendererNotFoundError:
+            # When the renderer is not found. It is possible that the renderer is not yet
+            # instantiated. This block of the code will do the lazy loading.
+            renderer = self._template_engine(self._template_base_path)
+
+            self.component('renderer').register(renderer)
+
+            return renderer
 
 class RestController(Controller):
     """

@@ -14,7 +14,7 @@ import traceback
 
 from tori.exception import *
 
-def _assign_renderer(class_reference, *args, **kwargs):
+def _assign_renderer(class_reference, base_path, engine=None):
     """
     Assign the renderer to the given controller-type class.
 
@@ -33,16 +33,15 @@ def _assign_renderer(class_reference, *args, **kwargs):
 
     Additionally, the arguments might be different if the renderer is not the default one.
     """
-    class_reference._rendering_source = args[0]
-    class_reference._rendering_engine = len(args) > 1 and args[1] or None
+    class_reference._template_base_path = base_path
+    class_reference._template_engine    = engine
 
     return class_reference
 
 def renderer(*args, **kwargs):
-    """
-    Set up the renderer of a controller (``class_reference``).
+    """ Set up the renderer for a controller.
 
-    See :class:`tori.renderer.Renderer` for more information.
+    See :class:`tori.template.renderer.Renderer` for more information.
     """
     def inner_decorator(class_reference):
         if len(args) == 0:
@@ -53,6 +52,15 @@ def renderer(*args, **kwargs):
     return inner_decorator
 
 def custom_error(template_name, **contexts):
+    """ Set up the controller to handle exceptions with a custom error page.
+
+    .. note:: This decorator is to override the method ``write_error``.
+
+    :param template_name: the name of the template to render.
+    :type  template_name: string
+    :param contexts:      map of context variables
+    :type  contexts:      dict
+    """
     def updated_controller(controller):
         def write_error(self, status_code, **kwargs):
             debug_info = []

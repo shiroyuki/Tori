@@ -25,6 +25,9 @@ Even though Tori is based on Tornado, there are a few elements that differ from 
 2. Tori uses `Jinja2 <http://jinja.pocoo.org/>`_ as template engine.
 3. Tori's controller extends Tornado's ``RequestHandler`` with the integration with Tori's session controller.
 
+Table of Content
+----------------
+
 .. toctree::
    :maxdepth: 1
    :glob:
@@ -32,7 +35,7 @@ Even though Tori is based on Tornado, there are a few elements that differ from 
    */index
 
 Indices and Modules
-===================
+-------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
