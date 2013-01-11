@@ -8,22 +8,53 @@ Tori Framework
 
 :Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
 
-Tori is a micro framework based on Facebook's Tornado framework 2.x and supports both Python 2.6+, including
-Python 3.3+.
+Tori is a micro framework based on Facebook's Tornado framework 2.x and supports both Python 2.6+, including Python 3.3+.
+
+Differences in Idea
+-------------------
 
 As you may know that there already exists number of web framework, Tori is made for the different purposes.
 
 1. It is to simplify the setup process.
 2. Everything in Tori, beside what Tornado provides, is designed for applications developed on the concepts of
-   aspect-oriented programming (AOP) and dependency injections (DI) which heavily relies on `Imagination Framework <https://github.com/shiroyuki/Imagination>`_.
+   aspect-oriented programming (AOP) and dependency injections (DI) which heavily relies on `Imagination Framework
+   <https://github.com/shiroyuki/Imagination>`_.
 3. Free to design the structure of the application in the way everyone wants.
 4. Many built-in components are designed for re-usability with or without Tornado and Imagination Framework.
+
+Differences in Code
+-------------------
 
 Even though Tori is based on Tornado, there are a few elements that differ from the Tornado.
 
 1. The setup script is different as Tori acts as a wrapper for Tornado's Application.
-2. Tori uses `Jinja2 <http://jinja.pocoo.org/>`_ as template engine.
-3. Tori's controller extends Tornado's ``RequestHandler`` with the integration with Tori's session controller.
+2. Tori Framework uses `Jinja2 <http://jinja.pocoo.org/>`_ as the default template engine.
+3. Tori Framework's controller extends Tornado's ``RequestHandler`` with the integration with Tori's session controller.
+4. Tori Framework can define more than one route to static resource.
+
+Prerequisites
+-------------
+
+======================= ==============================
+Module                  Required Third-party Modules
+======================= ==============================
+:mod:`tori.application` tornado 2.4+
+:mod:`tori.controller`  tornado 2.4+
+:mod:`tori.socket`      tornado 2.4+
+:mod:`tori.db`          pymongo 2.3+ / sqlalchemy 0.7+
+:mod:`tori.session`     redis 2.7+
+:mod:`tori.template`    jinja2 2.6+
+======================= ==============================
+
+.. note:: It is not required to have all of them. You can install only what you need.
+
+Installation
+------------
+
+For **Python 2.6+**, you can install via **PIP** command or **easy_install** command.
+
+For **Python 3.3+**, as the setup configuration is not ready, you can simply download the source code and dump into your
+Python path (e.g., ``PYTHONPATH`` on Linux, OS X and UNIX).
 
 Table of Content
 ----------------
@@ -32,7 +63,8 @@ Table of Content
    :maxdepth: 1
    :glob:
 
-   */index
+   manual/index
+   api/index
 
 Indices and Modules
 -------------------

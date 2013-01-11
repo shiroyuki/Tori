@@ -14,6 +14,16 @@ from tori.data.converter   import ArrayConverter
 from tori.socket.websocket import WebSocket
 
 class Remote(object):
+    """ RPC Request
+
+    :param method:  the name of the method
+    :type  method:  str
+    :param id:      the request ID (default with unix timestamp)
+    :param data:    method parameters
+    :type  data:    dict
+    :param service: the ID of the registered component/service (optional)
+    :type  service: str
+    """
     def __init__(self, method, id=None, data=None, service=None):
         self.id      = id or time.time()
         self.data    = data or None
@@ -21,16 +31,30 @@ class Remote(object):
         self.service = service or None
 
     def call(self):
+        """ Execute the request
+
+        :return: the result of the execution
+        """
         remote_call = self.service.__getattribute__(self.method)
 
         return remote_call(**self.data) if self.data else remote_call
 
 class Response(object):
+    """ RPC Response
+
+    :param result: the result from RPC
+    :param id: the response ID
+    """
     def __init__(self, result, id):
         self.id     = id
         self.result = result
 
 class Interface(WebSocket):
+    """ Remote Interface
+
+    Extends from :class:`tori.socket.websocket.WebSocket`
+    """
+
     def on_message(self, message):
         """
         :type message: str or unicode
@@ -40,11 +64,13 @@ class Interface(WebSocket):
         .. code-block:: javascript
 
             {
-                "id":      unique_id,
-                "service": service_name,
-                "data":    parameter_object,
+                ["id":      unique_id,]
+                ["service": service_name,]
+                ["data":    parameter_object,]
                 "method":  method_name
             }
+
+        When the service is not specified, the interface will act as a service.
 
         """
 

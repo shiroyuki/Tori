@@ -1,4 +1,4 @@
-tori.navigation
+Navigation APIs
 ===============
 
 .. automodule:: tori.navigation

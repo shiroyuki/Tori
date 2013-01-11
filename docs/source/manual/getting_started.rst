@@ -10,6 +10,7 @@ Suppose we have **Tori** on the system path and the following project structure:
     project/
         app/
             __init__.py
+            error.py
             views/
                 (empty)
         resources/
@@ -26,12 +27,10 @@ First, we write a controller ``project/app/controller.py`` with::
         def get(self, name):
             self.render('index.html', name=name)
 
-``@renderer('app.views')`` is to indicate that the template is in ``app.views`` and ``self.render`` is to render a template at
-``index.html`` in ``app.views`` with a context variable ``name`` from a query string.
+``@renderer('app.views')`` is to indicate that the template is in ``app.views`` and ``self.render`` is to render a
+template at ``index.html`` in ``app.views`` with a context variable ``name`` from a query string.
 
-.. note::
-    Unlike other WSGI-compatible frameworks, as Tori is based on Tornado which writes the output to the buffer. So, we return nothing
-    for ``MainController.get(...)``, ``MainController.post(...)``, ``MainController.put(...)`` and ``MainController.delete(...)``.
+.. note:: Read more on :doc:`controller`.
 
 Next, we write a Jinja2 template ``project/app/views/index.html`` with:
 
@@ -42,6 +41,8 @@ Next, we write a Jinja2 template ``project/app/views/index.html`` with:
     <head>Example</head>
     <body>Hello, {{ name }}</body>
     </html>
+
+.. note:: Read more on :doc:`template`.
 
 Then, we need to write a configuration file. For this example, we will save to at ``project/server.xml`` containing:
 
@@ -60,7 +61,7 @@ Then, we need to write a configuration file. For this example, we will save to a
         <services/>
     </application>
 
-See :doc:`configuration/index` for more information on the configuration.
+.. note:: See :doc:`configuration/index` for more information on the configuration.
 
 Then, we write a bootstrap file at ``project/server.py`` containing::
 

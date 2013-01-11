@@ -56,6 +56,10 @@ class Controller(RequestHandler):
 
     @property
     def session(self):
+        """ Session Controller
+
+        :rtype: tori.session.controller.Controller
+        """
         if not self.component('session'):
             return None
 

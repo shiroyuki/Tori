@@ -1,7 +1,5 @@
 Routing
-=======
-
-:Author: Juti Noppornpitak
+*******
 
 The routes (``<routes>``) is prioritized by the order in the routing list.
 
@@ -19,12 +17,18 @@ proxy       A routing directive for proxying requests.
 In general, the attribute ``pattern`` of any routing directives is to indicate the routing pattern where the directive intercepts,
 process and respond to any requests to the pattern. Each routing pattern is unique from each other.
 
+Controller
+==========
+
 For a routing directive ``controller``, the attribute ``class`` is a class reference to a particular controller where the
 controller must be on the system path (for Python).
 
 .. code-block:: xml
 
     <controller class="app.note.controller.IndexController" pattern="/notes/(.*)"/>
+
+Redirection
+===========
 
 For a routing directive ``redirection``, the attribute ``destination`` is a string indicating the destination of the redirection,
 and the attribute ``permanent`` is a boolean indicating whether the redirection is permanent.
@@ -33,6 +37,8 @@ and the attribute ``permanent`` is a boolean indicating whether the redirection 
 
     <redirection destination="/notes/" pattern="/notes"/>
 
+Resource
+========
 
 For a routing directive ``resource``, the attribute ``location`` is either:
 

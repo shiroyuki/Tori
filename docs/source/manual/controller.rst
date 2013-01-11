@@ -146,20 +146,50 @@ where ``web.controller.BlogEntryRestController`` is
 Customize Error Page
 ====================
 
-To specify a custome error page to a particular controller, the decorator :method:`tori.decorator.controller.custom_error`
-is necessary. For example,
+There are types of custom error pages for normal controllers and error controllers where any custom error pages will
+receive three variables: ``message``, ``code`` (HTTP Response Code) and ``debug_info`` (the text version of stack trace).
+
+Custom Error Pages for Unattended Exceptions
+--------------------------------------------
+
+When exceptions are raised unexpectedly, to handle the exceptions not handled by normal controllers, you need something
+similar to the following code.
+
+.. code-block:: python
+
+    @custom_error('error.html')
+    @renderer('app.view')
+    class ErrorController(BaseErrorController): pass
+
+Then, add a single ``<error>`` tag under the ``<server>`` tag. For example,
+
+.. code-block:: xml
+
+    <?xml version="1.0" encoding="utf-8"?>
+    <application>
+        <!-- ... -->
+        <server>
+            <!-- ... -->
+            <error>app.controller.ErrorController</error>
+            <!-- ... -->
+        </server>
+        <!-- ... -->
+    </application>
+
+Controller-specific Custom Error Pages
+--------------------------------------
+
+When exceptions are raised on a normal controller (e.g., any controller based on :class:`tori.controller.Controller` and
+:class:`tori.controller.RestController`), what you need is just add the decorator :meth:`tori.decorator.controller.custom_error`
+to the controller. For example,
 
 .. code-block:: python
 
     @custom_error('error.html')
     @renderer('web.views')
     class HomeController(Controller):
+        # Assuming something
         pass
-
-The error template ``web/views/error.html`` will receive three variables: ``message``, ``code`` (HTTP Response Code) and
-``debug_info`` (the text version of stack trace).
-
-For more information on how to
 
 References
 ==========

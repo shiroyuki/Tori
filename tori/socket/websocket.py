@@ -14,9 +14,7 @@ from tori.session.generator  import GuidGenerator
 from tori.session.controller import Controller as SessionController
 
 class WebSocket(BaseWebSocket):
-    """
-    Session-enabled Web Socket Handler
-    """
+    """ Web Socket Handler with extension to session controller """
 
     _guid_generator = GuidGenerator()
     _channel_table = {}
@@ -47,6 +45,10 @@ class WebSocket(BaseWebSocket):
 
     @property
     def session(self):
+        """ Session Controller
+
+        :rtype: tori.session.controller.Controller
+        """
         if not self.component('session'):
             return None
 
@@ -72,8 +74,7 @@ class WebSocket(BaseWebSocket):
         return self._session
 
     def _can_use_secure_cookie(self):
-        """
-        Check if the secure cookie is enabled.
+        """ Check if the secure cookie is enabled.
 
         :rtype: boolean
 

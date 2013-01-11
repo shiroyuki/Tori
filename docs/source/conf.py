@@ -329,6 +329,7 @@ MOCK_MODULES = [
     'tornado.web.HTTPError',
     'tornado.web.RedirectHandler',
     'tornado.web.RequestHandler',
+    'tornado.websocket',
     'kotoba',
     'kotoba.kotoba',
     'kotoba.kotoba.Kotoba',

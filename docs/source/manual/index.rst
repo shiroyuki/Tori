@@ -7,5 +7,7 @@ The manual is for the better understanding on how each part is designed and used
    :maxdepth: 1
    :glob:
 
+   concept-and-philosophy
+   getting_started
    */index
    *
