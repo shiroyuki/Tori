@@ -5,13 +5,10 @@
 
 This package contains classes and functions for common use.
 """
-import os
+import codecs
 import hashlib
 import logging
 import random
-import re
-import sys
-import time
 
 from .decorator.common import singleton
 
@@ -62,8 +59,12 @@ class Enigma(object):
         """
 
         hash_engine = hashlib.new('sha512')
+        data_list   = list(data_list)
 
-        hash_engine.update(''.join(data_list))
+        for i in range(len(data_list)):
+            data_list[i] = codecs.encode(data_list[i], 'ascii')
+
+        hash_engine.update(b''.join(data_list))
 
         return hash_engine.hexdigest()
 
