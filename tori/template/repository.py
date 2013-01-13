@@ -29,7 +29,7 @@ class Repository(dict):
         :type renderer_name: string or unicode
         :rtype: tori.template.renderer.Renderer
         """
-        if not self.has_key(renderer_name):
+        if renderer_name not in self:
             raise RendererNotFoundError
 
         return self[renderer_name]

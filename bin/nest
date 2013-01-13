@@ -40,7 +40,7 @@ from sys import version_info as version
 from subprocess import call
 
 nest_meta = {
-    'version': 0.1,
+    'version': 0.2,
     'license': 'MIT',
     'author':  'Juti Noppornpitak',
     'email':   'juti_n@yahoo.co.jp'
@@ -351,8 +351,8 @@ def install_vendors():
 
     call('rm -Rf %s' % temp_path, shell=True)
 
-print 'Nest %(version)s by %(author)s <%(email)s>' % nest_meta
-print """
+print('Nest %(version)s by %(author)s <%(email)s>' % nest_meta)
+print("""
 Nest is a utility tool which allows you to quickly start the development by
 generating necessary files into the app container (CURRENT_DIR/APP_NAME) and
 installing any necessary dependencies and front-end libraries (e.g., Zurb's
@@ -362,7 +362,7 @@ as long as you know what you are doing.
 
 Nest CLI and Tori Framework are both open-source and under MIT license. The
 source code is available at https://github.com/shiroyuki/Tori.
-"""
+""")
 
 if prompt('Now, are you ready?', ['y', 'n']).lower() == 'n':
     console('Nice to meet you. I hope to see you soon.', '!')

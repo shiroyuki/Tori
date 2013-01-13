@@ -2,11 +2,12 @@ from distutils.core import setup
 
 setup(
     name         = 'Tori',
-    version      = '2.0',
+    version      = '2.0.1',
     description  = 'Micro Web Framework',
     author       = 'Juti Noppornpitak',
     author_email = 'juti_n@yahoo.co.jp',
     url          = 'http://shiroyuki.com/work/projects-tori',
     packages     = ['tori', 'tori.data', 'tori.db', 'tori.decorator', 'tori.session', 'tori.socket', 'tori.template'],
-    scripts      = ['bin/nest']
+    scripts      = ['bin/nest'],
+    install_requires = ['imagination', 'kotoba', 'tornado', 'jinja2', 'pymongo']
 )

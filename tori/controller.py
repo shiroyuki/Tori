@@ -266,7 +266,7 @@ class ResourceService(RequestHandler):
 
         # If the request URI is already pre-calculated or fixed, load the
         # entity from the corresponding path.
-        if ResourceService._patterns.has_key(request_uri):
+        if request_uri in ResourceService._patterns:
             resource = self._get_resource_entity(ResourceService._patterns[request_uri])
 
         # When the resource is not loaded, try to get from the wildcard pattern.
