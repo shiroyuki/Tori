@@ -51,24 +51,14 @@ Module                  Required Third-party Modules
 Installation
 ------------
 
-Here is how you can install it.
+You can install via **PIP** command or **easy_install** command or you can download the source code
+and run ``python setup.py install``.
 
-Python 3.3 or Higher
-********************
+.. warning::
 
-For **Python 3.3+**, as the setup configuration is not ready, you can simply download the source code and dump into your
-Python path (e.g., ``PYTHONPATH`` on Linux, OS X and UNIX).
-
-Python 2.7
-**********
-
-For **Python 2.7**, you can install via **PIP** command or **easy_install** command or you can download the source code
-and run ``python setup.py install``. Just make sure you get the right version.
-
-.. note::
-
-    There is no plan on supporting the legacy releases of Python as the project moves forward to Python 3. Python 2.7 is
-    the only series supported by the project.
+    There is no plan on supporting the legacy releases of Python as the project moves forward to **Python 3.3 or higher**.
+    **Python 2.7** is the last series of Python 2 being supported by the project. **Python 2.6** seems to be working but
+    the framework is not tested.
 
 Table of Content
 ----------------
