@@ -80,7 +80,7 @@ class Finder(object):
 
         By default, read a file normally. If *is_binary* is ``True``, the method will read in binary mode.
         """
-        with open(file_path, is_binary and 'rb' or 'r') as fp:
+        with codecs.open(file_path, 'rb' if is_binary else 'r', 'utf-8') as fp:
             file_content = fp.read()
 
         fp.close()
