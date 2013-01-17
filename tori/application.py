@@ -14,6 +14,7 @@ import sys
 
 # Third-party libraries
 from   imagination.entity import Entity  as ImaginationEntity
+from imagination.helper import retrieve_module
 from   imagination.loader import Loader  as ImaginationLoader
 from   imagination.helper.assembler import Assembler   as ImaginationAssembler
 from   imagination.helper.assembler import Transformer as ImaginationTransformer
@@ -26,11 +27,11 @@ from   tornado.wsgi       import WSGIApplication as TornadoWSGIApplication
 from   wsgiref            import handlers
 
 # Internal libraries
-from .centre     import settings as AppSettings
-from .centre     import services as AppServices
-from .common     import get_logger
-from .exception  import *
-from .navigation import *
+from tori.centre     import settings as AppSettings
+from tori.centre     import services as AppServices
+from tori.common     import get_logger
+from tori.exception  import *
+from tori.navigation import *
 
 class BaseApplication(object):
     """
@@ -243,7 +244,17 @@ class Application(BaseApplication):
         for service_block in service_blocks:
             service_config_path = service_block.data()
 
-            if service_config_path[0] != '/':
+            # If the file path contains ':', treat the leading part for the full
+            # module name and re-assembles the file path.
+            if ':' in service_config_path:
+                full_module_name, relative_path = service_config_path.split(':')
+
+                module      = retrieve_module(full_module_name)
+                prefix_path = os.path.dirname(module.__file__)
+
+                config_filepath = path.join(prefix_path, relative_path)
+
+            elif service_config_path[0] != '/':
                 config_filepath = os.path.join(base_path, service_config_path)
 
             assembler.load(config_filepath)

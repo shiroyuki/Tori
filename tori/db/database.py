@@ -1,6 +1,13 @@
 from pymongo import Connection
 
 class Database(object):
+    """ MongoDB Database
+
+    :param name: the name of the database
+    :type  name: str
+    :param connection: the database connection
+    :type  connection: pymongo.Connection
+    """
     def __init__(self, name, connection=None):
         self._connection = connection
         self._name       = name
