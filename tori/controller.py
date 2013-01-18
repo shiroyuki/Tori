@@ -232,7 +232,7 @@ class ResourceService(RequestHandler):
     _plugins_registered = False
 
     @staticmethod
-    def add_pattern(pattern, base_path, enabled_cache=False):
+    def add_pattern(pattern, base_path, enable_cache=False):
         """
         Add the routing pattern for the resource path prefix.
 
@@ -240,10 +240,13 @@ class ResourceService(RequestHandler):
 
         :param base_path: a path prefix of the resource corresponding to the routing pattern.
 
-        :param enabled_cache: a flag to indicate whether any loaded resources need to be cached on the first request.
+        :param enable_cache: a flag to indicate whether any loaded resources need to be cached on the first request.
         """
         ResourceService._logger.debug('add URL pattern "%s" for "%s"' % (pattern, base_path))
-        ResourceService._patterns[pattern] = base_path
+        ResourceService._patterns[pattern] = {
+            'base_path': base_path,
+            'cacheable': enable_cache
+        }
         ResourceService._pattern_order.append(pattern)
 
     def get(self, *path):
@@ -255,34 +258,18 @@ class ResourceService(RequestHandler):
         .. note::
             This method requires refactoring.
         """
-        base_path    = None
-        resource     = None
-        used_pattern = None
-        request_uri  = self.request.uri
+        resource = self._retrieve_resource_entity()
 
-        # Remove the prefixed foreslashes.
-        path = '/'.join(path)
-        path = sub('^/+', '', path)
-
-        # If the request URI is already pre-calculated or fixed, load the
-        # entity from the corresponding path.
-        if request_uri in ResourceService._patterns:
-            resource = self._get_resource_entity(ResourceService._patterns[request_uri])
-
-        # When the resource is not loaded, try to get from the wildcard pattern.
-        if not resource:
-            self._logger.debug('Retrieving from the wildcard pattern.')
-
-            resource = self._get_resource_on_non_precalculated_pattern(path)
-
-        # Get the content type.
-        self.set_header("Content-Type", resource.kind or 'text/plain')
-
-        # Return HTTP 404 if the content is not found.
-        if not resource.exists:
+        if resource.exists and resource.cacheable:
+            self._cache_objects[self.request.uri] = resource
+        elif not resource.exists:
+            # Return HTTP 404 if the content is not found.
             self._logger.error('%s could not be found.' % resource.path)
 
             raise HTTPError(404)
+
+        # Get the content type.
+        self.set_header("Content-Type", resource.kind or 'text/plain')
 
         # Retrieve the plugins if registered.
         if not ResourceService._plugins and not ResourceService._plugins_registered:
@@ -294,22 +281,41 @@ class ResourceService(RequestHandler):
         for plugin in ResourceService._plugins:
             if plugin.expect(resource):
                 resource = plugin.execute(resource)
-            # End the iteraltion
+            # End the iteration
 
         # Return the content.
         try:
             self.finish(resource.content)
         except Exception as e:
-            print('Failed on resource distribution.')
+            raise HTTPError(500)
 
-    def _get_resource_entity(self, real_path):
-        return ResourceEntity(real_path)
-
-    def _get_resource_on_non_precalculated_pattern(self, path_to_resource):
+    def _retrieve_resource_entity(self):
         request_uri = self.request.uri
 
+        if request_uri in self._cache_objects:
+            return self._cache_objects[request_uri]
+
+        # If the request URI is already pre-calculated or fixed, load the
+        # entity from the corresponding path.
+        elif request_uri in ResourceService._patterns:
+            pattern = ResourceService._patterns[request_uri]
+
+            return self._create_resource_entity(pattern['base_path'], pattern['cacheable'])
+
+        # When the resource is not loaded, try to get from the wildcard pattern.
+        self._logger.debug('Retrieving from the wildcard pattern.')
+
+        return self._get_resource_on_non_precalculated_pattern(request_uri)
+
+    def _create_resource_entity(self, real_path, cachable):
+        return ResourceEntity(real_path, cachable)
+
+    def _get_resource_on_non_precalculated_pattern(self, request_uri):
         for pattern in ResourceService._pattern_order:
-            base_path = ResourceService._patterns[pattern]
+            pattern_info = ResourceService._patterns[pattern]
+
+            base_path = pattern_info['base_path']
+            cachable  = pattern_info['cacheable']
 
             self._logger.debug('Comparing Pattern: %s' % pattern)
 
@@ -318,14 +324,13 @@ class ResourceService(RequestHandler):
             if not matches:
                 continue
 
-            used_pattern = pattern
-            real_path    = p.abspath(p.join(
+            real_path = p.abspath(p.join(
                 base_path,
                 matches.groups()[0]
             ))
 
             self._logger.info('Real path: %s' % real_path)
 
-            return self._get_resource_entity(real_path)
+            return self._create_resource_entity(real_path, cachable)
 
         raise HTTPError(404)

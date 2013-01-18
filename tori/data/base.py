@@ -11,12 +11,13 @@ class ResourceEntity(object):
     .. note::
         This is for internal use only.
     """
-    def __init__(self, path):
+    def __init__(self, path, cacheable=False):
         if p.isdir(path):
             path = p.join(path, 'index.html')
 
-        self._path    = path
-        self._content = None
+        self._path      = path
+        self._content   = None
+        self._cacheable = cacheable
 
         self._type = get_type(path)
         self._type = self.kind[0]
@@ -57,6 +58,10 @@ class ResourceEntity(object):
         :param `new_content`: the new content
         """
         self._content = new_content
+
+    @property
+    def cacheable(self):
+        return self._cacheable
 
 
 class ResourceServiceMiddleware(object):
