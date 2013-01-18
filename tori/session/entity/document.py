@@ -1,5 +1,5 @@
 from tori.session.entity.base import Base
-from tori.db.odm.document import document
+from tori.db.document         import document
 
 @document
 class Document(Base):
