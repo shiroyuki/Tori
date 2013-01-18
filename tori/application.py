@@ -13,23 +13,24 @@ import os
 import sys
 
 # Third-party libraries
-from   imagination.entity import Entity  as ImaginationEntity
-from imagination.helper import retrieve_module
-from   imagination.loader import Loader  as ImaginationLoader
-from   imagination.helper.assembler import Assembler   as ImaginationAssembler
-from   imagination.helper.assembler import Transformer as ImaginationTransformer
-from   kotoba             import load_from_file
-from   tornado.autoreload import watch
-from   tornado.ioloop     import IOLoop
-from   tornado.web        import Application as TornadoNormalApplication
+from imagination.entity import Entity  as ImaginationEntity
+from imagination.helper import retrieve_module_path
+from imagination.loader import Loader  as ImaginationLoader
+from imagination.helper.assembler import Assembler   as ImaginationAssembler
+from imagination.helper.assembler import Transformer as ImaginationTransformer
+from kotoba             import load_from_file
+from tornado.autoreload import watch
+from tornado.ioloop     import IOLoop
+from tornado.web        import Application as TornadoNormalApplication
 import tornado.web
-from   tornado.wsgi       import WSGIApplication as TornadoWSGIApplication
-from   wsgiref            import handlers
+from tornado.wsgi       import WSGIApplication as TornadoWSGIApplication
+from wsgiref            import handlers
 
 # Internal libraries
 from tori.centre     import settings as AppSettings
 from tori.centre     import services as AppServices
 from tori.common     import get_logger
+from tori.data.base import resolve_file_path
 from tori.exception  import *
 from tori.navigation import *
 
@@ -246,18 +247,13 @@ class Application(BaseApplication):
 
             # If the file path contains ':', treat the leading part for the full
             # module name and re-assembles the file path.
-            if ':' in service_config_path:
-                full_module_name, relative_path = service_config_path.split(':')
 
-                module      = retrieve_module(full_module_name)
-                prefix_path = os.path.dirname(module.__file__)
+            config_file_path = resolve_file_path(service_config_path)
 
-                config_filepath = path.join(prefix_path, relative_path)
+            if service_config_path[0] != '/':
+                config_file_path = os.path.join(base_path, service_config_path)
 
-            elif service_config_path[0] != '/':
-                config_filepath = os.path.join(base_path, service_config_path)
-
-            assembler.load(config_filepath)
+            assembler.load(config_file_path)
 
     def _map_routing_table(self, configuration):
         """

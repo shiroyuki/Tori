@@ -1,6 +1,24 @@
 from mimetypes import guess_type as get_type
 from os        import path as p
+from imagination.helper import retrieve_module_path
 from tori.exception import *
+
+module_path_map = {}
+
+def resolve_file_path(file_path):
+    if ':' not in file_path:
+        return file_path
+
+    module_name, relative_path = file_path.split(':')
+
+    if module_name in module_path_map:
+        module_path = module_path_map[module_name]
+    else:
+        module_path = retrieve_module_path(module_name)
+
+        module_path_map[module_name] = module_path
+
+    return p.join(module_path, relative_path)
 
 class ResourceEntity(object):
     """
@@ -12,6 +30,8 @@ class ResourceEntity(object):
         This is for internal use only.
     """
     def __init__(self, path, cacheable=False):
+        path = resolve_file_path(path)
+
         if p.isdir(path):
             path = p.join(path, 'index.html')
 

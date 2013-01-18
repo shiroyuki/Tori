@@ -16,7 +16,7 @@ from tornado.web import HTTPError, RequestHandler
 
 from tori.centre             import services
 from tori.common             import get_logger
-from tori.data.base          import ResourceEntity
+from tori.data.base          import ResourceEntity, resolve_file_path
 from tori.exception          import *
 from tori.template.renderer  import DefaultRenderer
 from tori.session.generator  import GuidGenerator
@@ -244,7 +244,7 @@ class ResourceService(RequestHandler):
         """
         ResourceService._logger.debug('add URL pattern "%s" for "%s"' % (pattern, base_path))
         ResourceService._patterns[pattern] = {
-            'base_path': base_path,
+            'base_path': resolve_file_path(base_path),
             'cacheable': enable_cache
         }
         ResourceService._pattern_order.append(pattern)
