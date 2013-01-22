@@ -90,11 +90,11 @@ class TestDbDocument(unittest.TestCase):
     def test_changeset(self):
         character = self.collection.new_document(**self.test_stub[0])
 
-        print(character.get_changeset())
+        #print(character.get_changeset())
 
         character.reset_bits()
 
-        print(character.get_changeset())
+        #print(character.get_changeset())
 
 
 

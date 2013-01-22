@@ -9,3 +9,12 @@ class LockedIdException(Exception):
 
 class ReservedAttributeException(Exception):
     """ Exception thrown when a reserved attribute is tempted to change. """
+
+class UOWRepeatedRegistrationError(IOError):
+    """ Error thrown when the given reference is already registered as a new reference or already existed. """
+
+class UOWUnknownRecordError(IOError):
+    """ Error thrown when the given reference is already registered as a new reference or already existed. """
+
+class UOWUpdateError(IOError):
+    """ Error thrown when the given reference is already registered as a new reference or already existed. """
