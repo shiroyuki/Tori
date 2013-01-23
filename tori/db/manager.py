@@ -1,4 +1,4 @@
-from collection import Collection
+from tori.db.collection import Collection
 
 class Manager(object):
     def __init__(self, database):

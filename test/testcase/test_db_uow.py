@@ -1,12 +1,21 @@
-import unittest
+from unittest import TestCase
+
+try:
+    from unittest.mock import Mock, MagicMock # Python 3.3
+except ImportError as exception:
+    from mock import Mock, MagicMock # Python 2.7
+
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUnknownRecordError
 from tori.db.uow import UnitOfWork, Record
 
-class TestClass(object): pass
+class TestClass(object):
+    def __init__(self):
+        self.a = 1
+        self.b = 2
 
-class TestDbUow(unittest.TestCase):
+class TestDbUow(TestCase):
     def setUp(self):
-        self.uow = UnitOfWork()
+        self.uow = UnitOfWork(None)
 
     def test_new(self):
         test_object = TestClass()
@@ -29,7 +38,7 @@ class TestDbUow(unittest.TestCase):
 
         self.assertEqual(Record.STATUS_NEW, record.status)
 
-    def test_dirty_with_existing_data(self):
+    def test_dirty_with_existing_data_and_some_changes(self):
         test_object = TestClass()
 
         self.uow.register_clean(test_object)
@@ -37,7 +46,25 @@ class TestDbUow(unittest.TestCase):
 
         record = self.uow.retrieve_record(test_object)
 
+        self.assertEqual(Record.STATUS_CLEAN, record.status)
+
+    def test_dirty_with_existing_data_and_no_changes(self):
+        test_object = TestClass()
+
+        self.uow.register_clean(test_object)
+
+        test_object.a = 3
+
+        del test_object.b
+
+        self.uow.register_dirty(test_object)
+
+        record = self.uow.retrieve_record(test_object)
+
         self.assertEqual(Record.STATUS_DIRTY, record.status)
+        self.assertTrue('$set' in record.changeset)
+        self.assertTrue('$unset' in record.changeset)
+        self.assertFalse('$push' in record.changeset)
 
     def test_clean_with_existing_data(self):
         test_object = TestClass()
@@ -100,3 +127,6 @@ class TestDbUow(unittest.TestCase):
         test_object = TestClass()
 
         self.assertRaises(UOWUnknownRecordError, self.uow.retrieve_record, test_object)
+
+    # Test for commit
+    # Test for changeset calculation

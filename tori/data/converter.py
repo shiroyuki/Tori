@@ -24,8 +24,8 @@ class ArrayConverter(object):
             if callable(value):
                 continue
 
-            if not self._is_permitive(value):
-                if stack_depth == self._max_depth:
+            if not self._is_pirmitive_type(value):
+                if self._max_depth and stack_depth >= self._max_depth:
                     value = u'%s' % value
                 else:
                     value = self.convert(value, stack_depth + 1)
@@ -34,11 +34,11 @@ class ArrayConverter(object):
 
         return returnee
 
-    def _is_permitive(self, value):
+    def _is_pirmitive_type(self, value):
         if not self._permitive_types:
             self._permitive_types = [int, float, str, list, dict, tuple, set, bool]
 
-            # Prevent the code from raising exceptions due to Python 3 backward compatibility break.
+            # Prevent the code from raising exceptions due to Python-3 backward-compatibility break.
             try:
                 self._permitive_types.extend([unicode, long])
             except:
