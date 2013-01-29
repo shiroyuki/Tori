@@ -10,7 +10,6 @@ class Record(object):
     STATUS_DELETED   = 2
     STATUS_DIRTY     = 3
     STATUS_NEW       = 4
-    STATUS_CANCELLED = 0
 
     def __init__(self, entity, status):
         self.entity = entity
@@ -78,8 +77,10 @@ class UnitOfWork(object):
 
     """
     def __init__(self, entity_manager):
-        self._em         = entity_manager
-        self._record_map = {}
+        self._em           = entity_manager
+        self._record_map   = {} # Object Hash => Record
+        self._id_map       = {} # Object ID (str) => Object Hash
+        self._commit_order = [] # Object ID (BSON)
 
     def register_new(self, entity):
         uid = self._retrieve_entity_guid(entity)
@@ -112,7 +113,7 @@ class UnitOfWork(object):
         record = self.retrieve_record(entity)
 
         if record.status == Record.STATUS_NEW:
-            record.status = Record.STATUS_CANCELLED
+            self.delete_record(entity)
 
             return
 
@@ -134,9 +135,6 @@ class UnitOfWork(object):
 
                 new_data_graph[collection_name].append(record.changeset)
             elif record.status == Record.STATUS_DIRTY:
-                if collection_name not in updated_data_graph:
-                    updated_data_graph[collection_name] = {}
-
                 updated_data_graph[collection_name][record.entity.id] = {
                     'old': record.original_data_set,
                     'new': record.changeset
@@ -163,16 +161,19 @@ class UnitOfWork(object):
 
     def commit_updates(self, data_graph):
         for collection_name in data_graph:
-            self.commit_updates_for(collection_name, data_graph[collection_name])
+            self._commit_updates_for(collection_name, data_graph[collection_name])
 
-    def commit_updates_for(self, collection_name, sub_data_graph):
+    def _commit_updates_for(self, collection_name, sub_data_graph):
         collection = self._em.db.collection(collection_name)
 
         for object_id in sub_data_graph:
-            collection.insert(
-                {'_id': object_id},
-                sub_data_graph[object_id],
-                upsert=False
+            changeset = sub_data_graph[object_id]
+
+            self.synchronize_update(
+                collection,
+                object_id,
+                changeset['old'],
+                changeset['new']
             )
 
     def commit_removals(self, data_graph):
@@ -180,10 +181,30 @@ class UnitOfWork(object):
             self.commit_removals_for(collection_name, data_graph[collection_name])
 
     def commit_removals_for(self, collection_name, sub_data_graph):
-        collection = self._em.db.collection(collection_name)
+        collection = self._em.collection(collection_name)
 
         for object_id in sub_data_graph:
-            collection.remove({'_id': object_id})
+            self.synchronize_delete(collection, object_id)
+
+    def synchronize_new(self, collection, data_set):
+        collection.insert(data_set)
+
+    def synchronize_update(self, collection, object_id, old_data_set, new_data_set):
+        """Synchronize the updated data
+
+        :param collection: the target collection
+        :param object_id: the object ID
+        :param old_data_set: the original data (for event interception)
+        :param new_data_set: the updated data
+        """
+        collection.update(
+            {'_id': object_id},
+            new_data_set,
+            upsert=False
+        )
+
+    def synchronize_delete(self, collection, object_id):
+        collection.remove({'_id': object_id})
 
     def retrieve_record(self, entity):
         uid = self._retrieve_entity_guid(entity)
@@ -192,6 +213,14 @@ class UnitOfWork(object):
             raise UOWUnknownRecordError('Unable to retrieve the record for this entity.')
 
         return self._record_map[uid]
+
+    def delete_record(self, entity):
+        uid = self._retrieve_entity_guid(entity)
+
+        if uid not in self._record_map:
+            raise UOWUnknownRecordError('Unable to retrieve the record for this entity.')
+
+        del self._record_map[uid]
 
     def has_record(self, entity):
         return self._retrieve_entity_guid(entity) in self._record_map

@@ -7,8 +7,13 @@ Common Module
 """
 
 from time import time
+from bson import ObjectId
 
 from tori.common import Enigma
+from tori.data.converter import ArrayConverter
+
+class Serializer(ArrayConverter):
+    pass
 
 class GuidGenerator(object):
     """Simply GUID Generator"""
@@ -49,3 +54,10 @@ class HashGuidGenerator(GuidGenerator):
 
     def _generate(self):
         return self.enigma.hash(super(self, GuidGenerator)._generate())
+
+class PseudoObjectId(ObjectId):
+    """Pseudo Object ID
+
+    This class extends from :class:`bson.objectid.ObjectId`.
+    """
+    pass
