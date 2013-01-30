@@ -1,11 +1,9 @@
-from tori.data.converter import ArrayConverter
+from tori.db.common    import Serializer, PseudoObjectId
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUpdateError, UOWUnknownRecordError
-from tori.decorator.common import singleton
-
-converter = ArrayConverter()
-converter._max_depth = 0
 
 class Record(object):
+    serializer = Serializer(0)
+
     STATUS_CLEAN     = 1
     STATUS_DELETED   = 2
     STATUS_DIRTY     = 3
@@ -15,11 +13,11 @@ class Record(object):
         self.entity = entity
         self.status = status
 
-        self.original_data_set = converter.convert(entity)
+        self.original_data_set = Record.serializer.encode(entity)
 
     @property
     def changeset(self):
-        current_set = converter.convert(self.entity)
+        current_set = Record.serializer.encode(self.entity)
 
         if self.status == self.STATUS_NEW:
             return current_set
@@ -64,6 +62,10 @@ class Record(object):
 
         return change_set
 
+    def update(self):
+        self.original_data_set = Record.serializer.encode(self.entity)
+        self.status = Record.STATUS_CLEAN
+
 class UnitOfWork(object):
     """ Unit of Work
 
@@ -76,6 +78,8 @@ class UnitOfWork(object):
         word, Imagination Framework acts as an event controller for any actions (public methods) of this class.
 
     """
+    serializer = Serializer(0)
+
     def __init__(self, entity_manager):
         self._em           = entity_manager
         self._record_map   = {} # Object Hash => Record
@@ -88,7 +92,11 @@ class UnitOfWork(object):
         if self.has_record(entity):
             raise UOWRepeatedRegistrationError('Could not mark the entity as new.')
 
-        self._record_map[uid] = Record(entity, Record.STATUS_NEW)
+        if not entity.id:
+            entity.id = self._generate_pseudo_object_id()
+
+        self._record_map[uid]   = Record(entity, Record.STATUS_NEW)
+        self._id_map[entity.id] = uid
 
     def register_dirty(self, entity):
         record = self.retrieve_record(entity)
@@ -107,7 +115,8 @@ class UnitOfWork(object):
         if uid in self._record_map:
             raise UOWRepeatedRegistrationError('Could not mark the entity as clean')
 
-        self._record_map[uid] = Record(entity, Record.STATUS_CLEAN)
+        self._record_map[uid]   = Record(entity, Record.STATUS_CLEAN)
+        self._id_map[entity.id] = uid
 
     def register_deleted(self, entity):
         record = self.retrieve_record(entity)
@@ -206,6 +215,17 @@ class UnitOfWork(object):
     def synchronize_delete(self, collection, object_id):
         collection.remove({'_id': object_id})
 
+    def synchronize_records(self):
+        for uid in self._record_map:
+            record = self._record_map[uid]
+
+            if record.status == Record.STATUS_DELETED:
+                del self._record_map[uid]
+
+                continue
+
+            record.update()
+
     def retrieve_record(self, entity):
         uid = self._retrieve_entity_guid(entity)
 
@@ -227,3 +247,8 @@ class UnitOfWork(object):
 
     def _retrieve_entity_guid(self, entity):
         return hash(entity)
+
+    def _generate_pseudo_object_id(self):
+        pid = PseudoObjectId()
+
+        return pid

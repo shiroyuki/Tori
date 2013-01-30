@@ -7,9 +7,11 @@ except ImportError as exception:
 
 from pymongo.collection import Collection
 
+from tori.db.document import document
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUnknownRecordError
 from tori.db.uow import UnitOfWork, Record
 
+@document
 class TestClass(object):
     def __init__(self):
         self.a = 1

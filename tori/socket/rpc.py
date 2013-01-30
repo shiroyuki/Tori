@@ -10,7 +10,7 @@ Remote Procedure Call Module
 import json
 import time
 
-from tori.data.converter   import ArrayConverter
+from tori.data.serializer   import ArraySerializer
 from tori.socket.websocket import WebSocket
 
 class Remote(object):
@@ -82,5 +82,5 @@ class Interface(WebSocket):
         response = Response(remote.call(), remote.id)
 
         self.write_message(
-            json.dumps(ArrayConverter.instance().convert(response))
+            json.dumps(ArraySerializer.instance().encode(response))
         )

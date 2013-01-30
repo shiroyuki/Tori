@@ -10,10 +10,39 @@ from time import time
 from bson import ObjectId
 
 from tori.common import Enigma
-from tori.data.converter import ArrayConverter
+from tori.data.serializer import ArraySerializer
 
-class Serializer(ArrayConverter):
-    pass
+class Serializer(ArraySerializer):
+    def encode(self, data, stack_depth=0):
+        if not isinstance(data, object):
+            raise TypeError('The provided data must be an object')
+
+        returnee = {}
+
+        for name in dir(data):
+            if name[0] == '_' or name == 'id':
+                continue
+
+            value = data.__getattribute__(name)
+
+            if callable(value):
+                continue
+
+            if value and not self._is_primitive_type(value):
+                if self._max_depth and stack_depth >= self._max_depth:
+                    value = u'%s' % value
+                else:
+                    value = self.encode(value, stack_depth + 1)
+
+            returnee[name] = value
+
+        if data.id and not isinstance(data.id, PseudoObjectId):
+            returnee['_id'] = data.id
+
+        return returnee
+
+    def default_primitive_types(self):
+        return super(Serializer, self).default_primitive_types() + [PseudoObjectId]
 
 class GuidGenerator(object):
     """Simply GUID Generator"""
@@ -60,4 +89,3 @@ class PseudoObjectId(ObjectId):
 
     This class extends from :class:`bson.objectid.ObjectId`.
     """
-    pass

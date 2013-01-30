@@ -33,17 +33,17 @@ class Collection(object):
         return self._class(**attributes)
 
     def get(self, id):
-        raw_data = self._api.find_one({'_id': id})
+        data = self._api.find_one({'_id': id})
 
-        return self._convert_to_object(**raw_data)\
-            if   raw_data\
+        return self._convert_to_object(**data)\
+            if   data\
             else None
 
     def filter(self, **criteria):
-        raw_data_list = self._api.find(criteria)
+        data_list = self._api.find(criteria)
 
-        return [self._convert_to_object(**raw_data) for raw_data in raw_data_list]\
-            if   raw_data_list.count()\
+        return [self._convert_to_object(**data) for data in data_list]\
+            if   data_list.count()\
             else []
 
     def filter_one(self, **criteria):
@@ -66,6 +66,20 @@ class Collection(object):
 
     def commit(self):
         self._em.commit()
+
+    def _convert_to_object(self, **raw_data):
+        data = dict(raw_data)
+        id   = None
+
+        if '_id' in data:
+            id = data['_id']
+
+            del data['_id']
+
+        document    = self.new_document(**data)
+        document.id = id
+
+        return document
 
     def __len__(self):
         return self._api.count()
