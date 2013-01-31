@@ -26,10 +26,8 @@ class RelatingGuide(BaseGuide):
         self.target_property = target_property
 
 def __prevent_duplicated_mapping(cls, property_name):
-    if '__relational_map__' not in cls.__dict__:
-        cls.__relational_map__ = {}
-
-        return
+    if not cls:
+        raise ValueError('Expecting a valid type')
 
     if property_name in cls.__relational_map__:
         raise DuplicatedRelationalMapping('The property is already mapped.')
@@ -45,7 +43,7 @@ def embed(property, target, association_type=AssociationType.AUTO_DETECT):
 
     return decorator
 
-def link(property, target, target_property, association_type=AssociationType.AUTO_DETECT):
+def link(property, target, target_property=None, association_type=AssociationType.AUTO_DETECT):
     """Link between two documents
 
     .. warning:: This is experimental for Tori 2.1
@@ -60,5 +58,7 @@ def link(property, target, target_property, association_type=AssociationType.AUT
     def decorator(cls):
         __prevent_duplicated_mapping(cls, property)
         __map_property(cls, property, RelatingGuide(target, target_property, association_type))
+
+        return cls
 
     return decorator

@@ -85,6 +85,9 @@ def make_document_class(cls, collection_name=None):
 
     You will also see that this example tell the constructor to set ``_id``. This is just to work with the collection API.
     """
+    if not cls:
+        raise ValueError('Expecting a valid type')
+
     def get_id(self):
         return self.__dict__['_id'] if '_id' in self.__dict__ else None
 
@@ -100,9 +103,7 @@ def make_document_class(cls, collection_name=None):
         self._id = id
 
     cls.__collection_name__ = collection_name or cls.__name__.lower()
-
-    if '__relational_map__' not in cls.__dict__:
-        cls.__relational_map__ = {}
+    cls.__relational_map__  = {}
 
     cls.id = property(get_id, set_id)
 

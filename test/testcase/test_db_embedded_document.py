@@ -1,3 +1,4 @@
+"""
 import unittest
 from tori.db.exception import LockedIdException, ReservedAttributeException
 from tori.db.collection import Collection
@@ -166,3 +167,4 @@ class TestDbDocument(unittest.TestCase):
         self.assertEqual('Charge', character.job.skills[1].name)
         self.assertEqual('Shield', character.left_hand.name)
         self.assertEqual('Sword', character.right_hand.name)
+"""

@@ -7,6 +7,11 @@ class Database(object):
     :type  name: str
     :param connection: the database connection
     :type  connection: pymongo.Connection
+
+    .. warning::
+
+        This class is obsolete after Tori 2.0.
+
     """
     def __init__(self, name, connection=None):
         self._connection = connection

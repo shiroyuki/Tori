@@ -1,3 +1,4 @@
+from bson import ObjectId
 from tori.db.common    import Serializer, PseudoObjectId
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUpdateError, UOWUnknownRecordError
 
@@ -81,10 +82,11 @@ class UnitOfWork(object):
     serializer = Serializer(0)
 
     def __init__(self, entity_manager):
-        self._em           = entity_manager
-        self._record_map   = {} # Object Hash => Record
-        self._id_map       = {} # Object ID (str) => Object Hash
-        self._commit_order = [] # Object ID (BSON)
+        self._em            = entity_manager
+        self._record_map    = {} # Object Hash => Record
+        self._pseudo_id_map = {} # PseudoObjectID => object
+        self._object_id_map = {} # ObjectID => object
+        self._commit_order  = [] # ObjectID
 
     def register_new(self, entity):
         uid = self._retrieve_entity_guid(entity)
@@ -95,8 +97,10 @@ class UnitOfWork(object):
         if not entity.id:
             entity.id = self._generate_pseudo_object_id()
 
-        self._record_map[uid]   = Record(entity, Record.STATUS_NEW)
-        self._id_map[entity.id] = uid
+        self._record_map[uid] = Record(entity, Record.STATUS_NEW)
+
+        # Map the pseudo object ID to the entity.
+        self._pseudo_id_map[str(entity.id)] = entity
 
     def register_dirty(self, entity):
         record = self.retrieve_record(entity)
@@ -115,8 +119,10 @@ class UnitOfWork(object):
         if uid in self._record_map:
             raise UOWRepeatedRegistrationError('Could not mark the entity as clean')
 
-        self._record_map[uid]   = Record(entity, Record.STATUS_CLEAN)
-        self._id_map[entity.id] = uid
+        self._record_map[uid] = Record(entity, Record.STATUS_CLEAN)
+
+        # Map the real object ID to the entity
+        self._object_id_map[str(entity.id)] = entity
 
     def register_deleted(self, entity):
         record = self.retrieve_record(entity)
@@ -142,7 +148,10 @@ class UnitOfWork(object):
                 if collection_name not in new_data_graph:
                     new_data_graph[collection_name] = []
 
-                new_data_graph[collection_name].append(record.changeset)
+                new_data_graph[collection_name].append({
+                    'entity':    record.entity,
+                    'changeset': record.changeset
+                })
             elif record.status == Record.STATUS_DIRTY:
                 updated_data_graph[collection_name][record.entity.id] = {
                     'old': record.original_data_set,
@@ -166,7 +175,7 @@ class UnitOfWork(object):
         collection = self._em.db.collection(collection_name)
 
         for data_set in sub_data_graph:
-            collection.insert(data_set, safe=True)
+            self.synchronize_new(collection, data_set)
 
     def commit_updates(self, data_graph):
         for collection_name in data_graph:
@@ -190,13 +199,17 @@ class UnitOfWork(object):
             self.commit_removals_for(collection_name, data_graph[collection_name])
 
     def commit_removals_for(self, collection_name, sub_data_graph):
-        collection = self._em.collection(collection_name)
+        collection = self._em.db.collection(collection_name)
 
         for object_id in sub_data_graph:
             self.synchronize_delete(collection, object_id)
 
     def synchronize_new(self, collection, data_set):
-        collection.insert(data_set)
+        object_id = collection.insert(data_set['changeset'])
+
+        data_set['entity'].id = object_id
+
+        self._record_map[object_id] = data_set['entity']
 
     def synchronize_update(self, collection, object_id, old_data_set, new_data_set):
         """Synchronize the updated data
@@ -216,15 +229,9 @@ class UnitOfWork(object):
         collection.remove({'_id': object_id})
 
     def synchronize_records(self):
-        for uid in self._record_map:
-            record = self._record_map[uid]
-
-            if record.status == Record.STATUS_DELETED:
-                del self._record_map[uid]
-
-                continue
-
-            record.update()
+        self._record_map    = {}
+        self._object_id_map = {}
+        self._pseudo_id_map = {}
 
     def retrieve_record(self, entity):
         uid = self._retrieve_entity_guid(entity)
@@ -245,10 +252,19 @@ class UnitOfWork(object):
     def has_record(self, entity):
         return self._retrieve_entity_guid(entity) in self._record_map
 
+    def find_recorded_entity(self, object_id):
+        key = str(object_id)
+        is_pseudo_key = type(object_id) == PseudoObjectId
+
+        if is_pseudo_key and key in self._pseudo_id_map:
+            return self._pseudo_id_map[key]
+        elif not is_pseudo_key and key in self._object_id_map:
+            return self._object_id_map[key]
+
+        return None
+
     def _retrieve_entity_guid(self, entity):
         return hash(entity)
 
     def _generate_pseudo_object_id(self):
-        pid = PseudoObjectId()
-
-        return pid
+        return PseudoObjectId()

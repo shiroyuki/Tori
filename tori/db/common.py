@@ -89,3 +89,30 @@ class PseudoObjectId(ObjectId):
 
     This class extends from :class:`bson.objectid.ObjectId`.
     """
+
+class ProxyObject(object):
+    def __init__(self, em, cls, object_id, read_only=False):
+        self._collection = em.collection(cls)
+        self._object_id  = object_id
+        self._object     = None
+        self._read_only  = read_only
+
+    def __getattr__(self, item):
+        if not self._object:
+            self._object = self._collection.get(self._object_id)
+
+        if item == '_actual':
+            return self._object
+        elif item[0] == '_':
+            return self.__getattribute__(item)
+
+        return self._object.__getattribute__(item)
+
+    def __setattribute__(self, key, value):
+        if self._read_only:
+            raise ReadOnlyProxyException('The proxy is read only.')
+
+        if not self._object:
+            self._object = self._collection.get(self._object_id)
+
+        self._object.__setattr__(key, value)

@@ -7,6 +7,9 @@ class UnavailableCollectionException(Exception):
 class LockedIdException(Exception):
     """ Exception thrown when the ID is tempted to change. """
 
+class MissingObjectIdException(Exception):
+    """ Exception raised when the object Id is not specified during data retrieval. """
+
 class ReservedAttributeException(Exception):
     """ Exception thrown when a reserved attribute is tempted to change. """
 
@@ -18,3 +21,6 @@ class UOWUnknownRecordError(IOError):
 
 class UOWUpdateError(IOError):
     """ Error thrown when the given reference is already registered as a new reference or already existed. """
+
+class ReadOnlyProxyException(Exception):
+    """ Exception raised when the proxy is for read only. """

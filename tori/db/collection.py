@@ -7,30 +7,50 @@ Collection
 
 The module provides a simple wrapper to work with MongoDB and Tori ORM.
 """
+from tori.db.common import ProxyObject
+from tori.db.exception import MissingObjectIdException
 
 class Collection(object):
     """
     Collection (Entity Repository) for Mongo DB
 
     :param em: the entity manager
-    :type em: tori.db.manager.Manager
+    :type  em: tori.db.manager.Manager
+    :param api: collection API
+    :type  api: pymongo.collection.Collection
     :param document_class: the document class
     :type document_class: type
 
     """
-    def __init__(self, em, document_class):
+    def __init__(self, em, api, document_class):
         self._class = document_class
         self._em    = em
-
-        self._name = self._class.__collection_name__
-        self._api  = self._em.collection(self._name)
+        self._api   = api
 
     @property
     def name(self):
-        return self._name
+        return self._class.__collection_name__
 
     def new(self, **attributes):
-        return self._class(**attributes)
+        """ Create a new document/entity
+
+        :param attributes: attribute map
+        :return: object
+
+        .. note::
+
+            This method deal with data mapping
+
+        """
+        document = self._class(**attributes)
+
+        for property_name in self._class.__relational_map__:
+            guide = self._class.__relational_map__[property_name]
+            proxy = ProxyObject(self._em, guide.target, document.__getattribute__(property_name))
+
+            document.__setattr__(property_name, proxy)
+
+        return document
 
     def get(self, id):
         data = self._api.find_one({'_id': id})
@@ -68,15 +88,21 @@ class Collection(object):
         self._em.commit()
 
     def _convert_to_object(self, **raw_data):
+        if '_id' not in raw_data:
+            raise MissingObjectIdException('The key _id in the raw data is not found.')
+
+        id       = raw_data['_id']
+        document = self._em._uow.find_recorded_entity(id)
+
+        # Returned the known document from the record.
+        if document:
+            return document
+
         data = dict(raw_data)
-        id   = None
 
-        if '_id' in data:
-            id = data['_id']
+        del data['_id']
 
-            del data['_id']
-
-        document    = self.new_document(**data)
+        document    = self.new(**data)
         document.id = id
 
         return document

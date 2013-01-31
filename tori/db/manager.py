@@ -1,36 +1,58 @@
-from tori.db.common import PseudoObjectId
+from pymongo import Connection
 from tori.db.collection import Collection
 from tori.db.uow import UnitOfWork
 
 class Manager(object):
-    def __init__(self, database):
+    def __init__(self, name, connection=None, document_types=[]):
         """Constructor
 
-        :type database: tori.db.database.Database
+        :param name: the name of the database
+        :type  name: str
+        :param connection: the database connection
+        :type  connection: pymongo.Connection
         """
-        self._database    = database
+        self._uow  = UnitOfWork(self)
+        self._name = name
+        self._connection  = connection or Connection()
+        self._database    = self._connection[self._name]
         self._collections = {}
-        self._uow         = UnitOfWork(self)
+        self._registered_types = {}
+
+        for document_type in document_types:
+            self._registered_types[document_type.__collection_name__] = document_type
 
     @property
-    def database(self):
-        """Database
+    def db(self):
+        """ Database-level API
 
-        :rtype: tori.db.database.Database
+        :rtype: pymongo.database.Database
+
+        .. warning::
+
+            Please use this property with caution. The unit of work cannot track any changes done by direct calls via
+            this property and may mess up with the change-set calculation.
+
         """
         return self._database
+
+    def collections(self):
+        return [self.collection(self._registered_types[key]) for key in self._registered_types]
 
     def collection(self, document_class):
         """Retrieve the collection
 
         :param document_class: the class of document/entity
-        :type  document_class: object
+        :type  document_class: type
+
         :rtype: tori.db.collection.Collection
         """
-        key = hash(document_class)
+        key = document_class.__collection_name__
+
+        if key not in self._registered_types:
+            return None
 
         if key not in self._collections:
-            return None
+            self._collections[key] = Collection(self, self._database[key], self._registered_types[key])
 
         return self._collections[key]
 
