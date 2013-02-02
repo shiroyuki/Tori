@@ -63,12 +63,13 @@ class TestDbUow(TestCase):
 
         self.uow.register_dirty(test_object)
 
-        record = self.uow.retrieve_record(test_object)
+        record     = self.uow.retrieve_record(test_object)
+        change_set = self.uow.compute_change_set(record)
 
         self.assertEqual(Record.STATUS_DIRTY, record.status)
-        self.assertTrue('$set' in record.changeset)
-        self.assertTrue('$unset' in record.changeset)
-        self.assertFalse('$push' in record.changeset)
+        self.assertTrue('$set' in change_set)
+        self.assertTrue('$unset' in change_set)
+        self.assertFalse('$push' in change_set)
 
     def test_clean_with_existing_data(self):
         test_object = TestClass()

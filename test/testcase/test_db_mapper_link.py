@@ -92,8 +92,9 @@ class TestDbMapperLink(unittest.TestCase):
         character = self.em.collection(Character).filter_one()
 
         self.assertEqual('Shiroyuki', character.name)
-        self.assertEqual(1, character.job.id)
-        self.assertIsInstance(character.job, ProxyObject)
-        self.assertIsInstance(character.job._actual, Job)
-        self.assertFalse(character.job._read_only)
+        self.assertIsInstance(character.job, ProxyObject) # Check the type of the proxy object
+        self.assertIsInstance(character.job._actual, Job) # Check the type of the actual object
+        self.assertEqual(1, character.job.id) # Check if the property of the actual object is accessible via the proxy
+        self.assertEqual('Knight', character.job.name) # Check if the property of the actual object is accessible via the proxy
+        self.assertFalse(character.job._read_only) # Check if the proxy setting is readable
 

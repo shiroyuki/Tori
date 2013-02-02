@@ -11,6 +11,7 @@ from bson import ObjectId
 
 from tori.common import Enigma
 from tori.data.serializer import ArraySerializer
+from tori.db.exception import ReadOnlyProxyException
 
 class Serializer(ArraySerializer):
     def encode(self, data, stack_depth=0):
@@ -91,11 +92,12 @@ class PseudoObjectId(ObjectId):
     """
 
 class ProxyObject(object):
-    def __init__(self, em, cls, object_id, read_only=False):
+    def __init__(self, em, cls, object_id, read_only, cascading_options):
         self._collection = em.collection(cls)
         self._object_id  = object_id
         self._object     = None
         self._read_only  = read_only
+        self._cascading_options = cascading_options
 
     def __getattr__(self, item):
         if not self._object:

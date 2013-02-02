@@ -46,7 +46,13 @@ class Collection(object):
 
         for property_name in self._class.__relational_map__:
             guide = self._class.__relational_map__[property_name]
-            proxy = ProxyObject(self._em, guide.target, document.__getattribute__(property_name))
+            proxy = ProxyObject(
+                self._em,
+                guide.target,
+                document.__getattribute__(property_name),
+                guide.read_only,
+                guide.cascading_options
+            )
 
             document.__setattr__(property_name, proxy)
 
