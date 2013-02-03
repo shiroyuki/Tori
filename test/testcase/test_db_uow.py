@@ -8,8 +8,18 @@ except ImportError as exception:
 from pymongo.collection import Collection
 
 from tori.db.document import document
+from tori.db.manager import Manager
+from tori.db.mapper import link, CascadingType
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUnknownRecordError
 from tori.db.uow import UnitOfWork, Record
+
+@document
+@link('left', TestNode, cascading_options=[CascadingType.PERSIST])
+@link('right', TestNode, cascading_options=[CascadingType.PERSIST])
+class TestNode(object):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
 
 @document
 class TestClass(object):
@@ -19,7 +29,11 @@ class TestClass(object):
 
 class TestDbUow(TestCase):
     def setUp(self):
-        self.uow = UnitOfWork(None)
+        self.em  = Manager('tori_test', document_types=[TestNode])
+        self.uow = UnitOfWork(self.em)
+
+        for collection in self.em.collections():
+            collection._api.remove() # Reset the database
 
     def test_new(self):
         test_object = TestClass()
@@ -180,4 +194,14 @@ class TestDbUow(TestCase):
 
         collection.insert = Mock(return_value=5)
 
-    # Test for changeset calculation
+    def test_commit_with_post_only(self):
+        left  = TestNode(None, None)
+        right = TestNode(None, None)
+        root  = TestNode(left, right)
+
+        self.em.persist(root)
+
+    # Test for change_set calculation
+    def test_change_set(self):
+        pass
+

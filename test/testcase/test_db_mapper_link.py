@@ -98,3 +98,5 @@ class TestDbMapperLink(unittest.TestCase):
         self.assertEqual('Knight', character.job.name) # Check if the property of the actual object is accessible via the proxy
         self.assertFalse(character.job._read_only) # Check if the proxy setting is readable
 
+
+

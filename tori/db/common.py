@@ -32,6 +32,8 @@ class Serializer(ArraySerializer):
             if value and not self._is_primitive_type(value):
                 if self._max_depth and stack_depth >= self._max_depth:
                     value = u'%s' % value
+                elif isinstance(value, ProxyObject):
+                    value = ProxyObject.id
                 else:
                     value = self.encode(value, stack_depth + 1)
 
