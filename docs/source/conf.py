@@ -76,7 +76,7 @@ release = '2.0-DEV'
 # Else, today_fmt is used as the format for a strftime call.
 #today_fmt = '%B %d, %Y'
 
-# List of patterns, relative to source directory, that match files and
+# EntityCollection of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = []
 
@@ -194,7 +194,7 @@ latex_elements = {
 #'preamble': '',
 }
 
-# Grouping the document tree into LaTeX files. List of tuples
+# Grouping the document tree into LaTeX files. EntityCollection of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'Tori.tex', u'Tori Documentation',
@@ -224,7 +224,7 @@ latex_documents = [
 
 # -- Options for manual page output --------------------------------------------
 
-# One entry per manual page. List of tuples
+# One entry per manual page. EntityCollection of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'tori', u'Tori Documentation',
@@ -237,7 +237,7 @@ man_pages = [
 
 # -- Options for Texinfo output ------------------------------------------------
 
-# Grouping the document tree into Texinfo files. List of tuples
+# Grouping the document tree into Texinfo files. EntityCollection of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [

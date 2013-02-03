@@ -122,7 +122,7 @@ class BaseDocument(object):
         @document
         class Note(BaseDocument): pass
 
-    In this case, it is similar to the example for :py:meth:`document` except that the class ``Node`` no longer guarantees
+    In this case, it is similar to the example for :py:meth:`document` except that the class ``DependencyNode`` no longer guarantees
     that it will have attributes ``title``, ``content`` and ``author`` but it maps all available data to the object.
 
     In case that a document class needs to have certain attributes and unknown dynamic attributes the Note class should

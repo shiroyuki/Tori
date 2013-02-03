@@ -66,7 +66,7 @@ def embed(property, target, association_type=AssociationType.AUTO_DETECT):
 
     return decorator
 
-def link(property, target, target_property=None, association_type=AssociationType.AUTO_DETECT, read_only=False, cascading_options=[]):
+def link(property, target=None, target_property=None, association_type=AssociationType.AUTO_DETECT, read_only=False, cascading_options=[]):
     """Link between two documents
 
     .. warning:: This is experimental for Tori 2.1
@@ -78,10 +78,12 @@ def link(property, target, target_property=None, association_type=AssociationTyp
     :param read_only:        the flag to indicate whether this is for read only.
 
     :return: the decorator callback
+
+    If :param:`target` is not defined, the default target will be the reference class.
     """
     def decorator(cls):
         __prevent_duplicated_mapping(cls, property)
-        __map_property(cls, property, RelatingGuide(target, target_property, association_type, read_only, cascading_options))
+        __map_property(cls, property, RelatingGuide(target or cls, target_property, association_type, read_only, cascading_options))
 
         return cls
 

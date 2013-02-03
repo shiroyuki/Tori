@@ -1,4 +1,5 @@
 from pymongo import Connection
+from tori.db.common import PseudoObjectId
 from tori.db.collection import Collection
 from tori.db.uow import UnitOfWork
 
@@ -62,12 +63,14 @@ class Manager(object):
 
     def persist(self, *entities):
         for entity in entities:
-            if entity.id:
-                self._uow.register_dirty(entity)
+            self.persist_one(entity)
 
-                continue
+    def persist_one(self, entity):
+        registering_action = self._uow.register_new\
+            if self._uow.is_new(entity)\
+            else self._uow.register_dirty
 
-            self._uow.register_new(entity)
+        registering_action(entity)
 
     def flush(self):
         self._uow.commit()

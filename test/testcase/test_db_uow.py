@@ -13,9 +13,9 @@ from tori.db.mapper import link, CascadingType
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUnknownRecordError
 from tori.db.uow import UnitOfWork, Record
 
+@link('left', cascading_options=[CascadingType.PERSIST, CascadingType.DELETE])
+@link('right', cascading_options=[CascadingType.PERSIST, CascadingType.DELETE])
 @document
-@link('left', TestNode, cascading_options=[CascadingType.PERSIST])
-@link('right', TestNode, cascading_options=[CascadingType.PERSIST])
 class TestNode(object):
     def __init__(self, left, right):
         self.left = left
@@ -195,11 +195,17 @@ class TestDbUow(TestCase):
         collection.insert = Mock(return_value=5)
 
     def test_commit_with_post_only(self):
-        left  = TestNode(None, None)
-        right = TestNode(None, None)
-        root  = TestNode(left, right)
+        g = TestNode(None, None)
+        f = TestNode(None, None)
+        e = TestNode(None, f)
+        d = TestNode(None, None)
+        c = TestNode(d, None)
+        b = TestNode(None, d)
+        a = TestNode(b, c)
 
-        self.em.persist(root)
+        self.em.persist(a, e, g)
+
+        #print(self.em._uow.compute_order())
 
     # Test for change_set calculation
     def test_change_set(self):

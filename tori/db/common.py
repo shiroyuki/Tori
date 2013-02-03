@@ -13,6 +13,13 @@ from tori.common import Enigma
 from tori.data.serializer import ArraySerializer
 from tori.db.exception import ReadOnlyProxyException
 
+class EntityCollection(list):
+    """ Entity Collection Class
+
+    This class extends from the built-in ``list`` only for clear distinction
+    between a normal list and a list due to association.
+    """
+
 class Serializer(ArraySerializer):
     def encode(self, data, stack_depth=0):
         if not isinstance(data, object):
@@ -29,11 +36,14 @@ class Serializer(ArraySerializer):
             if callable(value):
                 continue
 
+            is_proxy    = isinstance(value, ProxyObject)
+            is_document = isinstance(data, object) and '__relational_map__' in dir(data)
+
             if value and not self._is_primitive_type(value):
                 if self._max_depth and stack_depth >= self._max_depth:
                     value = u'%s' % value
-                elif isinstance(value, ProxyObject):
-                    value = ProxyObject.id
+                elif is_proxy or is_document:
+                    value = value.id
                 else:
                     value = self.encode(value, stack_depth + 1)
 
@@ -92,6 +102,9 @@ class PseudoObjectId(ObjectId):
 
     This class extends from :class:`bson.objectid.ObjectId`.
     """
+
+    def __repr__(self):
+        return "PseudoObjectId('%s')" % (str(self),)
 
 class ProxyObject(object):
     def __init__(self, em, cls, object_id, read_only, cascading_options):
