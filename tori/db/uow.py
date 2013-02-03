@@ -1,4 +1,5 @@
 from multiprocessing import Lock as MultiProcessLock
+from time import time
 from threading import Lock as ThreadLock
 from tori.db.common    import Serializer, PseudoObjectId, ProxyObject, EntityCollection
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUpdateError, UOWUnknownRecordError
@@ -24,6 +25,7 @@ class Record(object):
 
 class DependencyNode(object):
     def __init__(self, object_id):
+        self.created_at     = int(time() * 1000000)
         self.object_id      = object_id
         self.adjacent_nodes = set()
 
@@ -32,10 +34,10 @@ class DependencyNode(object):
         return len(self.adjacent_nodes)
 
     def __eq__(self, other):
-        return self.score == other.score
+        return self.object_id == other.object_id
 
     def __ne__(self, other):
-        return self.score != other.score
+        return self.object_id != other.object_id
 
     def __lt__(self, other):
         return self.score < other.score
@@ -50,10 +52,10 @@ class DependencyNode(object):
         return self.score >= other.score
 
     def __hash__(self):
-        return id(self)
+        return self.created_at
 
     def __repr__(self):
-        return '<DependencyNode for {}-{}>'.format(self.object_id, self.score)
+        return '<DependencyNode for {}, {}>'.format(self.object_id, self.score)
 
 class UnitOfWork(object):
     """ Unit of Work
@@ -378,11 +380,26 @@ class UnitOfWork(object):
                 for dependency_object_id in data:
                     self._register_dependency(object_id, dependency_object_id)
 
-        order = [self._dependency_map[id] for id in self._dependency_map]
+        """
+        After constructing the dependency graph (as a supposedly directed acyclic graph), do topological sorting.
+        """
+        final_order = []
 
-        order.sort()
+        for id in self._dependency_map:
+            node = self._dependency_map[id]
 
-        return order
+            self._retrieve_dependency_order(node, final_order)
+
+        return final_order
+
+    def _retrieve_dependency_order(self, node, priority_order):
+        initial_order = list(node.adjacent_nodes)
+
+        for adjacent_node in initial_order:
+            self._retrieve_dependency_order(adjacent_node, priority_order)
+
+        if node not in priority_order:
+            priority_order.append(node)
 
     def _register_dependency(self, a, b):
         if a not in self._dependency_map:

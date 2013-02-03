@@ -205,7 +205,18 @@ class TestDbUow(TestCase):
 
         self.em.persist(a, e, g)
 
-        #print(self.em._uow.compute_order())
+        order = self.em._uow.compute_order()
+
+        print('a', a.id)
+        print('b', b.id)
+        print('c', c.id)
+        print('d', d.id)
+        print('e', e.id)
+        print('f', f.id)
+        print('g', g.id)
+
+        for item in order:
+            print(item)
 
     # Test for change_set calculation
     def test_change_set(self):
