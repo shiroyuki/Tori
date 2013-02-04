@@ -218,6 +218,13 @@ class TestDbUow(TestCase):
         for item in order:
             print(item)
 
+        self.em.flush()
+
+        nodes = self.em.collection(TestNode)._api.find()
+
+        for node in nodes:
+            print(node)
+
     # Test for change_set calculation
     def test_change_set(self):
         pass

@@ -8,6 +8,7 @@ Document
 This module contains the abstract of documents in MongoDB.
 """
 import inspect
+from tori.db.common import PseudoObjectId
 
 from tori.db.exception import LockedIdException, ReservedAttributeException
 from tori.db.mapper import AssociationType, EmbeddingGuide
@@ -97,7 +98,7 @@ def make_document_class(cls, collection_name=None):
 
         :param id: the ID of the document.
         """
-        if '_id' in self.__dict__ and self.__dict__['_id']:
+        if '_id' in self.__dict__ and self.__dict__['_id'] and not isinstance(self.__dict__['_id'], PseudoObjectId):
             raise LockedIdException('The ID is already assigned and cannot be changed.')
 
         self._id = id
