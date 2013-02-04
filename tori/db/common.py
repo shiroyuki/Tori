@@ -122,6 +122,8 @@ class ProxyObject(object):
             return self._object
         elif item[0] == '_':
             return self.__getattribute__(item)
+        elif not self._object_id:
+            return
 
         return self._object.__getattribute__(item)
 

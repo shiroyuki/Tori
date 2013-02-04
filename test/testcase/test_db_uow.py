@@ -17,9 +17,13 @@ from tori.db.uow import UnitOfWork, Record
 @link('right', cascading_options=[CascadingType.PERSIST, CascadingType.DELETE])
 @document
 class TestNode(object):
-    def __init__(self, left, right):
-        self.left = left
+    def __init__(self, name, left, right):
+        self.name  = name
+        self.left  = left
         self.right = right
+
+    def __repr__(self):
+        return '<TestNode {} "{}">'.format(self.id, self.name)
 
 @document
 class TestClass(object):
@@ -195,35 +199,33 @@ class TestDbUow(TestCase):
         collection.insert = Mock(return_value=5)
 
     def test_commit_with_post_only(self):
-        g = TestNode(None, None)
-        f = TestNode(None, None)
-        e = TestNode(None, f)
-        d = TestNode(None, None)
-        c = TestNode(d, None)
-        b = TestNode(None, d)
-        a = TestNode(b, c)
+        g = TestNode('g', None, None)
+        f = TestNode('f', None, None)
+        e = TestNode('e', None, f)
+        d = TestNode('d', None, None)
+        c = TestNode('c', d, None)
+        b = TestNode('b', None, d)
+        a = TestNode('a', b, c)
 
         self.em.persist(a, e, g)
-
-        order = self.em._uow.compute_order()
-
-        print('a', a.id)
-        print('b', b.id)
-        print('c', c.id)
-        print('d', d.id)
-        print('e', e.id)
-        print('f', f.id)
-        print('g', g.id)
-
-        for item in order:
-            print(item)
-
         self.em.flush()
+
+        print()
 
         nodes = self.em.collection(TestNode)._api.find()
 
         for node in nodes:
             print(node)
+
+        nodes = self.em.collection(TestNode).filter()
+
+        for node in nodes:
+            print(node.name)
+            print('  L -> {}'.format(node.left.name if node.left else None))
+            print('  R -> {}'.format(node.right.name if node.right else None))
+
+        print(a.left.name)
+
 
     # Test for change_set calculation
     def test_change_set(self):
