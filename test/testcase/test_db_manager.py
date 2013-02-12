@@ -63,6 +63,17 @@ class TestDbManager(TestCase):
 
         self.assertEqual(6, len(collection.filter()))
 
+    def test_commit_with_delete_without_cascading(self):
+        self.__inject_data()
+
+        collection = self.em.collection(TestNode)
+        doc_a      = collection.filter_one({'name': 'g'})
+
+        self.em.delete(doc_a)
+        self.em.flush()
+
+        self.assertEqual(6, len(collection.filter()))
+
     # Test for change_set calculation
     def test_change_set(self):
         pass
