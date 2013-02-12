@@ -172,8 +172,8 @@ class UnitOfWork(object):
             reference = self.eager_load(entity.__getattribute__(property_name))
 
             if not guide.cascading_options\
-              or cascading_type not in guide.cascading_options\
-              or not reference:
+                or cascading_type not in guide.cascading_options\
+                or not reference:
                 continue
 
             if isinstance(reference, EntityCollection):
