@@ -156,6 +156,17 @@ class TestDbManager(TestCase):
 
         self.assertEqual(len(reference_map) - 4, len(collection.filter()))
 
+    def test_commit_with_delete_with_cascading_with_some_dependency_left(self):
+        reference_map = self.__inject_data_with_cascading()
+
+        collection = self.em.collection(TestNode)
+        doc_h      = collection.filter_one({'name': 'h'})
+
+        self.em.delete(doc_h)
+        self.em.flush()
+
+        self.assertEqual(len(reference_map) - 1, len(collection.filter()))
+
     # Test for change_set calculation
     def test_change_set(self):
         pass
@@ -170,8 +181,9 @@ class TestDbManager(TestCase):
         reference_map['c'] = TestNode('c', reference_map['d'], None)
         reference_map['b'] = TestNode('b', None, reference_map['d'])
         reference_map['a'] = TestNode('a', reference_map['b'], reference_map['c'])
+        reference_map['h'] = TestNode('h', reference_map['f'], None)
 
-        self.em.persist(reference_map['a'], reference_map['e'], reference_map['g'])
+        self.em.persist(reference_map['a'], reference_map['e'], reference_map['g'], reference_map['h'])
         self.em.flush()
 
         return reference_map
