@@ -65,16 +65,13 @@ class Collection(object):
             if   data\
             else None
 
-    def filter(self, **criteria):
-        data_list = self._api.find(criteria)
+    def filter(self, criteria={}):
+        data_list   = self._api.find(criteria)
+        object_list = [self._convert_to_object(**data) for data in data_list]
 
-        return EntityCollection(
-            [self._convert_to_object(**data) for data in data_list]\
-                if   data_list.count()\
-                else []
-        )
+        return EntityCollection(object_list)
 
-    def filter_one(self, **criteria):
+    def filter_one(self, criteria={}):
         raw_data = self._api.find_one(criteria)
 
         return self._convert_to_object(**raw_data)\
@@ -99,12 +96,12 @@ class Collection(object):
         if '_id' not in raw_data:
             raise MissingObjectIdException('The key _id in the raw data is not found.')
 
-        id       = raw_data['_id']
-        document = self._em._uow.find_recorded_entity(id)
+        id     = raw_data['_id']
+        record = self._em._uow.find_recorded_entity(id)
 
         # Returned the known document from the record.
-        if document:
-            return document
+        if record:
+            return record.entity
 
         data = dict(raw_data)
 

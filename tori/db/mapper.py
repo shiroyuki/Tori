@@ -41,7 +41,8 @@ class EmbeddingGuide(BaseGuide):
     pass
 
 class RelatingGuide(BaseGuide):
-    def __init__(self, target, target_property, association_type, read_only, cascading_options):
+    def __init__(self, target, target_property, association_type,
+                 read_only, cascading_options):
         BaseGuide.__init__(self, target, association_type)
 
         self.target_property   = target_property
@@ -66,7 +67,9 @@ def embed(property, target, association_type=AssociationType.AUTO_DETECT):
 
     return decorator
 
-def link(property, target=None, target_property=None, association_type=AssociationType.AUTO_DETECT, read_only=False, cascading_options=[]):
+def link(property, target=None, target_property=None,
+         association_type=AssociationType.AUTO_DETECT, read_only=False,
+         cascading_options=[]):
     """Link between two documents
 
     .. warning:: This is experimental for Tori 2.1

@@ -239,10 +239,12 @@ class UnitOfWork(object):
         self._blocker_activated = False
 
     def synchronize_new(self, collection, entity, change_set):
+        pseudo_id = self._convert_object_id_to_str(entity.id)
         object_id = collection._api.insert(change_set)
         entity.id = object_id # update the entity ID
+        key       = self._convert_object_id_to_str(object_id)
 
-        self._record_map[entity.id] = entity
+        self._object_id_map[key] = self._object_id_map[pseudo_id]
 
     def synchronize_update(self, collection, object_id, old_data_set, new_data_set):
         """Synchronize the updated data
@@ -262,8 +264,16 @@ class UnitOfWork(object):
         collection._api.remove({'_id': object_id})
 
     def synchronize_records(self):
-        self._record_map    = {}
-        self._object_id_map = {}
+        writing_statuses = [Record.STATUS_NEW, Record.STATUS_DIRTY]
+        uid_list         = list(self._record_map.keys())
+
+        for uid in uid_list:
+            record = self._record_map[uid]
+
+            if record.status == Record.STATUS_DELETED:
+                del self._record_map[uid]
+            elif record.status in writing_statuses:
+                record.update()
 
     def retrieve_record(self, entity):
         uid = self._retrieve_entity_guid(entity)
@@ -288,7 +298,7 @@ class UnitOfWork(object):
         key = self._convert_object_id_to_str(object_id)
 
         if key in self._object_id_map:
-            return self._object_id_map[key]
+            return self._record_map[self._object_id_map[key]]
 
         return None
 
@@ -318,6 +328,12 @@ class UnitOfWork(object):
             object_id   = record.entity.id
             current_set = Record.serializer.encode(record.entity)
 
+            # Register the current entity into the dependency map if it's never
+            # been registered or eventually has no dependencies.
+            if object_id not in self._dependency_map:
+                self._dependency_map[object_id] = DependencyNode(object_id)
+
+            # Go through the relational map to establish relationship between dependency nodes.
             for property_name in record.entity.__relational_map__:
                 data = current_set[property_name]
 
@@ -331,7 +347,8 @@ class UnitOfWork(object):
                 for dependency_object_id in data:
                     self._register_dependency(object_id, dependency_object_id)
 
-        # After constructing the dependency graph (as a supposedly directed acyclic graph), do topological sorting.
+        # After constructing the dependency graph (as a supposedly directed acyclic
+        # graph), do the topological sorting from the dependency graph.
         final_order = []
 
         for id in self._dependency_map:

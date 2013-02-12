@@ -31,7 +31,7 @@ class TestClass(object):
         self.a = 1
         self.b = 2
 
-class TestDbUow(TestCase):
+class TestDbManagerAndUnitOfWork(TestCase):
     def setUp(self):
         self.em  = Manager('tori_test', document_types=[TestNode])
         self.uow = UnitOfWork(self.em)
@@ -149,85 +149,67 @@ class TestDbUow(TestCase):
 
         self.assertRaises(UOWUnknownRecordError, self.uow.retrieve_record, test_object)
 
-    # Test for commit
-    def test_commit_normal_path(self):
-        a = TestClass() # new -> commit as new
-        b = TestClass() # new -> update -> commit as new
-        c = TestClass() # new -> delete -> no commit
-        d = TestClass() # new -> update -> delete -> no commit
-        e = TestClass() # clean -> no commit
-        f = TestClass() # clean -> update -> commit as dirty
-        g = TestClass() # clean -> delete -> commit as deleted
-        h = TestClass() # clean -> update -> delete -> commit as deleted
+    def test_commit_with_insert(self):
+        reference_map = self.__inject_data()
 
-        self.uow.register_new(a)
+        collection = self.em.collection(TestNode)
+        doc        = collection.filter_one({'name': 'a'})
 
-        self.uow.register_new(b)
+        self.assertEqual(7, len(collection.filter()))
+        self.assertEqual(reference_map['a'].id, doc.id)
 
-        b.a = 3
+    def test_commit_with_update(self):
+        reference_map = self.__inject_data()
 
-        self.uow.register_dirty(b)
+        doc = self.em.collection(TestNode).filter_one({'name': 'a'})
 
-        self.uow.register_new(c)
-        self.uow.register_deleted(c)
-
-        self.uow.register_new(d)
-
-        d.a = 4
-
-        self.uow.register_deleted(d)
-
-        self.uow.register_clean(e)
-
-        self.uow.register_clean(f)
-
-        f.a = 5
-
-        self.uow.register_dirty(f)
-
-        self.uow.register_clean(g)
-        self.uow.register_deleted(g)
-
-        self.uow.register_clean(h)
-
-        h.a = 6
-
-        self.uow.register_deleted(h)
-
-        collection = Mock(Collection)
-
-        collection.insert = Mock(return_value=5)
-
-    def test_commit_with_post_only(self):
-        g = TestNode('g', None, None)
-        f = TestNode('f', None, None)
-        e = TestNode('e', None, f)
-        d = TestNode('d', None, None)
-        c = TestNode('c', d, None)
-        b = TestNode('b', None, d)
-        a = TestNode('a', b, c)
-
-        self.em.persist(a, e, g)
+        self.em.persist(doc)
         self.em.flush()
 
-        print()
+        docs = self.em.collection(TestNode).filter()
 
-        nodes = self.em.collection(TestNode)._api.find()
+        self.assertEqual(7, len(docs))
+        self.assertEqual(reference_map['a'].id, doc.id)
+        self.assertEqual(reference_map['a'].name, doc.name)
 
-        for node in nodes:
-            print(node)
+    def test_commit_with_delete(self):
+        self.__inject_data()
 
-        nodes = self.em.collection(TestNode).filter()
+        collection = self.em.collection(TestNode)
+        doc_g      = collection.filter_one({'name': 'g'})
 
-        for node in nodes:
-            print(node.name)
-            print('  L -> {}'.format(node.left.name if node.left else None))
-            print('  R -> {}'.format(node.right.name if node.right else None))
+        self.em.delete(doc_g)
+        self.em.flush()
 
-        print(a.left.name)
-
+        self.assertEqual(6, len(collection.filter()))
 
     # Test for change_set calculation
     def test_change_set(self):
         pass
 
+    def __inject_data(self):
+        reference_map = {}
+
+        reference_map['g'] = TestNode('g', None, None)
+        reference_map['f'] = TestNode('f', None, None)
+        reference_map['e'] = TestNode('e', None, reference_map['f'])
+        reference_map['d'] = TestNode('d', None, None)
+        reference_map['c'] = TestNode('c', reference_map['d'], None)
+        reference_map['b'] = TestNode('b', None, reference_map['d'])
+        reference_map['a'] = TestNode('a', reference_map['b'], reference_map['c'])
+
+        self.em.persist(reference_map['a'], reference_map['e'], reference_map['g'])
+
+        commit_order = self.em._uow.compute_order()
+        name_order   = []
+
+        for dnode in commit_order:
+            lookup_key = self.em._uow._convert_object_id_to_str(dnode.object_id)
+            uid        = self.em._uow._object_id_map[lookup_key]
+            record     = self.em._uow._record_map[uid]
+
+            name_order.append(record.entity.name)
+
+        self.em.flush()
+
+        return reference_map
