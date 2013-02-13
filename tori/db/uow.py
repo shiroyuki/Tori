@@ -23,14 +23,39 @@ class Record(object):
         self.status = Record.STATUS_CLEAN
 
 class DependencyNode(object):
-    def __init__(self, object_id):
+    """ Dependency Node
+
+    This is designed to be bi-directional to maximize flexibility on traversing the graph.
+    """
+    def __init__(self, record):
         self.created_at     = int(time() * 1000000)
-        self.object_id      = object_id
+        self.record         = record
         self.adjacent_nodes = set()
+        self.reverse_edges  = set()
+
+    def connect(self, other):
+        self.adjacent_nodes.add(other)
+        other.reverse_edges.add(self)
+
+    @property
+    def object_id(self):
+        return self.record.entity.id
+
+    @property
+    def status(self):
+        return self.record.status
 
     @property
     def score(self):
-        return len(self.adjacent_nodes)
+        score = 0
+
+        for node in self.reverse_edges:
+            if node.status == Record.STATUS_DELETED:
+                continue
+
+            score += 1
+
+        return score
 
     def __eq__(self, other):
         return self.object_id == other.object_id
@@ -230,7 +255,7 @@ class UnitOfWork(object):
                     record.original_data_set,
                     change_set
                 )
-            elif record.status == Record.STATUS_DELETED:
+            elif record.status == Record.STATUS_DELETED and commit_node.score == 0:
                 self.synchronize_delete(collection, record.entity.id)
 
         self.synchronize_records()
@@ -295,10 +320,14 @@ class UnitOfWork(object):
         return self._retrieve_entity_guid(entity) in self._record_map
 
     def find_recorded_entity(self, object_id):
-        key = self._convert_object_id_to_str(object_id)
+        object_key = self._convert_object_id_to_str(object_id)
 
-        if key in self._object_id_map:
-            return self._record_map[self._object_id_map[key]]
+        if object_key in self._object_id_map:
+            try:
+                return self._record_map[self._object_id_map[object_key]]
+            except KeyError as exception:
+                # This exception is raised possibly due to that the record is deleted.
+                del self._object_id_map[object_key]
 
         return None
 
@@ -309,14 +338,14 @@ class UnitOfWork(object):
         return PseudoObjectId()
 
     def _convert_object_id_to_str(self, object_id):
-        key = str(object_id)
+        object_key = str(object_id)
 
         if isinstance(object_id, PseudoObjectId):
-            key = 'pseudo/{}'.format(key)
+            object_key = 'pseudo/{}'.format(object_key)
 
-        return key
+        return object_key
 
-    def compute_order(self):
+    def _construct_dependency_graph(self):
         self._dependency_map = {}
 
         for uid in self._record_map:
@@ -325,27 +354,40 @@ class UnitOfWork(object):
             if not record.entity.__relational_map__:
                 continue
 
-            object_id   = record.entity.id
+            object_id   = self._convert_object_id_to_str(record.entity.id)
             current_set = Record.serializer.encode(record.entity)
 
             # Register the current entity into the dependency map if it's never
             # been registered or eventually has no dependencies.
             if object_id not in self._dependency_map:
-                self._dependency_map[object_id] = DependencyNode(object_id)
+                self._dependency_map[object_id] = DependencyNode(record)
 
             # Go through the relational map to establish relationship between dependency nodes.
             for property_name in record.entity.__relational_map__:
+                # ``data`` can be either an object ID or list.
                 data = current_set[property_name]
 
                 if not data:
+                    # Ignore anything evaluated as False.
                     continue
                 elif not isinstance(data, list):
-                    self._register_dependency(object_id, data)
+                    other_uid    = self._object_id_map[self._convert_object_id_to_str(data)]
+                    other_record = self._record_map[other_uid]
+
+                    self._register_dependency(record, other_record)
 
                     continue
 
                 for dependency_object_id in data:
-                    self._register_dependency(object_id, dependency_object_id)
+                    other_uid    = self._object_id_map[self._convert_object_id_to_str(dependency_object_id)]
+                    other_record = self._record_map[other_uid]
+
+                    self._register_dependency(record, other_record)
+
+        return self._dependency_map
+
+    def compute_order(self):
+        self._construct_dependency_graph()
 
         # After constructing the dependency graph (as a supposedly directed acyclic
         # graph), do the topological sorting from the dependency graph.
@@ -368,13 +410,16 @@ class UnitOfWork(object):
             priority_order.append(node)
 
     def _register_dependency(self, a, b):
-        if a not in self._dependency_map:
-            self._dependency_map[a] = DependencyNode(a)
+        key_a = self._convert_object_id_to_str(a.entity.id)
+        key_b = self._convert_object_id_to_str(b.entity.id)
 
-        if b not in self._dependency_map:
-            self._dependency_map[b] = DependencyNode(b)
+        if key_a not in self._dependency_map:
+            self._dependency_map[key_a] = DependencyNode(a)
 
-        self._dependency_map[a].adjacent_nodes.add(self._dependency_map[b])
+        if key_b not in self._dependency_map:
+            self._dependency_map[key_b] = DependencyNode(b)
+
+        self._dependency_map[key_a].connect(self._dependency_map[key_b])
 
     def compute_change_set(self, record):
         current_set = Record.serializer.encode(record.entity)

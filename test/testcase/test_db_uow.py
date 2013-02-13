@@ -21,9 +21,6 @@ class TestDbUnitOfWork(TestCase):
         self.em  = Manager('tori_test', document_types=[TestClass])
         self.uow = self.em._uow
 
-        for collection in self.em.collections():
-            collection._api.remove() # Reset the database
-
     def test_new(self):
         test_object = TestClass()
 

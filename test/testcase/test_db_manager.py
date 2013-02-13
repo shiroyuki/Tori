@@ -167,9 +167,32 @@ class TestDbManager(TestCase):
 
         self.assertEqual(len(reference_map) - 1, len(collection.filter()))
 
-    # Test for change_set calculation
-    def test_change_set(self):
-        pass
+    def test_commit_with_delete_with_cascading_with_no_dependency_left(self):
+        reference_map = self.__inject_data_with_cascading()
+
+        collection = self.em.collection(TestNode)
+        doc_e      = collection.filter_one({'name': 'e'})
+        doc_h      = collection.filter_one({'name': 'h'})
+
+        self.em.delete(doc_e, doc_h)
+        self.em.flush()
+
+        self.assertEqual(len(reference_map) - 3, len(collection.filter()))
+
+    def __debug_graph(self, graph):
+        print('----- Begin -----')
+
+        for id in graph:
+            node = graph[id]
+
+            print('[{} {} {}]'.format(node.record.entity.name, node.score, node.record.entity.id))
+
+            for other in node.adjacent_nodes:
+                print('  --> [{} {} {}]'.format(other.record.entity.name, other.score, node.record.entity.id))
+
+            for other in node.reverse_edges:
+                print('  <-- [{} {} {}]'.format(other.record.entity.name, other.score, node.record.entity.id))
+        print('----- End -----')
 
     def __inject_data_with_cascading(self):
         reference_map = {}
