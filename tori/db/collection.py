@@ -9,6 +9,7 @@ The module provides a simple wrapper to work with MongoDB and Tori ORM.
 """
 from tori.db.common import ProxyObject, EntityCollection
 from tori.db.exception import MissingObjectIdException
+from tori.db.mapper import AssociationType
 
 class Collection(object):
     """
@@ -46,35 +47,58 @@ class Collection(object):
 
         for property_name in self._class.__relational_map__:
             guide = self._class.__relational_map__[property_name]
-            proxy = ProxyObject(
-                self._em,
-                guide.target,
-                document.__getattribute__(property_name),
-                guide.read_only,
-                guide.cascading_options
-            )
 
-            document.__setattr__(property_name, proxy)
+            if guide.association_type in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
+                proxy = ProxyObject(
+                    self._em,
+                    guide.target_class,
+                    document.__getattribute__(property_name),
+                    guide.read_only,
+                    guide.cascading_options
+                )
+
+                document.__setattr__(property_name, proxy)
+
+                continue
+            elif guide.association_type == AssociationType.ONE_TO_MANY:
+                proxy_list = EntityCollection()
+
+                for sub_document_attributes in document.__getattribute__(property_name):
+                    proxy_list.append(
+                        ProxyObject(
+                            self._em,
+                            guide.target_class,
+                            sub_document_attributes,
+                            guide.read_only,
+                            guide.cascading_options
+                        )
+                    )
+
+                document.__setattr__(property_name, proxy_list)
+
+                continue
+
+            # guide.association_type == AssociationType.MANY_TO_MANY
 
         return document
 
     def get(self, id):
         data = self._api.find_one({'_id': id})
 
-        return self._convert_to_object(**data)\
+        return self._dehydrate_object(**data)\
             if   data\
             else None
 
     def filter(self, criteria={}):
         data_list   = self._api.find(criteria)
-        object_list = [self._convert_to_object(**data) for data in data_list]
+        object_list = [self._dehydrate_object(**data) for data in data_list]
 
         return EntityCollection(object_list)
 
     def filter_one(self, criteria={}):
         raw_data = self._api.find_one(criteria)
 
-        return self._convert_to_object(**raw_data)\
+        return self._dehydrate_object(**raw_data)\
             if   raw_data\
             else None
 
@@ -92,7 +116,7 @@ class Collection(object):
     def commit(self):
         self._em.commit()
 
-    def _convert_to_object(self, **raw_data):
+    def _dehydrate_object(self, **raw_data):
         if '_id' not in raw_data:
             raise MissingObjectIdException('The key _id in the raw data is not found.')
 
@@ -109,6 +133,8 @@ class Collection(object):
 
         document    = self.new(**data)
         document.id = id
+
+        self._em._uow.register_clean(document)
 
         return document
 

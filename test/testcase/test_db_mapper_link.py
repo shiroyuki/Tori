@@ -25,9 +25,9 @@ class Weapon(object):
         self.attack = attack
         self.defend = defend
 
-@link('job', Job)
-@link('left_hand', Weapon)
-@link('right_hand', Weapon)
+@link('job', Job, association_type=AssociationType.ONE_TO_ONE)
+@link('left_hand', Weapon, association_type=AssociationType.ONE_TO_ONE)
+@link('right_hand', Weapon, association_type=AssociationType.ONE_TO_ONE)
 @document('c')
 class Character(object):
     def __init__(self, name, level, job, left_hand, right_hand, _id=None):
@@ -77,7 +77,7 @@ class TestDbMapperLink(unittest.TestCase):
     def setUp(self):
         self.em = Manager('tori_test', document_types=[Skill, Job, Weapon, Character, Skill])
 
-        for collection in self.em.collections():
+        for collection in self.em.collections:
             collection._api.remove() # Reset the database
 
         self.em.collection(Character)._api.insert(self.ts_character)

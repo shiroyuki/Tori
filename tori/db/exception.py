@@ -24,3 +24,6 @@ class UOWUpdateError(IOError):
 
 class ReadOnlyProxyException(Exception):
     """ Exception raised when the proxy is for read only. """
+
+class IntegrityConstraintError(RuntimeError):
+    """ Runtime Error raised when the given value violates a integrity constraint. """

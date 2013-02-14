@@ -29,21 +29,21 @@ class AssociationType(object):
 class CascadingType(object):
     PERSIST = 1
     DELETE  = 2
-    MERGE   = 3
-    DETACH  = 4
+    MERGE   = 3 # Not supported in Tori 2.1
+    DETACH  = 4 # Not supported in Tori 2.1
 
 class BaseGuide(object):
-    def __init__(self, target, association_type):
-        self.target = target
+    def __init__(self, target_class, association_type):
+        self.target_class = target_class
         self.association_type = association_type
 
 class EmbeddingGuide(BaseGuide):
     pass
 
 class RelatingGuide(BaseGuide):
-    def __init__(self, target, target_property, association_type,
+    def __init__(self, target_class, target_property, association_type,
                  read_only, cascading_options):
-        BaseGuide.__init__(self, target, association_type)
+        BaseGuide.__init__(self, target_class, association_type)
 
         self.target_property   = target_property
         self.read_only         = read_only
@@ -84,9 +84,26 @@ def link(property, target=None, target_property=None,
 
     If :param:`target` is not defined, the default target will be the reference class.
     """
+
+    if association_type == AssociationType.AUTO_DETECT:
+        raise ValueError('The association is not specified.')
+
+    if not AssociationType.known_type(association_type):
+        raise ValueError('Unknown association')
+
     def decorator(cls):
         __prevent_duplicated_mapping(cls, property)
-        __map_property(cls, property, RelatingGuide(target or cls, target_property, association_type, read_only, cascading_options))
+        __map_property(
+            cls,
+            property,
+            RelatingGuide(
+                target or cls,
+                target_property,
+                association_type,
+                read_only,
+                cascading_options
+            )
+        )
 
         return cls
 

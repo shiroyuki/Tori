@@ -1,4 +1,5 @@
 from unittest import TestCase
+from tori.db.common import EntityCollection
 from tori.db.uow import Record
 
 try:
@@ -8,10 +9,11 @@ except ImportError as exception:
 
 from tori.db.document import document
 from tori.db.manager import Manager
-from tori.db.mapper import link, CascadingType
+from tori.db.mapper import link, CascadingType, AssociationType
 
-@link('left', cascading_options=[CascadingType.PERSIST, CascadingType.DELETE])
-@link('right', cascading_options=[CascadingType.PERSIST, CascadingType.DELETE])
+
+@link('left', association_type=AssociationType.ONE_TO_ONE, cascading_options=[CascadingType.PERSIST, CascadingType.DELETE])
+@link('right', association_type=AssociationType.ONE_TO_ONE, cascading_options=[CascadingType.PERSIST, CascadingType.DELETE])
 @document
 class TestNode(object):
     def __init__(self, name, left, right):
@@ -27,18 +29,20 @@ class Computer(object):
     def __init__(self, name):
         self.name = name
 
-@link('computer', Computer)
+@link('computer', Computer, association_type=AssociationType.ONE_TO_ONE)
+@link('friends', association_type=AssociationType.ONE_TO_MANY)
 @document
 class Developer(object):
-    def __init__(self, name, computer):
+    def __init__(self, name, computer, friends=EntityCollection()):
         self.name     = name
         self.computer = computer
+        self.friends  = friends
 
 class TestDbManager(TestCase):
     def setUp(self):
         self.em  = Manager('tori_test', document_types=[Developer, Computer, TestNode])
 
-        for collection in self.em.collections():
+        for collection in self.em.collections:
             collection._api.remove() # Reset the database
 
     def test_commit_with_insert_with_cascading(self):
@@ -157,24 +161,49 @@ class TestDbManager(TestCase):
         self.assertEqual(len(reference_map) - 4, len(collection.filter()))
 
     def test_commit_with_delete_with_cascading_with_some_dependency_left(self):
-        reference_map = self.__inject_data_with_cascading()
+        reference_map     = self.__inject_data_with_cascading()
+        expected_max_size = len(reference_map) + 1
 
         collection = self.em.collection(TestNode)
-        doc_h      = collection.filter_one({'name': 'h'})
+
+        # Added an extra node that relies on node "f" without using the collection.
+        collection._api.insert({'left': None, 'right': reference_map['f'].id, 'name': 'extra'})
+
+        doc_h = collection.filter_one({'name': 'h'})
 
         self.em.delete(doc_h)
         self.em.flush()
 
-        self.assertEqual(len(reference_map) - 1, len(collection.filter()))
+        self.assertEqual(
+            expected_max_size - 1,
+            len(collection.filter()),
+            'Expected for %s nodes remaining' % expected_max_size
+        )
+
+    def test_commit_with_delete_with_cascading_with_some_unsupervised_dependency_left(self):
+        reference_map     = self.__inject_data_with_cascading()
+        expected_max_size = len(reference_map) + 1
+
+        collection = self.em.collection(TestNode)
+
+        # Added an extra node that relies on node "f" without using the collection.
+        collection._api.insert({'left': None, 'right': reference_map['f'].id, 'name': 'extra'})
+
+        self.em.delete(reference_map['e'], reference_map['h'])
+        self.em.flush()
+
+        self.assertEqual(
+            expected_max_size - 2,
+            len(collection.filter()),
+            'Expected for %s nodes remaining' % (expected_max_size - 2)
+        )
 
     def test_commit_with_delete_with_cascading_with_no_dependency_left(self):
         reference_map = self.__inject_data_with_cascading()
 
         collection = self.em.collection(TestNode)
-        doc_e      = collection.filter_one({'name': 'e'})
-        doc_h      = collection.filter_one({'name': 'h'})
 
-        self.em.delete(doc_e, doc_h)
+        self.em.delete(reference_map['e'], reference_map['h'])
         self.em.flush()
 
         self.assertEqual(len(reference_map) - 3, len(collection.filter()))

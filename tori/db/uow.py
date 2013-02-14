@@ -1,7 +1,7 @@
 from time import time
 from threading import Lock as ThreadLock
 from tori.db.common    import Serializer, PseudoObjectId, ProxyObject, EntityCollection
-from tori.db.exception import UOWRepeatedRegistrationError, UOWUpdateError, UOWUnknownRecordError
+from tori.db.exception import UOWRepeatedRegistrationError, UOWUpdateError, UOWUnknownRecordError, IntegrityConstraintError
 from tori.db.mapper import CascadingType
 
 class Record(object):
@@ -158,8 +158,6 @@ class UnitOfWork(object):
         self.unfreeze()
 
     def register_clean(self, entity):
-        self.freeze()
-
         uid = self._retrieve_entity_guid(entity)
 
         if uid in self._record_map:
@@ -169,8 +167,6 @@ class UnitOfWork(object):
 
         # Map the real object ID to the entity
         self._object_id_map[self._convert_object_id_to_str(entity.id)] = uid
-
-        self.unfreeze()
 
     def register_deleted(self, entity):
         self.freeze()
@@ -194,7 +190,7 @@ class UnitOfWork(object):
 
         for property_name in entity.__relational_map__:
             guide     = entity.__relational_map__[property_name]
-            reference = self.eager_load(entity.__getattribute__(property_name))
+            reference = self.hydrate_entity(entity.__getattribute__(property_name))
 
             if not guide.cascading_options\
                 or cascading_type not in guide.cascading_options\
@@ -204,14 +200,23 @@ class UnitOfWork(object):
             if isinstance(reference, EntityCollection):
                 for sub_reference in reference:
                     self._register_by_cascading_type(
-                        self.eager_load(sub_reference),
-                        cascading_type
+                        self.hydrate_entity(sub_reference),
+                        cascading_type,
+                        guide.target_class
                     )
 
-            self._register_by_cascading_type(reference, cascading_type)
+            self._register_by_cascading_type(reference, cascading_type, guide.target_class)
 
-    def _register_by_cascading_type(self, reference, cascading_type):
+    def _register_by_cascading_type(self, reference, cascading_type, expected_class):
         if cascading_type == CascadingType.PERSIST:
+            if type(reference) is not expected_class:
+                raise IntegrityConstraintError(
+                    'Expected an instance of class {} but received one of {}'.format(
+                        expected_class.__name__,
+                        type(reference).__name__
+                    )
+                )
+
             if self.is_new(reference):
                 try:
                     self.register_new(reference)
@@ -225,13 +230,18 @@ class UnitOfWork(object):
     def is_new(self, reference):
         return not reference.id or isinstance(reference.id, PseudoObjectId)
 
-    def eager_load(self, reference):
+    def hydrate_entity(self, reference):
         return reference._actual if isinstance(reference, ProxyObject) else reference
 
     def commit(self):
         self._blocker_activated = True
 
         self.freeze()
+
+        # Load the entire graph of supervised collections.
+        if self._em.has_cascading():
+            for c in self._em.collections:
+                c.filter()
 
         commit_order = self.compute_order()
 
