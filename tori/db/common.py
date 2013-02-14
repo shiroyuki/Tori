@@ -13,13 +13,6 @@ from tori.common import Enigma
 from tori.data.serializer import ArraySerializer
 from tori.db.exception import ReadOnlyProxyException
 
-class EntityCollection(list):
-    """ Entity Collection Class
-
-    This class extends from the built-in ``list`` only for clear distinction
-    between a normal list and a list due to association.
-    """
-
 class Serializer(ArraySerializer):
     def encode(self, data, stack_depth=0):
         if not isinstance(data, object):

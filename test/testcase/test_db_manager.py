@@ -1,5 +1,4 @@
 from unittest import TestCase
-from tori.db.common import EntityCollection
 from tori.db.uow import Record
 
 try:
@@ -33,7 +32,7 @@ class Computer(object):
 @link('friends', association_type=AssociationType.ONE_TO_MANY)
 @document
 class Developer(object):
-    def __init__(self, name, computer, friends=EntityCollection()):
+    def __init__(self, name, computer, friends=[]):
         self.name     = name
         self.computer = computer
         self.friends  = friends

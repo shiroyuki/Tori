@@ -7,7 +7,7 @@ Collection
 
 The module provides a simple wrapper to work with MongoDB and Tori ORM.
 """
-from tori.db.common import ProxyObject, EntityCollection
+from tori.db.common import ProxyObject
 from tori.db.exception import MissingObjectIdException
 from tori.db.mapper import AssociationType
 
@@ -61,7 +61,7 @@ class Collection(object):
 
                 continue
             elif guide.association_type == AssociationType.ONE_TO_MANY:
-                proxy_list = EntityCollection()
+                proxy_list = []
 
                 for sub_document_attributes in document.__getattribute__(property_name):
                     proxy_list.append(
@@ -90,10 +90,9 @@ class Collection(object):
             else None
 
     def filter(self, criteria={}):
-        data_list   = self._api.find(criteria)
-        object_list = [self._dehydrate_object(**data) for data in data_list]
+        data_list = self._api.find(criteria)
 
-        return EntityCollection(object_list)
+        return [self._dehydrate_object(**data) for data in data_list]
 
     def filter_one(self, criteria={}):
         raw_data = self._api.find_one(criteria)

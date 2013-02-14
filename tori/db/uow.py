@@ -1,6 +1,6 @@
 from time import time
 from threading import Lock as ThreadLock
-from tori.db.common    import Serializer, PseudoObjectId, ProxyObject, EntityCollection
+from tori.db.common    import Serializer, PseudoObjectId, ProxyObject
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUpdateError, UOWUnknownRecordError, IntegrityConstraintError
 from tori.db.mapper import CascadingType
 
@@ -197,7 +197,7 @@ class UnitOfWork(object):
                 or not reference:
                 continue
 
-            if isinstance(reference, EntityCollection):
+            if isinstance(reference, list):
                 for sub_reference in reference:
                     self._register_by_cascading_type(
                         self.hydrate_entity(sub_reference),
