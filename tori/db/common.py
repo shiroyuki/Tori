@@ -24,21 +24,18 @@ class Serializer(ArraySerializer):
             if name[0] == '_' or name == 'id':
                 continue
 
-            value = data.__getattribute__(name)
+            property_reference = data.__getattribute__(name)
 
-            if callable(value):
+            if callable(property_reference):
                 continue
 
-            is_proxy    = isinstance(value, ProxyObject)
-            is_document = isinstance(data, object) and '__relational_map__' in dir(data)
+            if isinstance(property_reference, list):
+                value = []
 
-            if value and not self._is_primitive_type(value):
-                if self._max_depth and stack_depth >= self._max_depth:
-                    value = u'%s' % value
-                elif is_proxy or is_document:
-                    value = value.id
-                else:
-                    value = self.encode(value, stack_depth + 1)
+                for item in property_reference:
+                    value.append(self._process_value(data, item, stack_depth))
+            else:
+                value = self._process_value(data, property_reference, stack_depth)
 
             returnee[name] = value
 
@@ -47,48 +44,24 @@ class Serializer(ArraySerializer):
 
         return returnee
 
+    def _process_value(self, data, value, stack_depth):
+        is_proxy    = isinstance(value, ProxyObject)
+        is_document = isinstance(data, object) and '__relational_map__' in dir(data)
+
+        processed_data = value
+
+        if value and not self._is_primitive_type(value):
+            if self._max_depth and stack_depth >= self._max_depth:
+                processed_data = value
+            elif is_proxy or is_document:
+                processed_data = value.id
+            else:
+                processed_data = self.encode(value, stack_depth + 1)
+
+        return processed_data
+
     def default_primitive_types(self):
         return super(Serializer, self).default_primitive_types() + [PseudoObjectId]
-
-class GuidGenerator(object):
-    """Simply GUID Generator"""
-    def __init__(self):
-        self.counter     = 0
-        self.known_guids = []
-
-    def generate(self):
-        """Generate the GUID
-
-        :return: Global unique identifier within the scope of the generator
-        :rtype: str
-        """
-        self.counter = self.counter + 1
-
-        guid = None
-
-        while guid in self.known_guids or not guid:
-            guid = self._generate()
-
-        return guid
-
-    def _generate(self):
-        """Generate an identifier
-
-        :return: Global unique identifier within the scope of the generator
-        :rtype: str
-        """
-        return u'{}.{}'.format(time(), self.counter)
-
-class HashGuidGenerator(GuidGenerator):
-    """Hash-type GUID Generator"""
-
-    def __init__(self):
-        GuidGenerator.__init__(self)
-
-        self.enigma = Enigma.instance()
-
-    def _generate(self):
-        return self.enigma.hash(super(self, GuidGenerator)._generate())
 
 class PseudoObjectId(ObjectId):
     """Pseudo Object ID
@@ -101,30 +74,30 @@ class PseudoObjectId(ObjectId):
 
 class ProxyObject(object):
     def __init__(self, em, cls, object_id, read_only, cascading_options):
-        self._collection = em.collection(cls)
-        self._object_id  = object_id
-        self._object     = None
-        self._read_only  = read_only
-        self._cascading_options = cascading_options
+        self.__dict__['_collection'] = em.collection(cls)
+        self.__dict__['_object_id'] =  object_id
+        self.__dict__['_object'] =     None
+        self.__dict__['_read_only'] =  read_only
+        self.__dict__['_cascading_options'] = cascading_options
 
     def __getattr__(self, item):
-        if not self._object:
-            self._object = self._collection.get(self._object_id)
+        if not self.__dict__['_object']:
+            entity = self._collection.get(self.__dict__['_object_id'])
+
+            if entity:
+                self.__dict__['_object'] = entity
 
         if item == '_actual':
-            return self._object
+            return self.__dict__['_object']
         elif item[0] == '_':
-            return self.__getattribute__(item)
-        elif not self._object_id:
-            return
+            return self.__dict__[item]
+        elif not self.__dict__['_object_id'] or not self.__dict__['_object']:
+            return None
 
-        return self._object.__getattribute__(item)
+        return self.__dict__['_object'].__getattribute__(item)
 
-    def __setattribute__(self, key, value):
+    def __setattr__(self, key, value):
         if self._read_only:
             raise ReadOnlyProxyException('The proxy is read only.')
-
-        if not self._object:
-            self._object = self._collection.get(self._object_id)
 
         self._object.__setattr__(key, value)

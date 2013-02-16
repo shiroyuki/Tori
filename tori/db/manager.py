@@ -22,13 +22,6 @@ class Manager(object):
         for document_type in document_types:
             self._registered_types[document_type.__collection_name__] = document_type
 
-    def has_cascading(self):
-        for document_class_name in self._collections:
-            if self._collections[document_class_name]._class.__relational_map__:
-                return True
-
-        return False
-
     @property
     def db(self):
         """ Database-level API

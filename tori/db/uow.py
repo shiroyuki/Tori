@@ -148,10 +148,8 @@ class UnitOfWork(object):
         if record.status == Record.STATUS_DELETED:
             raise UOWUpdateError('Could not update the deleted entity.')
 
-        if record.status == Record.STATUS_NEW or not self.compute_change_set(record):
-            return
-
-        record.status = Record.STATUS_DIRTY
+        if record.status != Record.STATUS_NEW and self.compute_change_set(record):
+            record.status = Record.STATUS_DIRTY
 
         self.cascade_property_registration_of(entity, CascadingType.PERSIST)
 
@@ -176,6 +174,8 @@ class UnitOfWork(object):
         if record.status == Record.STATUS_NEW:
             self.delete_record(entity)
 
+            self.unfreeze()
+
             return
 
         record.status = Record.STATUS_DELETED
@@ -184,13 +184,19 @@ class UnitOfWork(object):
 
         self.unfreeze()
 
-    def cascade_property_registration_of(self, entity, cascading_type):
+    def cascade_property_registration_of(self, reference, cascading_type):
+        entity = reference
+
+        if isinstance(reference, ProxyObject):
+            entity = reference._actual
+
         if '__relational_map__' not in dir(entity):
             return
 
         for property_name in entity.__relational_map__:
-            guide     = entity.__relational_map__[property_name]
-            reference = self.hydrate_entity(entity.__getattribute__(property_name))
+            guide       = entity.__relational_map__[property_name]
+            actual_data = entity.__getattribute__(property_name)
+            reference   = self.hydrate_entity(actual_data)
 
             if not guide.cascading_options\
                 or cascading_type not in guide.cascading_options\
@@ -198,14 +204,20 @@ class UnitOfWork(object):
                 continue
 
             if isinstance(reference, list):
-                for sub_reference in reference:
+                for sub_reference in actual_data:
                     self._register_by_cascading_type(
                         self.hydrate_entity(sub_reference),
                         cascading_type,
                         guide.target_class
                     )
 
-            self._register_by_cascading_type(reference, cascading_type, guide.target_class)
+                continue
+
+            self._register_by_cascading_type(
+                reference,
+                cascading_type,
+                guide.target_class
+            )
 
     def _register_by_cascading_type(self, reference, cascading_type, expected_class):
         if cascading_type == CascadingType.PERSIST:
@@ -238,10 +250,12 @@ class UnitOfWork(object):
 
         self.freeze()
 
-        # Load the entire graph of supervised collections.
-        if self._em.has_cascading():
-            for c in self._em.collections:
-                c.filter()
+        # Load the sub graph of supervised collections.
+        for c in self._em.collections:
+            if not c.has_cascading():
+                continue
+
+            c.filter()
 
         commit_order = self.compute_order()
 
@@ -342,7 +356,9 @@ class UnitOfWork(object):
         return None
 
     def _retrieve_entity_guid(self, entity):
-        return hash(entity)
+        return self._object_id_map[self._convert_object_id_to_str(entity.id)]\
+            if isinstance(entity, ProxyObject)\
+            else hash(entity)
 
     def _generate_pseudo_object_id(self):
         return PseudoObjectId()

@@ -27,6 +27,7 @@ class Collection(object):
         self._class = document_class
         self._em    = em
         self._api   = api
+        self._has_cascading = None
 
     @property
     def name(self):
@@ -136,6 +137,20 @@ class Collection(object):
         self._em._uow.register_clean(document)
 
         return document
+
+    def has_cascading(self):
+        if self._has_cascading is not None:
+            return self._has_cascading
+
+        self._has_cascading = False
+
+        for property_name in self._class.__relational_map__:
+            if self._class.__relational_map__[property_name].cascading_options:
+                self._has_cascading = True
+
+                break
+
+        return self._has_cascading
 
     def __len__(self):
         return self._api.count()
