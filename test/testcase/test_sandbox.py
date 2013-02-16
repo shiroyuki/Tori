@@ -31,31 +31,8 @@ class TestSandbox(TestCase):
         for collection in self.em.collections:
             collection._api.remove() # Reset the database
 
-    def test_fetch_document_with_one_to_many_association(self):
-        self.__inject_data_with_one_to_many_association()
-
-        c = self.em.collection(Developer)
-
-        boss = c.filter_one({'name': 'boss'})
-
-        self.assertIsInstance(boss.delegates, list)
-
-        self.assertIsInstance(boss.delegates[0], ProxyObject)
-        self.assertEqual(boss.delegates[0].name, 'a')
-        self.assertIsInstance(boss.delegates[1], ProxyObject)
-        self.assertEqual(boss.delegates[1].name, 'b')
-
-        boss.delegates[0].name = 'assistant'
-
-        self.em.persist(boss.delegates[0])
-
-        order = self.em._uow.compute_order()
-
-        self.em.flush()
-
-        data = c._api.find_one({'_id': boss.delegates[0].id})
-
-        self.assertEqual(boss.delegates[0].name, data['name'])
+    def test_sandbox(self):
+        return
 
     def __debug_graph(self, graph):
         print('----- Begin -----')
@@ -71,11 +48,3 @@ class TestSandbox(TestCase):
             for other in node.reverse_edges:
                 print('  <-- [{} {} {}]'.format(other.record.entity.name, other.score, node.record.entity.id))
         print('----- End -----')
-
-    def __inject_data_with_one_to_many_association(self):
-        api = self.em.collection(Developer)._api
-
-        a_id = api.insert({'name': 'a'})
-        b_id = api.insert({'name': 'b'})
-
-        api.insert({'name': 'boss', 'delegates': [a_id, b_id]})

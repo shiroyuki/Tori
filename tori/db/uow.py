@@ -173,12 +173,8 @@ class UnitOfWork(object):
 
         if record.status == Record.STATUS_NEW:
             self.delete_record(entity)
-
-            self.unfreeze()
-
-            return
-
-        record.status = Record.STATUS_DELETED
+        else:
+            record.status = Record.STATUS_DELETED
 
         self.cascade_property_registration_of(entity, CascadingType.DELETE)
 
@@ -281,6 +277,8 @@ class UnitOfWork(object):
                 )
             elif record.status == Record.STATUS_DELETED and commit_node.score == 0:
                 self.synchronize_delete(collection, record.entity.id)
+            elif record.status == Record.STATUS_DELETED and commit_node.score > 0:
+                record.status = Record.STATUS_CLEAN
 
         self.synchronize_records()
         self.unfreeze()

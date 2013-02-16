@@ -262,13 +262,13 @@ class TestDbManager(TestCase):
         self.em.delete(architect)
         self.em.flush()
 
-        self.assertEqual(2, len(c.filter()), 'should have some dependencies left (but no orphan node)')
+        self.assertEqual(4, len(c.filter()), 'should have some dependencies left (but no orphan node)')
 
         # Test: cascading on delete with no dependencies left (orphan removal)
         self.em.delete(boss)
         self.em.flush()
 
-        self.assertEqual(0, len(c.filter()), 'should have some dependencies left (but no orphan node)')
+        self.assertEqual(0, len(c.filter()), 'should have no dependencies left (orphan removal)')
 
     def __inject_data_with_cascading(self):
         reference_map = {}
