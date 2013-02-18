@@ -1,6 +1,7 @@
 from pymongo import Connection
 from tori.db.common import PseudoObjectId, ProxyObject
 from tori.db.collection import Collection
+from tori.db.exception import IntegrityConstraintError
 from tori.db.mapper import AssociationType
 from tori.db.uow import UnitOfWork
 
@@ -110,27 +111,42 @@ class Manager(object):
                 )
 
                 entity.__setattr__(property_name, proxy)
-
-                continue
             elif guide.association_type == AssociationType.ONE_TO_MANY:
                 proxy_list = []
 
-                for sub_document_attributes in entity.__getattribute__(property_name):
+                for object_id in entity.__getattribute__(property_name):
                     proxy_list.append(
                         ProxyObject(
                             self,
                             guide.target_class,
-                            sub_document_attributes,
+                            object_id,
                             guide.read_only,
                             guide.cascading_options
                         )
                     )
 
                 entity.__setattr__(property_name, proxy_list)
+            elif guide.association_type == AssociationType.MANY_TO_MANY:
+                proxy_list   = []
+                map_name     = '{}_{}'.format(entity.__class__.__name__, guide.target_class.__name__)
+                mapping_list = self.db[map_name].find_one({'from': entity.id})
 
-                continue
+                for data_set in mapping_list:
+                    object_id = data_set['to']
 
-            # elif guide.association_type == AssociationType.MANY_TO_MANY
+                    proxy_list.append(
+                        ProxyObject(
+                            self,
+                            guide.target_class,
+                            object_id,
+                            guide.read_only,
+                            guide.cascading_options
+                        )
+                    )
+
+                entity.__setattr__(property_name, proxy_list)
+            else:
+                raise IntegrityConstraintError('Unknown type of entity association')
 
     def _get_class_key(self, entity):
         return hash(entity.__class__)
