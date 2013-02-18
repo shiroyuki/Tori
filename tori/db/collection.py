@@ -46,40 +46,7 @@ class Collection(object):
         """
         document = self._class(**attributes)
 
-        for property_name in self._class.__relational_map__:
-            guide = self._class.__relational_map__[property_name]
-
-            if guide.association_type in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
-                proxy = ProxyObject(
-                    self._em,
-                    guide.target_class,
-                    document.__getattribute__(property_name),
-                    guide.read_only,
-                    guide.cascading_options
-                )
-
-                document.__setattr__(property_name, proxy)
-
-                continue
-            elif guide.association_type == AssociationType.ONE_TO_MANY:
-                proxy_list = []
-
-                for sub_document_attributes in document.__getattribute__(property_name):
-                    proxy_list.append(
-                        ProxyObject(
-                            self._em,
-                            guide.target_class,
-                            sub_document_attributes,
-                            guide.read_only,
-                            guide.cascading_options
-                        )
-                    )
-
-                document.__setattr__(property_name, proxy_list)
-
-                continue
-
-            # guide.association_type == AssociationType.MANY_TO_MANY
+        self._em.apply_relational_map(document)
 
         return document
 

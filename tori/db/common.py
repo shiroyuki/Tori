@@ -61,7 +61,7 @@ class Serializer(ArraySerializer):
         return processed_data
 
     def default_primitive_types(self):
-        return super(Serializer, self).default_primitive_types() + [PseudoObjectId]
+        return super(Serializer, self).default_primitive_types() + [PseudoObjectId, ObjectId]
 
 class PseudoObjectId(ObjectId):
     """Pseudo Object ID

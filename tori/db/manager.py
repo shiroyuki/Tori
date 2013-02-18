@@ -1,6 +1,7 @@
 from pymongo import Connection
-from tori.db.common import PseudoObjectId
+from tori.db.common import PseudoObjectId, ProxyObject
 from tori.db.collection import Collection
+from tori.db.mapper import AssociationType
 from tori.db.uow import UnitOfWork
 
 class Manager(object):
@@ -40,15 +41,15 @@ class Manager(object):
     def collections(self):
         return [self.collection(self._registered_types[key]) for key in self._registered_types]
 
-    def collection(self, document_class):
+    def collection(self, entity_class):
         """Retrieve the collection
 
-        :param document_class: the class of document/entity
-        :type  document_class: type
+        :param entity_class: the class of document/entity
+        :type  entity_class: type
 
         :rtype: tori.db.collection.Collection
         """
-        key = document_class.__collection_name__
+        key = entity_class.__collection_name__
 
         if key not in self._registered_types:
             return None
@@ -66,6 +67,13 @@ class Manager(object):
         for entity in entities:
             self.persist_one(entity)
 
+    def refresh(self, *entities):
+        for entity in entities:
+            self.refresh_one(entity)
+
+    def refresh_one(self, entity):
+        self._uow.refresh(entity)
+
     def persist_one(self, entity):
         registering_action = self._uow.register_new\
             if self._uow.is_new(entity)\
@@ -76,17 +84,53 @@ class Manager(object):
     def flush(self):
         self._uow.commit()
 
-    def register(self, document_class):
-        key = hash(document_class)
+    def register(self, entity_class):
+        key = hash(entity_class)
 
         if key in self._collections:
             return
 
-        self._collections[key] = Collection(self.database, document_class)
+        self._collections[key] = Collection(self.database, entity_class)
 
-    def register_multiple(self, *document_classes):
-        for document_class in document_classes:
-            self.register(document_class)
+    def register_multiple(self, *entity_classes):
+        for entity_class in entity_classes:
+            self.register(entity_class)
+
+    def apply_relational_map(self, entity):
+        for property_name in entity.__relational_map__:
+            guide = entity.__relational_map__[property_name]
+
+            if guide.association_type in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
+                proxy = ProxyObject(
+                    self,
+                    guide.target_class,
+                    entity.__getattribute__(property_name),
+                    guide.read_only,
+                    guide.cascading_options
+                )
+
+                entity.__setattr__(property_name, proxy)
+
+                continue
+            elif guide.association_type == AssociationType.ONE_TO_MANY:
+                proxy_list = []
+
+                for sub_document_attributes in entity.__getattribute__(property_name):
+                    proxy_list.append(
+                        ProxyObject(
+                            self,
+                            guide.target_class,
+                            sub_document_attributes,
+                            guide.read_only,
+                            guide.cascading_options
+                        )
+                    )
+
+                entity.__setattr__(property_name, proxy_list)
+
+                continue
+
+            # elif guide.association_type == AssociationType.MANY_TO_MANY
 
     def _get_class_key(self, entity):
         return hash(entity.__class__)

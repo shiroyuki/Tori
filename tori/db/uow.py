@@ -120,6 +120,32 @@ class UnitOfWork(object):
 
         self._tlock.release()
 
+    def refresh(self, entity):
+        collection = self._em.collection(entity.__class__)
+        record     = self.retrieve_record(entity)
+
+        updated_data_set = collection._api({'_id': entity.id})
+
+        # Reset the attributes.
+        for attribute_name in updated_data_set:
+            entity.__setattr__(attribute_name, updated_data_set[attribute_name])
+
+        # Remove the non-existed attributes.
+        for attribute_name in record.original_data_set:
+            if attribute_name in updated_data_set:
+                continue
+
+            entity.__delattr__(attribute_name)
+
+        # Update the original data set and reset the status if necessary.
+        record.original_data_set = Record.serializer.encode(entity)
+
+        if record.status == Record.STATUS_DIRTY:
+            record.status = Record.STATUS_CLEAN
+
+        # Remap the object.
+        self._em.apply_relational_map(entity)
+
     def register_new(self, entity):
         self.freeze()
 

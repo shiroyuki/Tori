@@ -38,13 +38,10 @@ class ArraySerializer(object):
         if not self._primitive_types:
             self._primitive_types = self.default_primitive_types()
 
-            # Prevent the code from raising exceptions due to Python-3 backward-compatibility break.
-            try:
-                self._permitive_types.extend([unicode, long])
-            except:
-                pass
-
         return type(value) in self._primitive_types
 
     def default_primitive_types(self):
-        return [int, float, str, list, dict, tuple, set, bool]
+        try:
+            return [int, float, str, list, dict, tuple, set, bool, unicode, long]
+        except NameError as exception:
+            return [int, float, str, list, dict, tuple, set, bool]
