@@ -41,13 +41,13 @@ class EmbeddingGuide(BaseGuide):
     pass
 
 class RelatingGuide(BaseGuide):
-    def __init__(self, target_class, target_property, association_type,
+    def __init__(self, target_class, is_reverse_mapping, association_type,
                  read_only, cascading_options):
         BaseGuide.__init__(self, target_class, association_type)
 
-        self.target_property   = target_property
-        self.read_only         = read_only
-        self.cascading_options = cascading_options
+        self.is_reverse_mapping = is_reverse_mapping
+        self.read_only          = read_only
+        self.cascading_options  = cascading_options
 
 def __prevent_duplicated_mapping(cls, property_name):
     if not cls:
@@ -67,16 +67,16 @@ def embed(property, target, association_type=AssociationType.AUTO_DETECT):
 
     return decorator
 
-def link(property, target=None, target_property=None,
+def link(mapped_by=None, target=None, inverted_by=None,
          association_type=AssociationType.AUTO_DETECT, read_only=False,
-         cascading_options=[]):
+         cascading=[]):
     """Link between two documents
 
     .. warning:: This is experimental for Tori 2.1
 
-    :param property:         the name of property of the current class
+    :param mapped_by:        the name of property of the current class
     :param target:           the target class
-    :param target_property:  the name of property of the target class
+    :param inverted_by:      the name of property of the target class
     :param association_type: the type of association
     :param read_only:        the flag to indicate whether this is for read only.
 
@@ -92,16 +92,23 @@ def link(property, target=None, target_property=None,
         raise ValueError('Unknown association')
 
     def decorator(cls):
-        __prevent_duplicated_mapping(cls, property)
+        mapped_property_name = inverted_by
+        is_reverse_mapping   = True
+
+        if mapped_by:
+            mapped_property_name = mapped_by
+            is_reverse_mapping   = False
+
+        __prevent_duplicated_mapping(cls, mapped_by)
         __map_property(
             cls,
-            property,
+            mapped_property_name,
             RelatingGuide(
                 target or cls,
-                target_property,
+                is_reverse_mapping,
                 association_type,
                 read_only,
-                cascading_options
+                cascading
             )
         )
 
