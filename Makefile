@@ -8,8 +8,8 @@ doc_update:
 	cd docs && make html
 
 test: clean
-	cd test && python test.py
-	cd test && python3 test.py
+	nosetests -w test
+	nosetests-3.3 -w test
 
 clean:
 	rm -Rf MANIFEST dist docs/build/*
