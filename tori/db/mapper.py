@@ -37,6 +37,9 @@ class BaseGuide(object):
         self.target_class = target_class
         self.association_type = association_type
 
+    def _disabled_method(self, *args, **kwargs):
+        raise NotImplemented('Read-only access')
+
 class EmbeddingGuide(BaseGuide):
     pass
 
@@ -48,6 +51,9 @@ class RelatingGuide(BaseGuide):
         self.is_reverse_mapping = is_reverse_mapping
         self.read_only          = read_only
         self.cascading_options  = cascading_options
+
+        self.__setattr__ = self._disabled_method
+        self.__delattr__ = self._disabled_method
 
 def __prevent_duplicated_mapping(cls, property_name):
     if not cls:
