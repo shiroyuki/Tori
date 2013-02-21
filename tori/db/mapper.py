@@ -16,7 +16,7 @@ This is a module handling object association.
 from tori.db.exception import DuplicatedRelationalMapping
 
 class AssociationType(object):
-    AUTO_DETECT  = 1
+    AUTO_DETECT  = 1 # Not support in the near future
     ONE_TO_ONE   = 2
     ONE_TO_MANY  = 3
     MANY_TO_ONE  = 4
@@ -32,10 +32,12 @@ class CascadingType(object):
     MERGE   = 3 # Not supported in Tori 2.1
     DETACH  = 4 # Not supported in Tori 2.1
 
+class OnDeleteType(object)
+
 class BaseGuide(object):
-    def __init__(self, target_class, association_type):
+    def __init__(self, target_class, association):
         self.target_class = target_class
-        self.association_type = association_type
+        self.association  = association
 
     def _disabled_method(self, *args, **kwargs):
         raise NotImplemented('Read-only access')
@@ -44,9 +46,9 @@ class EmbeddingGuide(BaseGuide):
     pass
 
 class RelatingGuide(BaseGuide):
-    def __init__(self, target_class, is_reverse_mapping, association_type,
-                 read_only, cascading_options):
-        BaseGuide.__init__(self, target_class, association_type)
+    def __init__(self, target_class, is_reverse_mapping, association,
+                 read_only, cascading_options, on_delete):
+        BaseGuide.__init__(self, target_class, association)
 
         self.is_reverse_mapping = is_reverse_mapping
         self.read_only          = read_only
