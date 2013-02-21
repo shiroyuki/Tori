@@ -5,5 +5,7 @@ python:
 services:
   - mongodb
   - redis-service
-install: "pip install -q kotoba imagination tornado jinja2 sqlalchemy redis pymongo"
+install:
+  - "pip install -q kotoba tornado jinja2 sqlalchemy redis pymongo"
+  - "git clone https://github.com/shiroyuki/Imagination.git && cd Imagination && python setup.py install"
 script:  "nosetests -w test"
