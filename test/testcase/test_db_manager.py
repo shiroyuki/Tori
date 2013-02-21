@@ -11,8 +11,8 @@ from tori.db.document import document
 from tori.db.manager import Manager
 from tori.db.mapper import link, CascadingType, AssociationType
 
-@link('left', association_type=AssociationType.ONE_TO_ONE, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
-@link('right', association_type=AssociationType.ONE_TO_ONE, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
+@link('left', association=AssociationType.ONE_TO_ONE, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
+@link('right', association=AssociationType.ONE_TO_ONE, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
 @document
 class TestNode(object):
     def __init__(self, name, left, right):
@@ -28,8 +28,8 @@ class Computer(object):
     def __init__(self, name):
         self.name = name
 
-@link('computer', Computer, association_type=AssociationType.ONE_TO_ONE)
-@link('delegates', association_type=AssociationType.ONE_TO_MANY, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
+@link('computer', Computer, association=AssociationType.ONE_TO_ONE)
+@link('delegates', association=AssociationType.ONE_TO_MANY, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
 @document
 class Developer(object):
     def __init__(self, name, computer=None, delegates=[]):

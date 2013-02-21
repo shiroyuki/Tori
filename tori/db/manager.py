@@ -100,8 +100,9 @@ class Manager(object):
     def apply_relational_map(self, entity):
         for property_name in entity.__relational_map__:
             guide = entity.__relational_map__[property_name]
+            """ :type: tori.db.mapper.RelatingGuide """
 
-            if guide.association_type in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
+            if guide.association in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
                 proxy = ProxyObject(
                     self,
                     guide.target_class,
@@ -111,7 +112,7 @@ class Manager(object):
                 )
 
                 entity.__setattr__(property_name, proxy)
-            elif guide.association_type == AssociationType.ONE_TO_MANY:
+            elif guide.association == AssociationType.ONE_TO_MANY:
                 proxy_list = []
 
                 for object_id in entity.__getattribute__(property_name):
@@ -126,10 +127,10 @@ class Manager(object):
                     )
 
                 entity.__setattr__(property_name, proxy_list)
-            elif guide.association_type == AssociationType.MANY_TO_MANY:
+            elif guide.association == AssociationType.MANY_TO_MANY:
                 proxy_list   = []
-                map_name     = '{}_{}'.format(entity.__class__.__name__, guide.target_class.__name__)
-                mapping_list = self.db[map_name].find_one({'from': entity.id})
+                map_name     = guide.association_collection_name(entity)
+                mapping_list = self.db[map_name].find({'from': entity.id})
 
                 for data_set in mapping_list:
                     object_id = data_set['to']

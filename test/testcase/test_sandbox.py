@@ -15,8 +15,8 @@ class Computer(object):
     def __init__(self, name):
         self.name = name
 
-@link('computer', Computer, association_type=AssociationType.ONE_TO_ONE)
-@link('delegates', association_type=AssociationType.ONE_TO_MANY, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
+@link('computer', Computer, association=AssociationType.ONE_TO_ONE)
+@link('delegates', association=AssociationType.ONE_TO_MANY, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
 @document
 class Developer(object):
     def __init__(self, name, computer=None, delegates=[]):

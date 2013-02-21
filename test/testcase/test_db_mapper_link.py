@@ -25,9 +25,9 @@ class Weapon(object):
         self.attack = attack
         self.defend = defend
 
-@link('job', Job, association_type=AssociationType.ONE_TO_ONE)
-@link('left_hand', Weapon, association_type=AssociationType.ONE_TO_ONE)
-@link('right_hand', Weapon, association_type=AssociationType.ONE_TO_ONE)
+@link('job', Job, association=AssociationType.ONE_TO_ONE)
+@link('left_hand', Weapon, association=AssociationType.ONE_TO_ONE)
+@link('right_hand', Weapon, association=AssociationType.ONE_TO_ONE)
 @document('c')
 class Character(object):
     def __init__(self, name, level, job, left_hand, right_hand, _id=None):

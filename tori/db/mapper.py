@@ -32,7 +32,13 @@ class CascadingType(object):
     MERGE   = 3 # Not supported in Tori 2.1
     DETACH  = 4 # Not supported in Tori 2.1
 
-class OnDeleteType(object)
+class OnDeleteType(object):
+    CASCADING = 1 # Default
+    SET_NULL  = 2
+
+    @staticmethod
+    def known_type(t):
+        return OnDeleteType.CASCADING <= t <= OnDeleteType.SET_NULL
 
 class BaseGuide(object):
     def __init__(self, target_class, association):
@@ -53,9 +59,13 @@ class RelatingGuide(BaseGuide):
         self.is_reverse_mapping = is_reverse_mapping
         self.read_only          = read_only
         self.cascading_options  = cascading_options
+        self.on_delete          = on_delete
 
         self.__setattr__ = self._disabled_method
         self.__delattr__ = self._disabled_method
+
+    def association_collection_name(self, entity):
+        return '{}_{}'.format(entity.__collection_name__, self.target_class.__collection_name__)
 
 def __prevent_duplicated_mapping(cls, property_name):
     if not cls:
@@ -76,27 +86,31 @@ def embed(property, target, association_type=AssociationType.AUTO_DETECT):
     return decorator
 
 def link(mapped_by=None, target=None, inverted_by=None,
-         association_type=AssociationType.AUTO_DETECT, read_only=False,
-         cascading=[]):
+         association=AssociationType.AUTO_DETECT, read_only=False,
+         cascading=[], on_delete=OnDeleteType.CASCADING):
     """Link between two documents
 
     .. warning:: This is experimental for Tori 2.1
 
-    :param mapped_by:        the name of property of the current class
-    :param target:           the target class
-    :param inverted_by:      the name of property of the target class
-    :param association_type: the type of association
-    :param read_only:        the flag to indicate whether this is for read only.
+    :param mapped_by:   the name of property of the current class
+    :param target:      the target class
+    :param inverted_by: the name of property of the target class
+    :param association: the type of association
+    :param read_only:   the flag to indicate whether this is for read only.
+    :param cascading:   the list of actions on cascading
+    :param on_delete:   the type of action on delete
 
     :return: the decorator callback
 
     If :param:`target` is not defined, the default target will be the reference class.
+
+    ``on_delete`` will be only used if cascading is required on deletion.
     """
 
-    if association_type == AssociationType.AUTO_DETECT:
+    if association == AssociationType.AUTO_DETECT:
         raise ValueError('The association is not specified.')
 
-    if not AssociationType.known_type(association_type):
+    if not AssociationType.known_type(association):
         raise ValueError('Unknown association')
 
     def decorator(cls):
@@ -114,9 +128,10 @@ def link(mapped_by=None, target=None, inverted_by=None,
             RelatingGuide(
                 target or cls,
                 is_reverse_mapping,
-                association_type,
+                association,
                 read_only,
-                cascading
+                cascading,
+                on_delete
             )
         )
 

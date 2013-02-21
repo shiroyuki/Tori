@@ -60,6 +60,11 @@ class TestDbCollection(unittest.TestCase):
     def test_get_document(self):
         self.assertEquals(None, self.collection.get(50))
 
+    def test_fetch_document(self):
+        self.assertEquals(4, self.collection.count())
+        self.assertEquals(4, len(self.collection.filter()))
+        self.assertEquals(2, len(self.collection.filter(length=2)))
+
     def test_insert_document_with_predefined_id(self):
         d = Document(**self.test_new_data)
 

@@ -7,9 +7,7 @@ Collection
 
 The module provides a simple wrapper to work with MongoDB and Tori ORM.
 """
-from tori.db.common import ProxyObject
 from tori.db.exception import MissingObjectIdException
-from tori.db.mapper import AssociationType
 
 class Collection(object):
     """
@@ -46,28 +44,42 @@ class Collection(object):
         """
         document = self._class(**attributes)
 
-        self._em.apply_relational_map(document)
-
         return document
 
     def get(self, id):
         data = self._api.find_one({'_id': id})
 
-        return self._dehydrate_object(**data)\
-            if   data\
-            else None
+        if not data:
+            return None
 
-    def filter(self, criteria={}):
+        document = self._dehydrate_object(**data)
+
+        return document
+
+    def filter(self, criteria={}, offset=0, length=None):
         data_list = self._api.find(criteria)
 
-        return [self._dehydrate_object(**data) for data in data_list]
+        if length and isinstance(length, int):
+            data_list = data_list[offset:(offset + length)]
+
+        document_list = []
+
+        for data in data_list:
+            document = self._dehydrate_object(**data)
+
+            document_list.append(document)
+
+        return document_list
 
     def filter_one(self, criteria={}):
         raw_data = self._api.find_one(criteria)
 
-        return self._dehydrate_object(**raw_data)\
-            if   raw_data\
-            else None
+        if not raw_data:
+            return None
+
+        document = self._dehydrate_object(**raw_data)
+
+        return document
 
     def post(self, document):
         self._em._uow.register_new(document)
@@ -100,6 +112,8 @@ class Collection(object):
 
         document    = self.new(**data)
         document.id = id
+
+        self._em.apply_relational_map(document)
 
         self._em._uow.register_clean(document)
 
