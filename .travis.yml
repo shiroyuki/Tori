@@ -1,0 +1,9 @@
+language: python
+python:
+  - "3.3"
+  - "2.7"
+services:
+  - mongodb
+  - redis-service
+install: "pip install imagination tornado jinja2 sqlalchemy redis"
+script:  "cd test && python test.py"
