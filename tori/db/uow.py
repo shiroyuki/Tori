@@ -216,7 +216,11 @@ class UnitOfWork(object):
             return
 
         for property_name in entity.__relational_map__:
-            guide       = entity.__relational_map__[property_name]
+            guide = entity.__relational_map__[property_name]
+
+            if guide.is_reverse_mapping:
+                continue
+
             actual_data = entity.__getattribute__(property_name)
             reference   = self.hydrate_entity(actual_data)
 
