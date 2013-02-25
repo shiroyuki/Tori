@@ -1,14 +1,9 @@
 from unittest import TestCase
+from pymongo import Connection
+from tori.db.session import Session
 from tori.db.common import ProxyObject
 from tori.db.uow import Record
-
-try:
-    from unittest.mock import Mock, MagicMock # Python 3.3
-except ImportError as exception:
-    from mock import Mock, MagicMock # Python 2.7
-
 from tori.db.document import document
-from tori.db.manager import Manager
 from tori.db.mapper import link, CascadingType, AssociationType
 
 @link('left', association=AssociationType.ONE_TO_ONE, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
@@ -37,17 +32,19 @@ class Developer(object):
         self.computer  = computer
         self.delegates = delegates
 
-class TestDbManager(TestCase):
-    em = Manager('test_tori_db_manager', document_types=[Developer, Computer, TestNode])
+class TestDbSession(TestCase):
+    connection       = Connection()
+    registered_types = {
+        'developer': Developer,
+        'computer':  Computer,
+        'testnode':  TestNode
+    }
 
     def setUp(self):
-        self.session = self.em.open_session()
+        self.session = Session(0, self.connection['test_tori_db_session'], self.registered_types)
 
         for collection in self.session.collections:
             collection._api.remove() # Reset the database
-
-    def tearDown(self):
-        self.em.close_session(self.session)
 
     def test_commit_with_insert_with_cascading(self):
         reference_map = self.__inject_data_with_cascading()

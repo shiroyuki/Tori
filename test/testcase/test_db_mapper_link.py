@@ -1,4 +1,6 @@
 import unittest
+from pymongo import Connection
+from tori.db.session import Session
 from tori.db.collection import Collection
 from tori.db.common import ProxyObject
 from tori.db.document   import document
@@ -39,7 +41,13 @@ class Character(object):
         self.right_hand = right_hand
 
 class TestDbMapperLink(unittest.TestCase):
-    em = 1
+    connection       = Connection()
+    registered_types = {
+        'c': Character,
+        'w': Weapon,
+        'j': Job,
+        's': Skill
+    }
 
     ts_character = {
         '_id':   1,
@@ -75,21 +83,21 @@ class TestDbMapperLink(unittest.TestCase):
     }
 
     def setUp(self):
-        self.em = Manager('tori_test', document_types=[Skill, Job, Weapon, Character, Skill])
+        self.session = Session(0, self.connection['test_tori_db_mapper_link'], self.registered_types)
 
-        for collection in self.em.collections:
+        for collection in self.session.collections:
             collection._api.remove() # Reset the database
 
-        self.em.collection(Character)._api.insert(self.ts_character)
-        self.em.collection(Job)._api.insert(self.ts_job)
-        self.em.collection(Weapon)._api.insert(self.ts_shield)
-        self.em.collection(Weapon)._api.insert(self.ts_sword)
+        self.session.collection(Character)._api.insert(self.ts_character)
+        self.session.collection(Job)._api.insert(self.ts_job)
+        self.session.collection(Weapon)._api.insert(self.ts_shield)
+        self.session.collection(Weapon)._api.insert(self.ts_sword)
 
     def tearDown(self):
         pass
 
     def test_get(self):
-        character = self.em.collection(Character).filter_one()
+        character = self.session.collection(Character).filter_one()
 
         self.assertEqual('Shiroyuki', character.name)
         self.assertIsInstance(character.job, ProxyObject) # Check the type of the proxy object
@@ -97,6 +105,3 @@ class TestDbMapperLink(unittest.TestCase):
         self.assertEqual(1, character.job.id) # Check if the property of the actual object is accessible via the proxy
         self.assertEqual('Knight', character.job.name) # Check if the property of the actual object is accessible via the proxy
         self.assertFalse(character.job._read_only) # Check if the proxy setting is readable
-
-
-

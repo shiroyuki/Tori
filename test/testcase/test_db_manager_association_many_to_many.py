@@ -1,4 +1,6 @@
 from unittest import TestCase
+from pymongo import Connection
+from tori.db.session import Session
 from tori.db.common import ProxyObject
 from tori.db.uow import Record
 
@@ -29,18 +31,24 @@ class Group(object):
         self.members = members
 
 class TestDbManagerAssociationManyToMany(TestCase):
-    def setUp(self):
-        self.em  = Manager('tori_test', document_types=[Group, Member])
+    connection       = Connection()
+    registered_types = {
+        'groups':  Group,
+        'members': Member
+    }
 
-        for collection in self.em.collections:
+    def setUp(self):
+        self.session = Session(0, self.connection['test_tori_db_session_assoc_m2m'], self.registered_types)
+
+        for collection in self.session.collections:
             collection._api.remove() # Reset the database
 
-        self.em.db['groups_members'].remove({}) # Reset the associations
+        self.session.db['groups_members'].remove({}) # Reset the associations
 
         self.__set_fixtures()
 
     def test_load(self):
-        collection = self.em.collection(Group)
+        collection = self.session.collection(Group)
 
         group_a = collection.filter_one({'name': 'group a'})
 
@@ -68,7 +76,7 @@ class TestDbManagerAssociationManyToMany(TestCase):
             (1, 2)
         ]
 
-        api = self.em.collection(Member)._api
+        api = self.session.collection(Member)._api
 
         for data in data_sets['members']:
             object_id   = api.insert(data)
@@ -76,7 +84,7 @@ class TestDbManagerAssociationManyToMany(TestCase):
 
         self.assertEqual(3, api.count())
 
-        api = self.em.collection(Group)._api
+        api = self.session.collection(Group)._api
 
         for data in data_sets['groups']:
             object_id   = api.insert(data)
@@ -84,7 +92,7 @@ class TestDbManagerAssociationManyToMany(TestCase):
 
         self.assertEqual(2, api.count())
 
-        api = self.em.db['groups_members']
+        api = self.session.db['groups_members']
 
         for origin, destination in associations:
             api.insert({
@@ -94,7 +102,7 @@ class TestDbManagerAssociationManyToMany(TestCase):
 
         self.assertEqual(4, api.count())
 
-        collection_names = self.em.db.collection_names()
+        collection_names = self.session.db.collection_names()
 
         self.assertIn('members', collection_names)
         self.assertIn('groups', collection_names)

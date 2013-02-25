@@ -1,4 +1,6 @@
 from unittest import TestCase
+from pymongo import Connection
+from tori.db.session import Session
 
 try:
     from unittest.mock import Mock, MagicMock # Python 3.3
@@ -17,8 +19,13 @@ class TestClass(object):
         self.b = 2
 
 class TestDbUnitOfWork(TestCase):
+    connection       = Connection()
+    registered_types = {
+        'testclass': TestClass
+    }
+
     def setUp(self):
-        self.em  = Manager('tori_test', document_types=[TestClass])
+        self.em  = Session(0, self.connection['test_tori_db_uow'], self.registered_types)
         self.uow = self.em._uow
 
     def test_new(self):
