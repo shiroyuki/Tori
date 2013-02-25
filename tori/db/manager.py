@@ -1,5 +1,5 @@
 from pymongo import Connection
-from tori.db.common import PseudoObjectId, ProxyObject
+from tori.db.common import ProxyObject
 from tori.db.collection import Collection
 from tori.db.exception import IntegrityConstraintError
 from tori.db.mapper import AssociationType

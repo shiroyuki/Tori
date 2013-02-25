@@ -8,8 +8,8 @@ doc_update:
 	cd docs && make html
 
 test: clean
-	nosetests -w test
-	nosetests-3.3 -w test
+	nosetests -c nose.cfg
+	nosetests-3.3 -c nose.cfg
 
 clean:
 	rm -Rf MANIFEST dist docs/build/*
