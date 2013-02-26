@@ -32,6 +32,7 @@ class DependencyNode(object):
         self.record         = record
         self.adjacent_nodes = set()
         self.reverse_edges  = set()
+        self.walked         = False
 
     def connect(self, other):
         self.adjacent_nodes.add(other)
@@ -455,6 +456,11 @@ class UnitOfWork(object):
         return final_order
 
     def _retrieve_dependency_order(self, node, priority_order):
+        if node.walked:
+            return
+
+        node.walked = True
+
         initial_order = list(node.adjacent_nodes)
 
         for adjacent_node in initial_order:
