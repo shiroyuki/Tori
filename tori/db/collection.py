@@ -14,17 +14,17 @@ class Collection(object):
     Collection (Entity Repository) for Mongo DB
 
     :param em: the entity manager
-    :type  em: tori.db.manager.Manager
+    :type  em: tori.db.session.Session
     :param api: collection API
     :type  api: pymongo.collection.Collection
     :param document_class: the document class
-    :type document_class: type
+    :type  document_class: type
 
     """
-    def __init__(self, em, api, document_class):
-        self._class = document_class
-        self._em    = em
-        self._api   = api
+    def __init__(self, session, api, document_class):
+        self._class   = document_class
+        self._session = session
+        self._api     = api
         self._has_cascading = None
 
     @property
@@ -82,25 +82,27 @@ class Collection(object):
         return document
 
     def post(self, document):
-        self._em._uow.register_new(document)
+        self._session._uow.register_new(document)
+
+        document.__session__ = self._session
 
         return document.id
 
     def put(self, document):
-        self._em._uow.register_update(document)
+        self._session._uow.register_update(document)
 
     def delete(self, document):
-        self._em._uow.register_new(document)
+        self._session._uow.register_new(document)
 
     def commit(self):
-        self._em.commit()
+        self._session.commit()
 
     def _dehydrate_object(self, **raw_data):
         if '_id' not in raw_data:
             raise MissingObjectIdException('The key _id in the raw data is not found.')
 
         id     = raw_data['_id']
-        record = self._em._uow.find_recorded_entity(id)
+        record = self._session._uow.find_recorded_entity(id)
 
         # Returned the known document from the record.
         if record:
@@ -112,10 +114,11 @@ class Collection(object):
 
         document    = self.new(**data)
         document.id = id
+        document.__session__ = self._session
 
-        self._em.apply_relational_map(document)
+        self._session.apply_relational_map(document)
 
-        self._em._uow.register_clean(document)
+        self._session._uow.register_clean(document)
 
         return document
 
@@ -126,7 +129,8 @@ class Collection(object):
         self._has_cascading = False
 
         for property_name in self._class.__relational_map__:
-            if self._class.__relational_map__[property_name].cascading_options:
+            cascading_options = self._class.__relational_map__[property_name].cascading_options
+            if cascading_options:
                 self._has_cascading = True
 
                 break

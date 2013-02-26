@@ -105,6 +105,7 @@ def make_document_class(cls, collection_name=None):
 
     cls.__collection_name__ = collection_name or cls.__name__.lower()
     cls.__relational_map__  = {}
+    cls.__session__         = None
 
     cls.id = property(get_id, set_id)
 

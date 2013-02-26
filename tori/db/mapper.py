@@ -16,7 +16,7 @@ This is a module handling object association.
 from tori.db.exception import DuplicatedRelationalMapping
 
 class AssociationType(object):
-    AUTO_DETECT  = 1 # Not support in the near future
+    AUTO_DETECT  = 1 # Not supported in the near future
     ONE_TO_ONE   = 2
     ONE_TO_MANY  = 3
     MANY_TO_ONE  = 4
@@ -34,7 +34,7 @@ class CascadingType(object):
 
 class OnDeleteType(object):
     CASCADING = 1 # Default
-    SET_NULL  = 2
+    SET_NULL  = 2 # Not supported in the near future
 
     @staticmethod
     def known_type(t):
