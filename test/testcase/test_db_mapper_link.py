@@ -1,7 +1,7 @@
 import unittest
 from pymongo import Connection
 from tori.db.session import Session
-from tori.db.collection import Collection
+from tori.db.repository import Repository
 from tori.db.common import ProxyObject
 from tori.db.document   import document
 from tori.db.manager    import Manager

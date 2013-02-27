@@ -1,11 +1,8 @@
 """
+Wrappers for SQLAlchemy
+#######################
+
 :Author: Juti Noppornpitak
-
-Relational Database Entity
-
-This module just provides :class:`tori.db.entity.Entity` as a result of the
-factory method :meth:`sqlalchemy.ext.declarative.declarative_base`.
-
 """
 from os import getpid
 from threading import current_thread

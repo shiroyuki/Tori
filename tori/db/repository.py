@@ -9,9 +9,9 @@ The module provides a simple wrapper to work with MongoDB and Tori ORM.
 """
 from tori.db.exception import MissingObjectIdException
 
-class Collection(object):
+class Repository(object):
     """
-    Collection (Entity AbstractRepository) for Mongo DB
+    Repository (Entity AbstractRepository) for Mongo DB
 
     :param em: the entity manager
     :type  em: tori.db.session.Session

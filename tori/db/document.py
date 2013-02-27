@@ -82,7 +82,7 @@ def make_document_class(cls, collection_name=None):
                 self.content = content
                 self._id     = _id
 
-    From the example, you will notice that this is all it take to make it work with :class:`tori.db.collection.Collection`.
+    From the example, you will notice that this is all it take to make it work with :class:`tori.db.repository.Repository`.
 
     You will also see that this example tell the constructor to set ``_id``. This is just to work with the collection API.
     """

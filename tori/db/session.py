@@ -1,6 +1,6 @@
 from pymongo import Connection
 from tori.db.common import ProxyObject
-from tori.db.collection import Collection
+from tori.db.repository import Repository
 from tori.db.exception import IntegrityConstraintError
 from tori.db.mapper import AssociationType
 from tori.db.uow import UnitOfWork
@@ -41,7 +41,7 @@ class Session(object):
         :param entity_class: the class of document/entity
         :type  entity_class: type
 
-        :rtype: tori.db.collection.Collection
+        :rtype: tori.db.repository.Repository
         """
         key = entity_class.__collection_name__
 
@@ -49,7 +49,7 @@ class Session(object):
             return None
 
         if key not in self._collections:
-            self._collections[key] = Collection(self, self._database[key], self._registered_types[key])
+            self._collections[key] = Repository(self, self._database[key], self._registered_types[key])
 
         return self._collections[key]
 
@@ -84,7 +84,7 @@ class Session(object):
         if key in self._collections:
             return
 
-        self._collections[key] = Collection(self.database, entity_class)
+        self._collections[key] = Repository(self.database, entity_class)
 
     def register_multiple(self, *entity_classes):
         for entity_class in entity_classes:

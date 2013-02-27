@@ -14,9 +14,7 @@
 import sys, os
 
 extra_paths = [
-    '../../',
-#    '../../../Kotoba',
-#    '../../../Imagination'
+    '../../'
 ]
 
 base_path = os.path.dirname(__file__)
