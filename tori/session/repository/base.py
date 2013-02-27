@@ -1,7 +1,7 @@
 from tori.exception import *
 
 class Base(object):
-    """ The Base Repository """
+    """ The Base AbstractRepository """
 
     def __init__(self):
         pass

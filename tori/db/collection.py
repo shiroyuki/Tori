@@ -11,7 +11,7 @@ from tori.db.exception import MissingObjectIdException
 
 class Collection(object):
     """
-    Collection (Entity Repository) for Mongo DB
+    Collection (Entity AbstractRepository) for Mongo DB
 
     :param em: the entity manager
     :type  em: tori.db.session.Session

@@ -83,7 +83,7 @@ class LoadedFixtureException(Exception):
 class SessionError(Exception):
     """ Exception thrown when there is an error with session component. """
 
-# Template Repository and Rendering Service
+# Template AbstractRepository and Rendering Service
 class RenderingSourceMissingError(Exception):
     """
     Exception used when the rendering source is not set.

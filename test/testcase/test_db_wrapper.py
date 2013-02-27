@@ -2,10 +2,9 @@ import unittest
 
 from sqlalchemy import Column, Integer, String
 
-from tori.db.wrapper  import Entity as BaseEntity
-from tori.db.repository import DatabaseRepository as RDB
+from tori.db.wrapper import Entity, Repository
 
-class Dummy(BaseEntity):
+class Dummy(Entity):
     __tablename__ = 'dummy'
 
     id   = Column(Integer, primary_key=True)
@@ -21,7 +20,7 @@ class TestDb(unittest.TestCase):
         pass
 
     def test_assembly(self):
-        db = RDB()
+        db = Repository()
         db.reflect()
 
         session = db.session
