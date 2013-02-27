@@ -25,12 +25,12 @@ class Serializer(ArraySerializer):
             if name[0] == '_' or name == 'id':
                 continue
 
-            property_reference = data.__getattribute__(name)
-
             guide = relational_map[name] if name in relational_map else None
 
-            if guide and guide.is_reverse_mapping:
+            if guide and guide.inverted_by:
                 continue
+
+            property_reference = data.__getattribute__(name)
 
             if callable(property_reference):
                 continue
@@ -82,44 +82,49 @@ class PseudoObjectId(ObjectId):
         return "PseudoObjectId('%s')" % (str(self),)
 
 class ProxyObject(object):
-    def __init__(self, em, cls, object_id, read_only, cascading_options, is_reverse_proxy):
-        self.__dict__['_collection'] = em.collection(cls)
+    def __init__(self, session, cls, object_id, read_only, cascading_options, is_reverse_proxy):
+        self.__dict__['_collection'] = session.collection(cls)
         self.__dict__['_object_id']  = object_id
         self.__dict__['_object']     = None
         self.__dict__['_read_only']  = read_only
         self.__dict__['_cascading_options'] = cascading_options
         self.__dict__['_is_reverse_proxy']  = is_reverse_proxy
 
-    def __getattr__(self, item):
+    def __get_object(self):
         if not self.__dict__['_object']:
             entity = self._collection.get(self.__dict__['_object_id'])
 
             if entity:
                 self.__dict__['_object'] = entity
 
+        return self.__dict__['_object']
+
+    def __getattr__(self, item):
         if item == '_actual':
-            return self.__dict__['_object']
+            return self.__get_object()
         elif item[0] == '_':
             return self.__dict__[item]
-        elif not self.__dict__['_object_id'] or not self.__dict__['_object']:
+        elif not self.__dict__['_object_id'] or not self.__get_object():
             return None
 
-        return self.__dict__['_object'].__getattribute__(item)
+        return self.__get_object().__getattribute__(item)
 
     def __setattr__(self, key, value):
         if self._read_only:
             raise ReadOnlyProxyException('The proxy is read only.')
 
-        self._object.__setattr__(key, value)
+        self.__get_object().__setattr__(key, value)
 
 class ProxyFactory(object):
     @staticmethod
     def make(session, id, mapping_guide):
+        is_reverse_proxy = mapping_guide.inverted_by != None
+
         return ProxyObject(
             session,
             mapping_guide.target_class,
             id,
-            mapping_guide.read_only,
+            mapping_guide.read_only or is_reverse_proxy,
             mapping_guide.cascading_options,
-            mapping_guide.is_reverse_mapping
+            is_reverse_proxy
         )

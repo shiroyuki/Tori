@@ -12,6 +12,7 @@ This is a module handling object association.
     entity manager.
 
 """
+from imagination.loader import Loader
 
 from tori.db.exception import DuplicatedRelationalMapping
 
@@ -34,26 +35,27 @@ class CascadingType(object):
 
 class BaseGuide(object):
     def __init__(self, target_class, association):
-        self.target_class = target_class
-        self.association  = association
+        self._target_class = target_class
+        self.association   = association
 
-    def _disabled_method(self, *args, **kwargs):
-        raise NotImplemented('Read-only access')
+    @property
+    def target_class(self):
+        if isinstance(self._target_class, Loader):
+            self._target_class = self._target_class.package
+
+        return self._target_class
 
 class EmbeddingGuide(BaseGuide):
     pass
 
 class RelatingGuide(BaseGuide):
-    def __init__(self, target_class, is_reverse_mapping, association,
+    def __init__(self, target_class, inverted_by, association,
                  read_only, cascading_options):
         BaseGuide.__init__(self, target_class, association)
 
-        self.is_reverse_mapping = is_reverse_mapping
+        self.inverted_by        = inverted_by
         self.read_only          = read_only
         self.cascading_options  = cascading_options
-
-        self.__setattr__ = self._disabled_method
-        self.__delattr__ = self._disabled_method
 
     def association_collection_name(self, entity):
         return '{}_{}'.format(entity.__collection_name__, self.target_class.__collection_name__)
@@ -84,7 +86,7 @@ def link(mapped_by=None, target=None, inverted_by=None,
     .. warning:: This is experimental for Tori 2.1
 
     :param mapped_by:   the name of property of the current class
-    :param target:      the target class
+    :param target:      the target class or class name (e.g., acme.entity.User)
     :param inverted_by: the name of property of the target class
     :param association: the type of association
     :param read_only:   the flag to indicate whether this is for read only.
@@ -103,21 +105,19 @@ def link(mapped_by=None, target=None, inverted_by=None,
     if not AssociationType.known_type(association):
         raise ValueError('Unknown association')
 
+    # Allow a name of classes as a target (e.g., acme.entity.User or 'acme.entity.User')
+    if isinstance(target, str):
+        loader = Loader(target)
+        target = loader
+
     def decorator(cls):
-        mapped_property_name = inverted_by
-        is_reverse_mapping   = True
-
-        if mapped_by:
-            mapped_property_name = mapped_by
-            is_reverse_mapping   = False
-
         __prevent_duplicated_mapping(cls, mapped_by)
         __map_property(
             cls,
-            mapped_property_name,
+            mapped_by,
             RelatingGuide(
                 target or cls,
-                is_reverse_mapping,
+                inverted_by,
                 association,
                 read_only,
                 cascading

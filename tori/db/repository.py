@@ -1,13 +1,14 @@
 """
-Collection
+Repository
 ==========
 
 :Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
 :Status: Stable
-
-The module provides a simple wrapper to work with MongoDB and Tori ORM.
 """
+import inspect
 from tori.db.exception import MissingObjectIdException
+from tori.db.mapper import AssociationType
+
 
 class Repository(object):
     """
@@ -42,6 +43,27 @@ class Repository(object):
             This method deal with data mapping
 
         """
+        spec = inspect.getargspec(self._class.__init__) # constructor contract
+        rmap = self._class.__relational_map__ # relational map
+
+        # Default missing argument to NULL or LIST
+        # todo: respect the default value of the argument
+        for argument_name in spec.args:
+            if argument_name == 'self' or argument_name in attributes:
+                continue
+
+            default_to_list = argument_name in rmap\
+                and (rmap[argument_name].association in [AssociationType.ONE_TO_MANY, AssociationType.MANY_TO_MANY])
+
+            attributes[argument_name] = [] if default_to_list else None
+
+        # Remove unwanted arguments/attributes/properties
+        for attribute_name in attributes:
+            if argument_name == 'self' or attribute_name in spec.args:
+                continue
+
+            del attributes[attribute_name]
+
         document = self._class(**attributes)
 
         return document
@@ -89,7 +111,7 @@ class Repository(object):
         return document.id
 
     def put(self, document):
-        self._session._uow.register_update(document)
+        self._session._uow.register_dirty(document)
 
     def delete(self, document):
         self._session._uow.register_new(document)

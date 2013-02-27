@@ -95,13 +95,34 @@ class Session(object):
             guide = entity.__relational_map__[property_name]
             """ :type: tori.db.mapper.RelatingGuide """
 
+            # In the reverse mapping, the lazy loading is not possible but so the proxy object is still used.
+            if guide.inverted_by:
+                collection = self.collection(guide.target_class)
+
+                if guide.association in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
+                    target = collection._api.find_one({guide.inverted_by: entity.id})
+
+                    entity.__setattr__(property_name, ProxyFactory.make(self, target['_id'], guide))
+                elif guide.association == AssociationType.ONE_TO_MANY:
+                    proxy_list = [
+                        ProxyFactory.make(self, target['_id'], guide)
+                        for target in collection._api.find({guide.inverted_by: entity.id})
+                    ]
+
+                    entity.__setattr__(property_name, proxy_list)
+                else:
+                    raise IntegrityConstraintError('Unknown type of entity association')
+
+                return # Done the application
+
+            # In the direct mapping, the lazy loading is applied wherever applicable.
             if guide.association in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
                 entity.__setattr__(property_name, ProxyFactory.make(self, entity.__getattribute__(property_name), guide))
             elif guide.association == AssociationType.ONE_TO_MANY:
-                proxy_list = []
-
-                for object_id in entity.__getattribute__(property_name):
-                    proxy_list.append(ProxyFactory.make(self, object_id, guide))
+                proxy_list = [
+                    ProxyFactory.make(self, object_id, guide)
+                    for object_id in entity.__getattribute__(property_name)
+                ]
 
                 entity.__setattr__(property_name, proxy_list)
             elif guide.association == AssociationType.MANY_TO_MANY:

@@ -219,7 +219,7 @@ class UnitOfWork(object):
         for property_name in entity.__relational_map__:
             guide = entity.__relational_map__[property_name]
 
-            if guide.is_reverse_mapping:
+            if guide.inverted_by:
                 continue
 
             actual_data = entity.__getattribute__(property_name)
