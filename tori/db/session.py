@@ -1,12 +1,12 @@
 from pymongo import Connection
-from tori.db.common import ProxyObject
+from tori.db.common import ProxyObject, ProxyFactory
 from tori.db.repository import Repository
 from tori.db.exception import IntegrityConstraintError
 from tori.db.mapper import AssociationType
 from tori.db.uow import UnitOfWork
 
 class Session(object):
-    def __init__(self, id, database, registered_types):
+    def __init__(self, id, database, registered_types={}):
         self._id               = id
         self._uow              = UnitOfWork(self)
         self._database         = database
@@ -46,7 +46,7 @@ class Session(object):
         key = entity_class.__collection_name__
 
         if key not in self._registered_types:
-            return None
+            self._registered_types[key] = entity_class
 
         if key not in self._collections:
             self._collections[key] = Repository(self, self._database[key], self._registered_types[key])
@@ -96,28 +96,12 @@ class Session(object):
             """ :type: tori.db.mapper.RelatingGuide """
 
             if guide.association in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
-                proxy = ProxyObject(
-                    self,
-                    guide.target_class,
-                    entity.__getattribute__(property_name),
-                    guide.read_only,
-                    guide.cascading_options
-                )
-
-                entity.__setattr__(property_name, proxy)
+                entity.__setattr__(property_name, ProxyFactory.make(self, entity.__getattribute__(property_name), guide))
             elif guide.association == AssociationType.ONE_TO_MANY:
                 proxy_list = []
 
                 for object_id in entity.__getattribute__(property_name):
-                    proxy_list.append(
-                        ProxyObject(
-                            self,
-                            guide.target_class,
-                            object_id,
-                            guide.read_only,
-                            guide.cascading_options
-                        )
-                    )
+                    proxy_list.append(ProxyFactory.make(self, object_id, guide))
 
                 entity.__setattr__(property_name, proxy_list)
             elif guide.association == AssociationType.MANY_TO_MANY:
@@ -128,15 +112,7 @@ class Session(object):
                 for data_set in mapping_list:
                     object_id = data_set['to']
 
-                    proxy_list.append(
-                        ProxyObject(
-                            self,
-                            guide.target_class,
-                            object_id,
-                            guide.read_only,
-                            guide.cascading_options
-                        )
-                    )
+                    proxy_list.append(ProxyFactory.make(self, object_id, guide))
 
                 entity.__setattr__(property_name, proxy_list)
             else:

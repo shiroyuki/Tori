@@ -32,14 +32,6 @@ class CascadingType(object):
     MERGE   = 3 # Not supported in Tori 2.1
     DETACH  = 4 # Not supported in Tori 2.1
 
-class OnDeleteType(object):
-    CASCADING = 1 # Default
-    SET_NULL  = 2 # Not supported in the near future
-
-    @staticmethod
-    def known_type(t):
-        return OnDeleteType.CASCADING <= t <= OnDeleteType.SET_NULL
-
 class BaseGuide(object):
     def __init__(self, target_class, association):
         self.target_class = target_class
@@ -53,13 +45,12 @@ class EmbeddingGuide(BaseGuide):
 
 class RelatingGuide(BaseGuide):
     def __init__(self, target_class, is_reverse_mapping, association,
-                 read_only, cascading_options, on_delete):
+                 read_only, cascading_options):
         BaseGuide.__init__(self, target_class, association)
 
         self.is_reverse_mapping = is_reverse_mapping
         self.read_only          = read_only
         self.cascading_options  = cascading_options
-        self.on_delete          = on_delete
 
         self.__setattr__ = self._disabled_method
         self.__delattr__ = self._disabled_method
@@ -87,7 +78,7 @@ def embed(property, target, association_type=AssociationType.AUTO_DETECT):
 
 def link(mapped_by=None, target=None, inverted_by=None,
          association=AssociationType.AUTO_DETECT, read_only=False,
-         cascading=[], on_delete=OnDeleteType.CASCADING):
+         cascading=[]):
     """Link between two documents
 
     .. warning:: This is experimental for Tori 2.1
@@ -98,7 +89,6 @@ def link(mapped_by=None, target=None, inverted_by=None,
     :param association: the type of association
     :param read_only:   the flag to indicate whether this is for read only.
     :param cascading:   the list of actions on cascading
-    :param on_delete:   the type of action on delete
 
     :return: the decorator callback
 
@@ -130,8 +120,7 @@ def link(mapped_by=None, target=None, inverted_by=None,
                 is_reverse_mapping,
                 association,
                 read_only,
-                cascading,
-                on_delete
+                cascading
             )
         )
 
