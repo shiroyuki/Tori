@@ -3,12 +3,12 @@ from pymongo import Connection
 from tori.db.session import Session
 from tori.db.common import ProxyObject
 from tori.db.uow import Record
-from tori.db.document import document
+from tori.db.entity import entity
 from tori.db.mapper import link, CascadingType, AssociationType
 
 @link('left', association=AssociationType.ONE_TO_ONE, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
 @link('right', association=AssociationType.ONE_TO_ONE, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
-@document
+@entity
 class TestNode(object):
     def __init__(self, name, left, right):
         self.name  = name
@@ -18,14 +18,14 @@ class TestNode(object):
     def __repr__(self):
         return '<TestNode {} "{}">'.format(self.id, self.name)
 
-@document
+@entity
 class Computer(object):
     def __init__(self, name):
         self.name = name
 
 @link('computer', Computer, association=AssociationType.ONE_TO_ONE)
 @link('delegates', association=AssociationType.ONE_TO_MANY, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
-@document
+@entity
 class Developer(object):
     def __init__(self, name, computer=None, delegates=[]):
         self.name      = name

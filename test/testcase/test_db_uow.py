@@ -7,12 +7,12 @@ try:
 except ImportError as exception:
     from mock import Mock, MagicMock # Python 2.7
 
-from tori.db.document import document
+from tori.db.entity import entity
 from tori.db.manager import Manager
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUnknownRecordError
 from tori.db.uow import Record
 
-@document
+@entity
 class TestClass(object):
     def __init__(self):
         self.a = 1

@@ -9,11 +9,11 @@ try:
 except ImportError as exception:
     from mock import Mock, MagicMock # Python 2.7
 
-from tori.db.document import document
+from tori.db.entity import entity
 from tori.db.manager import Manager
 from tori.db.mapper import link, CascadingType, AssociationType
 
-@document('members')
+@entity('members')
 class Member(object):
     def __init__(self, name):
         self.name = name
@@ -24,7 +24,7 @@ class Member(object):
     association=AssociationType.MANY_TO_MANY,
     cascading=[CascadingType.DELETE, CascadingType.PERSIST]
 )
-@document('groups')
+@entity('groups')
 class Group(object):
     def __init__(self, name, members=[]):
         self.name    = name

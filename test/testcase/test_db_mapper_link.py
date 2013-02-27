@@ -3,24 +3,24 @@ from pymongo import Connection
 from tori.db.session import Session
 from tori.db.repository import Repository
 from tori.db.common import ProxyObject
-from tori.db.document   import document
+from tori.db.entity   import entity
 from tori.db.manager    import Manager
 from tori.db.mapper     import AssociationType, link
 
-@document('s')
+@entity('s')
 class Skill(object):
     def __init__(self, name):
         self.name = name
 
 #@link('skills', Skill, None, AssociationType.ONE_TO_MANY)
-@document('j')
+@entity('j')
 class Job(object):
     def __init__(self, name, level, skills=[]):
         self.name   = name
         self.level  = level
         self.skills = skills
 
-@document('w')
+@entity('w')
 class Weapon(object):
     def __init__(self, name, attack, defend):
         self.name   = name
@@ -30,7 +30,7 @@ class Weapon(object):
 @link('job', Job, association=AssociationType.ONE_TO_ONE)
 @link('left_hand', Weapon, association=AssociationType.ONE_TO_ONE)
 @link('right_hand', Weapon, association=AssociationType.ONE_TO_ONE)
-@document('c')
+@entity('c')
 class Character(object):
     def __init__(self, name, level, job, left_hand, right_hand, _id=None):
         self._id   = _id

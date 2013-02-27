@@ -16,7 +16,7 @@ class Collection(Base):
 
         This is based on :class:`tori.session.repository.base.Base`. All
         non-implementing methods in the parent class are implemented. This is
-        only compatible with :class:`tori.session.entity.document.BaseDocument`.
+        only compatible with :class:`tori.session.entity.document.Document`.
 
     """
 

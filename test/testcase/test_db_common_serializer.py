@@ -1,9 +1,9 @@
 import unittest
 from bson import ObjectId
 from tori.db.common import Serializer, PseudoObjectId
-from tori.db.document import document
+from tori.db.entity import entity
 
-@document
+@entity
 class Document(object):
     def __init__(self, name):
         self.name = name

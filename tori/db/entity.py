@@ -13,7 +13,7 @@ from tori.db.common import PseudoObjectId
 from tori.db.exception import LockedIdException, ReservedAttributeException
 from tori.db.mapper import AssociationType, EmbeddingGuide
 
-def document(*args, **kwargs):
+def entity(*args, **kwargs):
     """Document decorator
 
     :param collection_name: the name of the collection
@@ -29,15 +29,15 @@ def document(*args, **kwargs):
     if len(args) == 1 and inspect.isclass(first_param) and isinstance(first_param, type):
         class_reference = first_param
 
-        return make_document_class(class_reference)
+        return prepare_entity_class(class_reference)
 
     # Otherwise, use the closure to handle the parameter.
     def decorator(class_reference):
-        return make_document_class(class_reference, *args, **kwargs)
+        return prepare_entity_class(class_reference, *args, **kwargs)
 
     return decorator
 
-def make_document_class(cls, collection_name=None):
+def prepare_entity_class(cls, collection_name=None):
     """Create a document-type class
 
     :param cls: the document class
@@ -111,7 +111,7 @@ def make_document_class(cls, collection_name=None):
 
     return cls
 
-class BaseDocument(object):
+class Entity(object):
     """Dynamic-attribute Base Document
 
     :param attributes: key-value dictionary
@@ -122,7 +122,7 @@ class BaseDocument(object):
     .. code-block:: python
 
         @document
-        class Note(BaseDocument): pass
+        class Note(Entity): pass
 
     In this case, it is similar to the example for :py:meth:`document` except that the class ``DependencyNode`` no longer guarantees
     that it will have attributes ``title``, ``content`` and ``author`` but it maps all available data to the object.
@@ -133,9 +133,9 @@ class BaseDocument(object):
     .. code-block:: python
 
         @document
-        class Note(BaseDocument):
+        class Note(Entity):
             def __init__(self, title, author, content, **attributes):
-                BaseDocument.__init__(self, **attributes)
+                Entity.__init__(self, **attributes)
 
                 self.title   = title
                 self.author  = author
