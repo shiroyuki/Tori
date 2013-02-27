@@ -286,6 +286,7 @@ class UnitOfWork(object):
 
         commit_order = self.compute_order()
 
+        # Commit changes to nodes.
         for commit_node in commit_order:
             uid    = self._object_id_map[self._convert_object_id_to_str(commit_node.object_id)]
             record = self._record_map[uid]
@@ -384,6 +385,66 @@ class UnitOfWork(object):
 
         return None
 
+    def compute_order(self):
+        self._construct_dependency_graph()
+
+        # After constructing the dependency graph (as a supposedly directed acyclic
+        # graph), do the topological sorting from the dependency graph.
+        final_order = []
+
+        for id in self._dependency_map:
+            node = self._dependency_map[id]
+
+            self._retrieve_dependency_order(node, final_order)
+
+        return final_order
+
+    def compute_change_set(self, record):
+        current_set = Record.serializer.encode(record.entity)
+
+        if record.status == Record.STATUS_NEW:
+            return current_set
+        elif record.status == Record.STATUS_DELETED:
+            return record.entity.id
+
+        original_set = dict(record.original_data_set)
+
+        change_set = {
+            '$set':   {},
+            '$push':  {}, # Ignored until the multiple-link association is implemented.
+            '$unset': {}
+        }
+
+        original_property_set = set(original_set.keys())
+        current_property_set  = set(current_set.keys())
+
+        expected_property_list = original_property_set.intersection(current_property_set)
+        expected_property_list = expected_property_list.union(current_property_set.difference(original_property_set))
+
+        unexpected_property_list = original_property_set.difference(current_property_set)
+
+        # Add or update properties
+        for name in expected_property_list:
+            if name in original_set and original_set[name] == current_set[name]:
+                continue
+
+            change_set['$set'][name] = current_set[name]
+
+        # Remove unwanted properties
+        for name in unexpected_property_list:
+            change_set['$unset'][name] = 1
+
+        directive_list = list(change_set.keys())
+
+        # Clean up the change set
+        for directive in directive_list:
+            if change_set[directive]:
+                continue
+
+            del change_set[directive]
+
+        return change_set
+
     def _retrieve_entity_guid(self, entity):
         return self._object_id_map[self._convert_object_id_to_str(entity.id)]\
             if isinstance(entity, ProxyObject)\
@@ -441,20 +502,6 @@ class UnitOfWork(object):
 
         return self._dependency_map
 
-    def compute_order(self):
-        self._construct_dependency_graph()
-
-        # After constructing the dependency graph (as a supposedly directed acyclic
-        # graph), do the topological sorting from the dependency graph.
-        final_order = []
-
-        for id in self._dependency_map:
-            node = self._dependency_map[id]
-
-            self._retrieve_dependency_order(node, final_order)
-
-        return final_order
-
     def _retrieve_dependency_order(self, node, priority_order):
         if node.walked:
             return
@@ -480,49 +527,3 @@ class UnitOfWork(object):
             self._dependency_map[key_b] = DependencyNode(b)
 
         self._dependency_map[key_a].connect(self._dependency_map[key_b])
-
-    def compute_change_set(self, record):
-        current_set = Record.serializer.encode(record.entity)
-
-        if record.status == Record.STATUS_NEW:
-            return current_set
-        elif record.status == Record.STATUS_DELETED:
-            return record.entity.id
-
-        original_set = dict(record.original_data_set)
-
-        change_set = {
-            '$set':   {},
-            '$push':  {}, # Ignored until the multiple-link association is implemented.
-            '$unset': {}
-        }
-
-        original_property_set = set(original_set.keys())
-        current_property_set  = set(current_set.keys())
-
-        expected_property_list = original_property_set.intersection(current_property_set)
-        expected_property_list = expected_property_list.union(current_property_set.difference(original_property_set))
-
-        unexpected_property_list = original_property_set.difference(current_property_set)
-
-        # Add or update properties
-        for name in expected_property_list:
-            if name in original_set and original_set[name] == current_set[name]:
-                continue
-
-            change_set['$set'][name] = current_set[name]
-
-        # Remove unwanted properties
-        for name in unexpected_property_list:
-            change_set['$unset'][name] = 1
-
-        directive_list = list(change_set.keys())
-
-        # Clean up the change set
-        for directive in directive_list:
-            if change_set[directive]:
-                continue
-
-            del change_set[directive]
-
-        return change_set

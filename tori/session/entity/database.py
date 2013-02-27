@@ -1,7 +1,7 @@
 from sqlalchemy       import Column
 from sqlalchemy.types import Integer, PickleType, String
 
-from tori.db.entity           import Entity
+from tori.db.wrapper           import Entity
 from tori.session.entity.base import Base
 
 class Database(Base, Entity):

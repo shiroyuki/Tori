@@ -18,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 from tori.common    import get_logger
 from tori.exception import *
 
-from tori.db.entity import Entity as BaseEntity
+from tori.db.wrapper import Entity as BaseEntity
 
 class Repository(object):
     """Abstract Database Service
