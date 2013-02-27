@@ -9,12 +9,6 @@ any modules related to relational databases are experimental and not supported b
 .. automodule:: tori.db.common
     :members:
 
-.. automodule:: tori.db.database
-    :members:
-
-.. automodule:: tori.db.document
-    :members:
-
 .. automodule:: tori.db.entity
     :members:
 

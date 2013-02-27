@@ -343,6 +343,8 @@ MOCK_MODULES = [
     'imagination.decorator',
     'imagination.decorator.validator',
     'imagination.decorator.validator.restrict_type',
+    'imagination.helper',
+    'imagination.helper.retrieve_module_path',
     'sqlalchemy',
     'sqlalchemy.Column',
     'sqlalchemy.create_engine',
