@@ -128,10 +128,10 @@ class Session(object):
             elif guide.association == AssociationType.MANY_TO_MANY:
                 proxy_list   = []
                 map_name     = guide.association_collection_name(entity)
-                mapping_list = self.db[map_name].find({'from': entity.id})
+                mapping_list = self.db[map_name].find({'origin': entity.id})
 
                 for data_set in mapping_list:
-                    object_id = data_set['to']
+                    object_id = data_set['destination']
 
                     proxy_list.append(ProxyFactory.make(self, object_id, guide))
 

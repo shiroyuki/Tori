@@ -96,8 +96,8 @@ class TestDbManagerAssociationManyToMany(TestCase):
 
         for origin, destination in associations:
             api.insert({
-                'from': data_sets['groups'][origin]['_id'],
-                'to':   data_sets['members'][destination]['_id']
+                'origin':      data_sets['groups'][origin]['_id'],
+                'destination': data_sets['members'][destination]['_id']
             })
 
         self.assertEqual(4, api.count())

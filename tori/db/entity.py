@@ -10,8 +10,7 @@ This module contains the abstract of documents in MongoDB.
 import inspect
 from tori.db.common import PseudoObjectId
 
-from tori.db.exception import LockedIdException, ReservedAttributeException
-from tori.db.mapper import AssociationType, EmbeddingGuide
+from tori.db.exception import LockedIdException
 
 def entity(*args, **kwargs):
     """Document decorator
@@ -144,3 +143,8 @@ class Entity(object):
     def __init__(self, **attributes):
         for name in attributes:
             self.__setattr__(name, attributes[name])
+
+class BasicAssociation(object):
+    def __init__(self, origin, destination):
+        self.origin      = origin
+        self.destination = destination

@@ -10,9 +10,6 @@ class LockedIdException(Exception):
 class MissingObjectIdException(Exception):
     """ Exception raised when the object Id is not specified during data retrieval. """
 
-class ReservedAttributeException(Exception):
-    """ Exception thrown when a reserved attribute is tempted to change. """
-
 class UOWRepeatedRegistrationError(IOError):
     """ Error thrown when the given reference is already registered as a new reference or already existed. """
 

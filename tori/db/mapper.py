@@ -13,8 +13,13 @@ This is a module handling object association.
 
 """
 from imagination.loader import Loader
-
+from tori.db.entity import BasicAssociation
 from tori.db.exception import DuplicatedRelationalMapping
+
+dynamic_association_class_template = """
+@document({collection_name})
+class {class_name}(BasicAssociation): pass
+"""
 
 class AssociationType(object):
     AUTO_DETECT  = 1 # Not supported in the near future
@@ -78,6 +83,35 @@ def embed(property, target, association_type=AssociationType.AUTO_DETECT):
 
     return decorator
 
+def map(cls, mapped_by=None, target=None, inverted_by=None,
+        association=AssociationType.AUTO_DETECT, read_only=False,
+        cascading=[]):
+
+    if association == AssociationType.AUTO_DETECT:
+        raise ValueError('The association is not specified.')
+
+    if not AssociationType.known_type(association):
+        raise ValueError('Unknown association')
+
+    # Allow a name of classes as a target (e.g., acme.entity.User or 'acme.entity.User')
+    if isinstance(target, str):
+        loader = Loader(target)
+        target = loader
+
+    __prevent_duplicated_mapping(cls, mapped_by)
+    __map_property(
+        cls,
+        mapped_by,
+        RelatingGuide(
+            target or cls,
+            inverted_by,
+            association,
+            read_only,
+            cascading
+        )
+    )
+
+
 def link(mapped_by=None, target=None, inverted_by=None,
          association=AssociationType.AUTO_DETECT, read_only=False,
          cascading=[]):
@@ -98,31 +132,8 @@ def link(mapped_by=None, target=None, inverted_by=None,
 
     ``on_delete`` will be only used if cascading is required on deletion.
     """
-
-    if association == AssociationType.AUTO_DETECT:
-        raise ValueError('The association is not specified.')
-
-    if not AssociationType.known_type(association):
-        raise ValueError('Unknown association')
-
-    # Allow a name of classes as a target (e.g., acme.entity.User or 'acme.entity.User')
-    if isinstance(target, str):
-        loader = Loader(target)
-        target = loader
-
     def decorator(cls):
-        __prevent_duplicated_mapping(cls, mapped_by)
-        __map_property(
-            cls,
-            mapped_by,
-            RelatingGuide(
-                target or cls,
-                inverted_by,
-                association,
-                read_only,
-                cascading
-            )
-        )
+        map(cls, mapped_by, target, inverted_by, association, read_only, cascading)
 
         return cls
 
