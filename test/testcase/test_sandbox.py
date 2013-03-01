@@ -20,10 +20,6 @@ class Association(object):
 
         exec(bytecode, globals())
 
-        print('Globals:', globals().keys())
-        print('Locals:', locals().keys())
-        print('Dir:', dir(self))
-
         a = globals()['Association']('abc')
 
         self.assertEqual('abc', a.name)

@@ -13,13 +13,7 @@ This is a module handling object association.
 
 """
 from imagination.loader import Loader
-from tori.db.entity import BasicAssociation
 from tori.db.exception import DuplicatedRelationalMapping
-
-dynamic_association_class_template = """
-@document({collection_name})
-class {class_name}(BasicAssociation): pass
-"""
 
 class AssociationType(object):
     AUTO_DETECT  = 1 # Not supported in the near future
@@ -38,7 +32,65 @@ class CascadingType(object):
     MERGE   = 3 # Not supported in Tori 2.1
     DETACH  = 4 # Not supported in Tori 2.1
 
-class BaseGuide(object):
+class AssociationFactory(object):
+    class_name_tmpl      = '{origin}{destination}Association'
+    collection_name_tmpl = '{origin}_{destination}'
+    code_template        = '\n'.join([
+        'from tori.db.entity import BasicAssociation, entity',
+        '@entity("{collection_name}")',
+        'class {class_name}(BasicAssociation): pass'
+    ])
+
+    def __init__(self, origin, destination, cascading_options):
+        self.__origin      = origin
+        self.__destination = destination
+        self.__cascading_options = cascading_options
+        self.__class       = None
+        self.__class_name  = None
+        self.__collection_name = None
+
+    @property
+    def class_name(self):
+        if not self.__class_name:
+            self.__class_name = self.class_name_tmpl.format(
+                origin=self.__origin.__name__,
+                destination=self.__destination.__name__
+            )
+
+        return self.__class_name
+
+    @property
+    def collection_name(self):
+        if not self.__collection_name:
+            self.__collection_name = self.collection_name_tmpl.format(
+                origin=self.__origin.__collection_name__,
+                destination=self.__destination.__collection_name__
+            )
+
+        return self.__collection_name
+
+    @property
+    def cls(self):
+        if not self.__class:
+            source = self.code_template.format(
+                collection_name=self.collection_name,
+                class_name=self.class_name
+            )
+
+            print(source)
+
+            code = compile(source, '<string>', 'exec')
+
+            exec(code, globals())
+
+            if self.class_name in globals():
+                self.__class = globals()[self.class_name]
+            else:
+                raise RuntimeError('Unable to auto-generation associative collection class.')
+
+        return self.__class
+
+class BasicGuide(object):
     def __init__(self, target_class, association):
         self._target_class = target_class
         self.association   = association
@@ -50,20 +102,22 @@ class BaseGuide(object):
 
         return self._target_class
 
-class EmbeddingGuide(BaseGuide):
+class EmbeddingGuide(BasicGuide):
     pass
 
-class RelatingGuide(BaseGuide):
-    def __init__(self, target_class, inverted_by, association,
+class RelatingGuide(BasicGuide):
+    def __init__(self, entity_class, target_class, inverted_by, association,
                  read_only, cascading_options):
-        BaseGuide.__init__(self, target_class, association)
+        BasicGuide.__init__(self, target_class, association)
 
-        self.inverted_by        = inverted_by
-        self.read_only          = read_only
-        self.cascading_options  = cascading_options
+        self.inverted_by       = inverted_by
+        self.read_only         = read_only
+        self.cascading_options = cascading_options
 
-    def association_collection_name(self, entity):
-        return '{}_{}'.format(entity.__collection_name__, self.target_class.__collection_name__)
+        # This is only used for many-to-many association.
+        self.association_class = AssociationFactory(entity_class, self.target_class, cascading_options)\
+            if association == AssociationType.MANY_TO_MANY\
+            else None
 
 def __prevent_duplicated_mapping(cls, property_name):
     if not cls:
@@ -103,6 +157,7 @@ def map(cls, mapped_by=None, target=None, inverted_by=None,
         cls,
         mapped_by,
         RelatingGuide(
+            cls,
             target or cls,
             inverted_by,
             association,

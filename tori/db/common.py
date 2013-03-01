@@ -30,6 +30,9 @@ class Serializer(ArraySerializer):
             if guide and guide.inverted_by:
                 continue
 
+            if guide and guide.association_class:
+                return
+
             property_reference = data.__getattribute__(name)
 
             if callable(property_reference):
