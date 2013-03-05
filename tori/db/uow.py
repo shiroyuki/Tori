@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+Unit of Work
+############
+"""
 from time import time
 from threading import Lock as ThreadLock
 from tori.db.common    import Serializer, PseudoObjectId, ProxyObject
@@ -16,10 +21,10 @@ class Record(object):
         self.entity = entity
         self.status = status
 
-        self.original_data_set = Record.serializer.encode(entity)
+        self.original_data_set, self.original_extra_association = Record.serializer.encode(self.entity)
 
     def update(self):
-        self.original_data_set = Record.serializer.encode(self.entity)
+        self.original_data_set, self.original_extra_association = Record.serializer.encode(self.entity)
         self.status = Record.STATUS_CLEAN
 
 class DependencyNode(object):
@@ -400,7 +405,7 @@ class UnitOfWork(object):
         return final_order
 
     def compute_change_set(self, record):
-        current_set = Record.serializer.encode(record.entity)
+        current_set, extra_association = Record.serializer.encode(record.entity)
 
         if record.status == Record.STATUS_NEW:
             return current_set
@@ -470,8 +475,9 @@ class UnitOfWork(object):
             if not record.entity.__relational_map__:
                 continue
 
-            object_id   = self._convert_object_id_to_str(record.entity.id)
-            current_set = Record.serializer.encode(record.entity)
+            object_id = self._convert_object_id_to_str(record.entity.id)
+
+            current_set, extra_association = Record.serializer.encode(record.entity)
 
             # Register the current entity into the dependency map if it's never
             # been registered or eventually has no dependencies.

@@ -9,6 +9,7 @@ This package contains an abstract controller (based on
 
 import logging
 
+from base64 import b64decode
 from os import path as p
 from re import match, sub
 
@@ -223,6 +224,16 @@ class ResourceService(RequestHandler):
 
     _logger = get_logger('%s.ResourceService' % (__name__), logging.ERROR)
 
+    _favicon_data = b64decode(''.join([
+        'AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAA',
+        'AAAAEAAAAAAAAAAAAAAA/4QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAARAAAAAAAAABEQAAAAAAAAEREA',
+        'AAAAAAARERAAAAAAABEREQAAAAAAEREREAAAAAARERERAAAAABEREREQAAAAEREREREA',
+        'AAARERERERAAABEREREREQAAEREREREREAARERERERERABEREREREREQERERERERERF/',
+        '/wAAP/8AAB//AAAP/wAAB/8AAAP/AAAB/wAAAP8AAAB/AAAAPwAAAB8AAAAPAAAABwAA',
+        'AAMAAAABAAAAAAAA'
+    ]))
+
     _patterns      = {}
     _pattern_order = []
     _cache_objects = {}
@@ -249,7 +260,7 @@ class ResourceService(RequestHandler):
         }
         ResourceService._pattern_order.append(pattern)
 
-    def get(self, *path):
+    def get(self, path=None):
         """
         Get a particular resource.
 
@@ -260,7 +271,10 @@ class ResourceService(RequestHandler):
         """
         resource = self._retrieve_resource_entity()
 
-        if resource.exists and resource.cacheable:
+        if isinstance(resource, str):
+            self.set_header('Content-Type', 'image/vnd.microsoft.icon')
+            return self.finish(resource)
+        elif resource.exists and resource.cacheable:
             self._cache_objects[self.request.uri] = resource
         elif not resource.exists:
             # Return HTTP 404 if the content is not found.
@@ -332,5 +346,8 @@ class ResourceService(RequestHandler):
             self._logger.info('Real path: %s' % real_path)
 
             return self._create_resource_entity(real_path, cachable)
+
+        if self.request.uri == '/favicon.ico':
+            return self._favicon_data
 
         raise HTTPError(404)

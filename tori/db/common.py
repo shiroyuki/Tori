@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
 """
 Common Module
-=============
+#############
 
 :Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
 :Stability: Stable
@@ -18,8 +19,9 @@ class Serializer(ArraySerializer):
         if not isinstance(data, object):
             raise TypeError('The provided data must be an object')
 
-        returnee       = {}
-        relational_map = data.__relational_map__ if self._is_entity(data) else {}
+        returnee           = {}
+        relational_map     = data.__relational_map__ if self._is_entity(data) else {}
+        extra_associations = {}
 
         for name in dir(data):
             if name[0] == '_' or name == 'id':
@@ -30,15 +32,20 @@ class Serializer(ArraySerializer):
             if guide and guide.inverted_by:
                 continue
 
-            if guide and guide.association_class:
-                return
-
             property_reference = data.__getattribute__(name)
+
+            is_list = isinstance(property_reference, list)
+            value   = None
 
             if callable(property_reference):
                 continue
 
-            if isinstance(property_reference, list):
+            if guide and guide.association_class and is_list:
+                extra_associations[name] = []
+
+                for destination in property_reference:
+                    extra_associations[name].append(destination.id)
+            elif is_list:
                 value = []
 
                 for item in property_reference:
@@ -51,7 +58,7 @@ class Serializer(ArraySerializer):
         if data.id and not isinstance(data.id, PseudoObjectId):
             returnee['_id'] = data.id
 
-        return returnee
+        return returnee, extra_associations
 
     def _is_entity(self, data):
         return '__relational_map__' in dir(data)
