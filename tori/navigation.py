@@ -13,7 +13,8 @@ Additionally, the parameter *route* for any methods mentioned on this page is an
 """
 
 # Standard libraries
-from os          import path
+from os import path
+from re import compile as RegExp
 
 # Third-party libraries
 from imagination.loader import Loader
@@ -21,18 +22,16 @@ from kotoba.kotoba      import Kotoba
 from tornado.web        import RedirectHandler
 
 # Internal libraries
-from .exception import *
+from tori.exception import *
 
 class RoutingMap(object):
     """ Routing Map """
 
     def __init__(self):
         self._sequence       = []
-        self._map            = {}
+        self._raw_map        = {}
+        self._id_map         = {}
         self._final_sequence = None
-
-    def map(self):
-        return self._map
 
     def register(self, route, force_action=False):
         """ Register a *route*. """
@@ -41,39 +40,49 @@ class RoutingMap(object):
             raise InvalidInput("Expected a route.")
 
         # Register the pattern to prevent the duplicate routing.
-        if not force_action and route.pattern() in self._sequence:
+        if not force_action and route.pattern in self._sequence:
             raise DuplicatedRouteError('')
 
-        if route.pattern() not in self._sequence:
-            self._sequence.append(route.pattern())
+        if route.pattern not in self._sequence:
+            self._sequence.append(route.pattern)
 
         # Register the route to the map.
-        self._map[route.pattern()] = route
+        self._raw_map[route.pattern] = route
 
         # Reset the final sequence.
         self._final_sequence = None
 
-    def get(self, routing_pattern):
+    def find_by_pattern(self, routing_pattern):
         """ Get the route by *routing_pattern* where it is a string. """
 
         try:
-            return self._map[routing_pattern]
+            return self._raw_map[routing_pattern]
         except KeyError:
             raise RoutingPatternNotFoundError('')
 
     def export(self):
-        """ Export the route map as a list of tuple representatives. """
+        """ Export the route map as a list of tuple representatives.
 
+        :rtype: list
+        """
         if not self._final_sequence:
+            has_favicon = False
+
             self._final_sequence = []
 
             for routing_pattern in self._sequence:
-                self._final_sequence.append(self.get(routing_pattern).to_tuple())
+                if routing_pattern == '/favicon.ico':
+                    has_favicon = True
+
+                self._final_sequence.append(self.find_by_pattern(routing_pattern).to_tuple())
+
+            if not has_favicon:
+                self._final_sequence.append(('/favicon.ico', StaticRoute._default_service))
 
         return self._final_sequence
 
     def update(self, other):
-        for route in other.map().values():
+        for route in other._raw_map.values():
             self.register(route, True)
 
     @staticmethod
@@ -98,37 +107,50 @@ class RoutingMap(object):
         return routing_map
 
 class Route(object):
-    """
-    The abstract class representing a routing directive.
+    """The abstract class representing a routing directive.
 
     :param route: an instance of :class:`kotoba.kotoba.Kotoba` representing the route.
     """
-
+    _re_wildcard_recur        = RegExp('(\*{2,})')
+    _re_wildcard_non_recur    = RegExp('(\*{1})')
+    _re_named_parameter       = RegExp('\{(?P<name>[^\}]+)\}')
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
 
     def __init__(self, route_data):
         self._source  = route_data
         self._class   = None
-        self._pattern = None
+        self._pattern = Route.get_pattern(self._source)
 
-    def type():
-        """ Get the routing type. """
+        use_regexp = self._source.attribute('regexp')
+
+        # If the given pattern is not a regular expression, rewrite the routing pattern.
+        if use_regexp and use_regexp.lower() != 'true':
+            self._pattern = self._re_wildcard_recur.sub('(.+)', self._pattern)
+            self._pattern = self._re_wildcard_non_recur.sub('([^/]+)', self._pattern)
+            self._pattern = self._re_named_parameter.sub('(?P<\g<name>>.+)', self._pattern)
+
+    @property
+    def pattern(self):
+        return self._pattern
+
+    def type(self):
+        """ Get the routing type.
+
+        :rtype: str
+        """
         return self.source().name()
 
     def source(self):
-        """ Get the original data for the route. """
+        """ Get the original data for the route.
+
+        :rtype: str
+        """
         return self._source
 
-    def pattern(self):
-        """ Get the routing pattern. """
-        if not self._pattern:
-            self._pattern = Route.get_pattern(self._source)
-
-        return self._pattern
-
     def bean_class(self):
-        """
-        Get the class reference for the route.
+        """ Get the class reference for the route.
+
+        :rtype: type
         """
         if not self._class and self.source().attribute('class'):
             self._class = Loader(self.source().attribute('class')).package
@@ -193,7 +215,7 @@ class DynamicRoute(Route):
 
     def to_tuple(self):
         """ Convert the route to tuple. """
-        return (self.pattern(), self.controller())
+        return (self.pattern, self.controller())
 
 class StaticRoute(Route):
     """
@@ -213,7 +235,7 @@ class StaticRoute(Route):
             self._base_path = base_path
 
         # Map the routing pattern to the actual location.
-        self.service().add_pattern(self.pattern(), self.location(), self.cache_enabled())
+        self.service().add_pattern(self.pattern, self.location(), self.cache_enabled())
 
     def location(self):
         """ Get the location of the static resource/content. """
@@ -241,18 +263,20 @@ class StaticRoute(Route):
 
     def service(self):
         """ Get the resource service. """
-
-        if not self._default_service:
-            self._default_service = Loader('tori.controller.ResourceService').package
-
-        # Get an alternative service if specified.
-        service = self.bean_class() or self._default_service
+        service = self.bean_class() or StaticRoute.default_service()
 
         return service
 
     def to_tuple(self):
         """ Convert the route to tuple. """
-        return (self.pattern(), self.service())
+        return (self.pattern, self.service())
+
+    @staticmethod
+    def default_service():
+        if not StaticRoute._default_service:
+            StaticRoute._default_service = Loader('tori.controller.ResourceService').package
+
+        return StaticRoute._default_service
 
 class RelayRoute(Route):
     """ Relay routing directive based on :class:`Route` used for redirection """
@@ -282,7 +306,7 @@ class RelayRoute(Route):
         """ Convert the route to tuple. """
 
         return (
-            self.pattern(),
+            self.pattern,
             RedirectHandler, {
                 'url':       self.destination(),
                 'permanent': self.is_permanent()

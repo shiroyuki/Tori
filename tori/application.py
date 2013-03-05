@@ -30,7 +30,7 @@ from wsgiref            import handlers
 from tori.centre     import settings as AppSettings
 from tori.centre     import services as AppServices
 from tori.common     import get_logger
-from tori.data.base import resolve_file_path
+from tori.data.base  import resolve_file_path
 from tori.exception  import *
 from tori.navigation import *
 
@@ -134,7 +134,8 @@ class Application(BaseApplication):
     _default_services         = [
         ('finder', 'tori.common.Finder', [], {}),
         ('renderer', 'tori.template.service.RenderingService', [], {}),
-        ('session', 'tori.session.repository.memory.Memory', [], {})
+        ('session', 'tori.session.repository.memory.Memory', [], {}),
+        ('routing_map', 'tori.navigation.RoutingMap', [], {})
     ]
 
     def __init__(self, configuration_location, **settings):
@@ -144,6 +145,8 @@ class Application(BaseApplication):
         self._config_base_path = os.path.dirname(self._config_main_path)
 
         self._config      = load_from_file(self._config_main_path)
+
+        # Initialize the routing map
         self._routing_map = RoutingMap()
 
         # Default properties
@@ -177,6 +180,9 @@ class Application(BaseApplication):
         if 'port' in settings:
             self._port = settings['port']
             self._logger.info('Changed the listening port: %s' % self._port)
+
+        # Update the routing map
+        AppServices.get('routing_map').update(self._routing_map)
 
         # Normal procedure
         self._update_routes(self._routing_map.export())
@@ -253,6 +259,8 @@ class Application(BaseApplication):
             if service_config_path[0] != '/':
                 config_file_path = os.path.join(base_path, service_config_path)
 
+            self._logger.info('Loading services from {}'.format(config_file_path))
+
             assembler.load(config_file_path)
 
     def _map_routing_table(self, configuration):
@@ -295,12 +303,11 @@ class Application(BaseApplication):
 
         *args* and *kwargs* are parameters used to instantiate the service.
         """
-
         AppServices.set(id, self._make_service_entity(id, package_path, *args, **kwargs))
 
     def get_route(self, routing_pattern):
         """ Get the route. """
-        return self._routing_map.get(routing_pattern)
+        return self._routing_map.find_by_pattern(routing_pattern)
 
 class WSGIApplication(Application):
     """
