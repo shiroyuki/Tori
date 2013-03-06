@@ -24,11 +24,13 @@ class Serializer(ArraySerializer):
         extra_associations = {}
 
         for name in dir(data):
+            # Skip all protected/private/reserved properties.
             if name[0] == '_' or name == 'id':
                 continue
 
             guide = relational_map[name] if name in relational_map else None
 
+            # Skip all pseudo properties used for reverse mapping.
             if guide and guide.inverted_by:
                 continue
 
@@ -37,14 +39,17 @@ class Serializer(ArraySerializer):
             is_list = isinstance(property_reference, list)
             value   = None
 
+            # Skip all callable properties
             if callable(property_reference):
                 continue
 
+            # With a valid association class, this property has the many-to-many relationship with the other entity.
             if guide and guide.association_class and is_list:
                 extra_associations[name] = []
 
                 for destination in property_reference:
                     extra_associations[name].append(destination.id)
+            # For one-to-many relationship, this property relies on the built-in list type.
             elif is_list:
                 value = []
 
@@ -55,6 +60,7 @@ class Serializer(ArraySerializer):
 
             returnee[name] = value
 
+        # If this is not a pseudo object ID, add the reserved key '_id' with the property 'id' .
         if data.id and not isinstance(data.id, PseudoObjectId):
             returnee['_id'] = data.id
 
