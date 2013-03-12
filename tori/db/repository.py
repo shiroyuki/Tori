@@ -77,7 +77,7 @@ class Repository(object):
         if not data:
             return None
 
-        document = self._dehydrate_object(**data)
+        document = self._dehydrate_object(data)
 
         return document
 
@@ -87,14 +87,7 @@ class Repository(object):
         if length and isinstance(length, int):
             data_list = data_list[offset:(offset + length)]
 
-        document_list = []
-
-        for data in data_list:
-            document = self._dehydrate_object(**data)
-
-            document_list.append(document)
-
-        return document_list
+        return [self._dehydrate_object(data) for data in data_list]
 
     def filter_one(self, criteria={}):
         raw_data = self._api.find_one(criteria)
@@ -102,7 +95,7 @@ class Repository(object):
         if not raw_data:
             return None
 
-        document = self._dehydrate_object(**raw_data)
+        document = self._dehydrate_object(raw_data)
 
         return document
 
@@ -122,7 +115,7 @@ class Repository(object):
     def commit(self):
         self._session.commit()
 
-    def _dehydrate_object(self, **raw_data):
+    def _dehydrate_object(self, raw_data):
         if '_id' not in raw_data:
             raise MissingObjectIdException('The key _id in the raw data is not found.')
 
@@ -154,6 +147,7 @@ class Repository(object):
 
         for property_name in self._class.__relational_map__:
             cascading_options = self._class.__relational_map__[property_name].cascading_options
+
             if cascading_options:
                 self._has_cascading = True
 
