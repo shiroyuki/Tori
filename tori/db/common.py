@@ -7,7 +7,6 @@ Common Module
 :Stability: Stable
 """
 
-from time import time
 from bson import ObjectId
 
 from tori.data.serializer import ArraySerializer

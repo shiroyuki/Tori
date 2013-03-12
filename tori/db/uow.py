@@ -18,16 +18,22 @@ class Record(object):
     STATUS_NEW       = 4
 
     def __init__(self, entity, status):
-        self.entity = entity
-        self.status = status
+        self.entity  = entity
+        self.status  = status
+        self.updated = time()
 
         self.original_data_set = Record.serializer.encode(self.entity)
         self.original_extra_association = Record.serializer.extra_associations(self.entity)
+
+    def mark_as(self, status):
+        self.status  = status
+        self.updated = time()
 
     def update(self):
         self.original_data_set = Record.serializer.encode(self.entity)
         self.original_extra_association = Record.serializer.extra_associations(self.entity)
-        self.status = Record.STATUS_CLEAN
+
+        self.mark_as(Record.STATUS_CLEAN)
 
 class DependencyNode(object):
     """ Dependency Node
@@ -149,7 +155,7 @@ class UnitOfWork(object):
         record.original_data_set = Record.serializer.encode(entity)
 
         if record.status == Record.STATUS_DIRTY:
-            record.status = Record.STATUS_CLEAN
+            record.mark_as(Record.STATUS_CLEAN)
 
         # Remap the object.
         self._em.apply_relational_map(entity)
@@ -183,7 +189,7 @@ class UnitOfWork(object):
             raise UOWUpdateError('Could not update the deleted entity.')
 
         if record.status != Record.STATUS_NEW and self.compute_change_set(record):
-            record.status = Record.STATUS_DIRTY
+            record.mark_as(Record.STATUS_DIRTY)
 
         self.cascade_property_registration_of(entity, CascadingType.PERSIST)
 
@@ -208,7 +214,7 @@ class UnitOfWork(object):
         if record.status == Record.STATUS_NEW:
             self.delete_record(entity)
         else:
-            record.status = Record.STATUS_DELETED
+            record.mark_as(Record.STATUS_DELETED)
 
         self.cascade_property_registration_of(entity, CascadingType.DELETE)
 
@@ -317,7 +323,7 @@ class UnitOfWork(object):
             elif record.status == Record.STATUS_DELETED and commit_node.score == 0:
                 self.synchronize_delete(collection, record.entity.id)
             elif record.status == Record.STATUS_DELETED and commit_node.score > 0:
-                record.status = Record.STATUS_CLEAN
+                record.mark_as(Record.STATUS_CLEAN)
 
         self.synchronize_records()
         self.unfreeze()
@@ -407,11 +413,56 @@ class UnitOfWork(object):
         return final_order
 
     def compute_change_set(self, record):
-        current_set       = Record.serializer.encode(record.entity)
-        extra_association = Record.serializer.extra_associations(record.entity)
+        current_set = Record.serializer.encode(record.entity)
 
         if record.status == Record.STATUS_NEW:
             return current_set
+        elif record.status == Record.STATUS_DELETED:
+            return record.entity.id
+
+        original_set = dict(record.original_data_set)
+
+        change_set = {
+            '$set':   {},
+            '$push':  {}, # Ignored until the multiple-link association is implemented.
+            '$unset': {}
+        }
+
+        original_property_set = set(original_set.keys())
+        current_property_set  = set(current_set.keys())
+
+        expected_property_list = original_property_set.intersection(current_property_set)
+        expected_property_list = expected_property_list.union(current_property_set.difference(original_property_set))
+
+        unexpected_property_list = original_property_set.difference(current_property_set)
+
+        # Add or update properties
+        for name in expected_property_list:
+            if name in original_set and original_set[name] == current_set[name]:
+                continue
+
+            change_set['$set'][name] = current_set[name]
+
+        # Remove unwanted properties
+        for name in unexpected_property_list:
+            change_set['$unset'][name] = 1
+
+        directive_list = list(change_set.keys())
+
+        # Clean up the change set
+        for directive in directive_list:
+            if change_set[directive]:
+                continue
+
+            del change_set[directive]
+
+        return change_set
+
+    def compute_change_set_for_extra_association(self, record):
+        extra_association = Record.serializer.extra_associations(record.entity)
+
+        if record.status == Record.STATUS_NEW:
+            return extra_association
         elif record.status == Record.STATUS_DELETED:
             return record.entity.id
 
