@@ -24,46 +24,28 @@ class Serializer(ArraySerializer):
 
         for name in dir(data):
             # Skip all protected/private/reserved properties.
-            if name[0] == '_' or name == 'id':
+            if self._is_preserved_property(name):
                 continue
 
-            guide = relational_map[name] if name in relational_map else None
+            guide = self._retrieve_guide(relational_map, name)
 
-            # Skip all pseudo properties used for reverse mapping.
-            if guide and guide.inverted_by:
+            # Skip all properties without an associative guide or with reverse mapping or without pseudo association class.
+            if not guide or guide.inverted_by or not guide.association_class:
                 continue
 
             property_reference = data.__getattribute__(name)
 
-            is_list = isinstance(property_reference, list)
-            value   = None
-
-            # Skip all callable properties
-            if callable(property_reference):
+            # Skip all callable properties and non-list properties
+            if callable(property_reference) or not isinstance(property_reference, list):
                 continue
 
             # With a valid association class, this property has the many-to-many relationship with the other entity.
-            if guide and guide.association_class and is_list:
-                extra_associations[name] = []
+            extra_associations[name] = []
 
-                for destination in property_reference:
-                    extra_associations[name].append(destination.id)
-            # For one-to-many relationship, this property relies on the built-in list type.
-            elif is_list:
-                value = []
+            for destination in property_reference:
+                extra_associations[name].append(destination.id)
 
-                for item in property_reference:
-                    value.append(self._process_value(data, item, stack_depth))
-            else:
-                value = self._process_value(data, property_reference, stack_depth)
-
-            returnee[name] = value
-
-        # If this is not a pseudo object ID, add the reserved key '_id' with the property 'id' .
-        if data.id and not isinstance(data.id, PseudoObjectId):
-            returnee['_id'] = data.id
-
-        return returnee, extra_associations
+        return extra_associations
 
     def encode(self, data, stack_depth=0):
         if not isinstance(data, object):
@@ -74,10 +56,10 @@ class Serializer(ArraySerializer):
 
         for name in dir(data):
             # Skip all protected/private/reserved properties.
-            if name[0] == '_' or name == 'id':
+            if self._is_preserved_property(name):
                 continue
 
-            guide = relational_map[name] if name in relational_map else None
+            guide = self._retrieve_guide(relational_map, name)
 
             # Skip all pseudo properties used for reverse mapping.
             if guide and guide.inverted_by:
@@ -92,7 +74,7 @@ class Serializer(ArraySerializer):
             if callable(property_reference):
                 continue
 
-            # With a valid association class, this property has the many-to-many relationship with the other entity.
+            # For one-to-many relationship, this property relies on the built-in list type.
             if is_list:
                 value = []
 
@@ -108,6 +90,12 @@ class Serializer(ArraySerializer):
             returnee['_id'] = data.id
 
         return returnee
+
+    def _retrieve_guide(self, relational_map, name):
+        return relational_map[name] if name in relational_map else None
+
+    def _is_preserved_property(self, name):
+        return name[0] == '_' or name == 'id'
 
     def _is_entity(self, data):
         return '__relational_map__' in dir(data)
