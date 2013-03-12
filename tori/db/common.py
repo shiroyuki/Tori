@@ -187,14 +187,10 @@ class ProxyCollection(list):
             .collection(self._guide.association_class.cls)\
             .filter({'origin': self._origin.id})
 
-        for association in mapping_list:
-            proxy = ProxyFactory.make(
-                self._session,
-                association.destination,
-                self._guide
-            )
-
-            self.append(proxy)
+        self.extend([
+            ProxyFactory.make(self._session, association.destination, self._guide)
+            for association in mapping_list
+        ])
 
     def __iter__(self):
         self._prepare_list()
