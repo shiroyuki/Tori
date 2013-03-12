@@ -20,9 +20,9 @@ class TestDbCommonSerializer(unittest.TestCase):
 
         encoded_doc = self.s.encode(doc)
 
-        self.assertFalse('_id' in encoded_doc[0])
-        self.assertFalse('id' in encoded_doc[0])
-        self.assertEqual(encoded_doc[0]['name'], 'shiroyuki')
+        self.assertFalse('_id' in encoded_doc)
+        self.assertFalse('id' in encoded_doc)
+        self.assertEqual(encoded_doc['name'], 'shiroyuki')
 
     def test_document_with_pseudo_id(self):
         doc = Document('shiroyuki')
@@ -31,9 +31,9 @@ class TestDbCommonSerializer(unittest.TestCase):
 
         encoded_doc = self.s.encode(doc)
 
-        self.assertFalse('_id' in encoded_doc[0])
-        self.assertFalse('id' in encoded_doc[0])
-        self.assertEqual(encoded_doc[0]['name'], 'shiroyuki')
+        self.assertFalse('_id' in encoded_doc)
+        self.assertFalse('id' in encoded_doc)
+        self.assertEqual(encoded_doc['name'], 'shiroyuki')
 
     def test_document_with_actual_id(self):
         doc = Document('shiroyuki')
@@ -42,6 +42,6 @@ class TestDbCommonSerializer(unittest.TestCase):
 
         encoded_doc = self.s.encode(doc)
 
-        self.assertTrue('_id' in encoded_doc[0])
-        self.assertFalse('id' in encoded_doc[0])
-        self.assertEqual(encoded_doc[0]['name'], 'shiroyuki')
+        self.assertTrue('_id' in encoded_doc)
+        self.assertFalse('id' in encoded_doc)
+        self.assertEqual(encoded_doc['name'], 'shiroyuki')

@@ -21,10 +21,12 @@ class Record(object):
         self.entity = entity
         self.status = status
 
-        self.original_data_set, self.original_extra_association = Record.serializer.encode(self.entity)
+        self.original_data_set = Record.serializer.encode(self.entity)
+        #self.original_extra_association = Record.serializer.extra_associations(self.entity)
 
     def update(self):
-        self.original_data_set, self.original_extra_association = Record.serializer.encode(self.entity)
+        self.original_data_set = Record.serializer.encode(self.entity)
+        #self.original_extra_association = Record.serializer.extra_associations(self.entity)
         self.status = Record.STATUS_CLEAN
 
 class DependencyNode(object):
@@ -405,7 +407,8 @@ class UnitOfWork(object):
         return final_order
 
     def compute_change_set(self, record):
-        current_set, extra_association = Record.serializer.encode(record.entity)
+        current_set       = Record.serializer.encode(record.entity)
+        extra_association = Record.serializer.extra_associations(record.entity)
 
         if record.status == Record.STATUS_NEW:
             return current_set
@@ -477,7 +480,8 @@ class UnitOfWork(object):
 
             object_id = self._convert_object_id_to_str(record.entity.id)
 
-            current_set, extra_association = Record.serializer.encode(record.entity)
+            current_set       = Record.serializer.encode(record.entity)
+            extra_association = Record.serializer.extra_associations(record.entity)
 
             # Register the current entity into the dependency map if it's never
             # been registered or eventually has no dependencies.

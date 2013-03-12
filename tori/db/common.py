@@ -10,12 +10,11 @@ Common Module
 from time import time
 from bson import ObjectId
 
-from tori.common import Enigma
 from tori.data.serializer import ArraySerializer
 from tori.db.exception import ReadOnlyProxyException
 
 class Serializer(ArraySerializer):
-    def encode(self, data, stack_depth=0):
+    def extra_associations(self, data, stack_depth=0):
         if not isinstance(data, object):
             raise TypeError('The provided data must be an object')
 
@@ -65,6 +64,50 @@ class Serializer(ArraySerializer):
             returnee['_id'] = data.id
 
         return returnee, extra_associations
+
+    def encode(self, data, stack_depth=0):
+        if not isinstance(data, object):
+            raise TypeError('The provided data must be an object')
+
+        returnee       = {}
+        relational_map = data.__relational_map__ if self._is_entity(data) else {}
+
+        for name in dir(data):
+            # Skip all protected/private/reserved properties.
+            if name[0] == '_' or name == 'id':
+                continue
+
+            guide = relational_map[name] if name in relational_map else None
+
+            # Skip all pseudo properties used for reverse mapping.
+            if guide and guide.inverted_by:
+                continue
+
+            property_reference = data.__getattribute__(name)
+
+            is_list = isinstance(property_reference, list)
+            value   = None
+
+            # Skip all callable properties
+            if callable(property_reference):
+                continue
+
+            # With a valid association class, this property has the many-to-many relationship with the other entity.
+            if is_list:
+                value = []
+
+                for item in property_reference:
+                    value.append(self._process_value(data, item, stack_depth))
+            else:
+                value = self._process_value(data, property_reference, stack_depth)
+
+            returnee[name] = value
+
+        # If this is not a pseudo object ID, add the reserved key '_id' with the property 'id' .
+        if data.id and not isinstance(data.id, PseudoObjectId):
+            returnee['_id'] = data.id
+
+        return returnee
 
     def _is_entity(self, data):
         return '__relational_map__' in dir(data)
