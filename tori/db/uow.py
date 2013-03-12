@@ -22,11 +22,11 @@ class Record(object):
         self.status = status
 
         self.original_data_set = Record.serializer.encode(self.entity)
-        #self.original_extra_association = Record.serializer.extra_associations(self.entity)
+        self.original_extra_association = Record.serializer.extra_associations(self.entity)
 
     def update(self):
         self.original_data_set = Record.serializer.encode(self.entity)
-        #self.original_extra_association = Record.serializer.extra_associations(self.entity)
+        self.original_extra_association = Record.serializer.extra_associations(self.entity)
         self.status = Record.STATUS_CLEAN
 
 class DependencyNode(object):
