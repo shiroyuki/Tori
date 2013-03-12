@@ -71,7 +71,7 @@ class TestDbUnitOfWork(TestCase):
         self.uow.register_dirty(test_object)
 
         record     = self.uow.retrieve_record(test_object)
-        change_set = self.uow.compute_change_set(record)
+        change_set = self.uow._compute_change_set(record)
 
         self.assertEqual(Record.STATUS_DIRTY, record.status)
         self.assertTrue('$set' in change_set)

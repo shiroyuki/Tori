@@ -122,13 +122,13 @@ class UnitOfWork(object):
         self._blocker_activated = False
         self._tlock = ThreadLock()
 
-    def freeze(self):
+    def _freeze(self):
         if not self._blocker_activated:
             return
 
         self._tlock.acquire()
 
-    def unfreeze(self):
+    def _unfreeze(self):
         if not self._blocker_activated:
             return
 
@@ -161,7 +161,7 @@ class UnitOfWork(object):
         self._em.apply_relational_map(entity)
 
     def register_new(self, entity):
-        self.freeze()
+        self._freeze()
 
         uid = self._retrieve_entity_guid(entity)
 
@@ -176,12 +176,12 @@ class UnitOfWork(object):
         # Map the pseudo object ID to the entity.
         self._object_id_map[self._convert_object_id_to_str(entity.id)] = uid
 
-        self.cascade_property_registration_of(entity, CascadingType.PERSIST)
+        self._cascade_property_registration_of(entity, CascadingType.PERSIST)
 
-        self.unfreeze()
+        self._unfreeze()
 
     def register_dirty(self, entity, can_register_new=False):
-        self.freeze()
+        self._freeze()
 
         record = self.retrieve_record(entity)
 
@@ -193,9 +193,9 @@ class UnitOfWork(object):
         elif record.status == Record.STATUS_NEW and can_register_new:
             return self.register_new(entity)
 
-        self.cascade_property_registration_of(entity, CascadingType.PERSIST)
+        self._cascade_property_registration_of(entity, CascadingType.PERSIST)
 
-        self.unfreeze()
+        self._unfreeze()
 
     def register_clean(self, entity):
         uid = self._retrieve_entity_guid(entity)
@@ -209,7 +209,7 @@ class UnitOfWork(object):
         self._object_id_map[self._convert_object_id_to_str(entity.id)] = uid
 
     def register_deleted(self, entity):
-        self.freeze()
+        self._freeze()
 
         record = self.retrieve_record(entity)
 
@@ -218,11 +218,11 @@ class UnitOfWork(object):
         else:
             record.mark_as(Record.STATUS_DELETED)
 
-        self.cascade_property_registration_of(entity, CascadingType.DELETE)
+        self._cascade_property_registration_of(entity, CascadingType.DELETE)
 
-        self.unfreeze()
+        self._unfreeze()
 
-    def cascade_property_registration_of(self, reference, cascading_type):
+    def _cascade_property_registration_of(self, reference, cascading_type):
         entity = reference
 
         if isinstance(reference, ProxyObject):
@@ -290,7 +290,7 @@ class UnitOfWork(object):
     def commit(self):
         self._blocker_activated = True
 
-        self.freeze()
+        self._freeze()
 
         # Load the sub graph of supervised collections.
         for c in self._em.collections:
@@ -299,40 +299,40 @@ class UnitOfWork(object):
 
             c.filter()
 
-        commit_order = self.compute_order()
+        commit_order = self._compute_order()
 
         # Commit changes to nodes.
         for commit_node in commit_order:
-            uid    = self._object_id_map[self._convert_object_id_to_str(commit_node.object_id)]
+            uid    = self._retrieve_entity_guid_by_id(commit_node.object_id)
             record = self._record_map[uid]
 
             collection = self._em.collection(record.entity.__class__)
-            change_set = self.compute_change_set(record)
+            change_set = self._compute_change_set(record)
 
             if record.status == Record.STATUS_NEW:
-                self.synchronize_new(
+                self._synchronize_new(
                     collection,
                     record.entity,
                     change_set
                 )
             elif record.status == Record.STATUS_DIRTY and change_set:
-                self.synchronize_update(
+                self._synchronize_update(
                     collection,
                     record.entity.id,
                     record.original_data_set,
                     change_set
                 )
             elif record.status == Record.STATUS_DELETED and commit_node.score == 0:
-                self.synchronize_delete(collection, record.entity.id)
+                self._synchronize_delete(collection, record.entity.id)
             elif record.status == Record.STATUS_DELETED and commit_node.score > 0:
                 record.mark_as(Record.STATUS_CLEAN)
 
-        self.synchronize_records()
-        self.unfreeze()
+        self._synchronize_records()
+        self._unfreeze()
 
         self._blocker_activated = False
 
-    def synchronize_new(self, collection, entity, change_set):
+    def _synchronize_new(self, collection, entity, change_set):
         pseudo_id = self._convert_object_id_to_str(entity.id)
         object_id = collection._api.insert(change_set)
         entity.id = object_id # update the entity ID
@@ -340,7 +340,7 @@ class UnitOfWork(object):
 
         self._object_id_map[key] = self._object_id_map[pseudo_id]
 
-    def synchronize_update(self, collection, object_id, old_data_set, new_data_set):
+    def _synchronize_update(self, collection, object_id, old_data_set, new_data_set):
         """Synchronize the updated data
 
         :param collection: the target collection
@@ -354,10 +354,10 @@ class UnitOfWork(object):
             upsert=False
         )
 
-    def synchronize_delete(self, collection, object_id):
+    def _synchronize_delete(self, collection, object_id):
         collection._api.remove({'_id': object_id})
 
-    def synchronize_records(self):
+    def _synchronize_records(self):
         writing_statuses = [Record.STATUS_NEW, Record.STATUS_DIRTY]
         uid_list         = list(self._record_map.keys())
 
@@ -400,7 +400,7 @@ class UnitOfWork(object):
 
         return None
 
-    def compute_order(self):
+    def _compute_order(self):
         self._construct_dependency_graph()
 
         # After constructing the dependency graph (as a supposedly directed acyclic
@@ -414,7 +414,7 @@ class UnitOfWork(object):
 
         return final_order
 
-    def compute_change_set(self, record):
+    def _compute_change_set(self, record):
         current_set = Record.serializer.encode(record.entity)
 
         if record.status == Record.STATUS_NEW:
@@ -460,7 +460,7 @@ class UnitOfWork(object):
 
         return change_set
 
-    def compute_change_set_for_extra_association(self, record):
+    def _compute_change_set_for_extra_association(self, record):
         extra_association = Record.serializer.extra_associations(record.entity)
 
         if record.status == Record.STATUS_NEW:
@@ -507,9 +507,12 @@ class UnitOfWork(object):
         return change_set
 
     def _retrieve_entity_guid(self, entity):
-        return self._object_id_map[self._convert_object_id_to_str(entity.id)]\
+        return self._retrieve_entity_guid_by_id(entity.id)\
             if isinstance(entity, ProxyObject)\
             else hash(entity)
+
+    def _retrieve_entity_guid_by_id(self, id):
+        return self._object_id_map[self._convert_object_id_to_str(id)]
 
     def _generate_pseudo_object_id(self):
         return PseudoObjectId()
@@ -550,7 +553,7 @@ class UnitOfWork(object):
                     # Ignore anything evaluated as False.
                     continue
                 elif not isinstance(data, list):
-                    other_uid    = self._object_id_map[self._convert_object_id_to_str(data)]
+                    other_uid    = self._retrieve_entity_guid_by_id(data)
                     other_record = self._record_map[other_uid]
 
                     self._register_dependency(record, other_record)
@@ -558,7 +561,7 @@ class UnitOfWork(object):
                     continue
 
                 for dependency_object_id in data:
-                    other_uid    = self._object_id_map[self._convert_object_id_to_str(dependency_object_id)]
+                    other_uid    = self._retrieve_entity_guid_by_id(dependency_object_id)
                     other_record = self._record_map[other_uid]
 
                     self._register_dependency(record, other_record)
