@@ -1,5 +1,5 @@
 from pymongo import Connection
-from tori.db.common import ProxyObject, ProxyFactory
+from tori.db.common import ProxyObject, ProxyFactory, ProxyCollection
 from tori.db.repository import Repository
 from tori.db.exception import IntegrityConstraintError
 from tori.db.mapper import AssociationType
@@ -126,14 +126,6 @@ class Session(object):
 
                 entity.__setattr__(property_name, proxy_list)
             elif guide.association == AssociationType.MANY_TO_MANY:
-                proxy_list   = []
-                mapping_list = self.collection(guide.association_class.cls).filter({'origin': entity.id})
-
-                for association in mapping_list:
-                    object_id = association.destination
-
-                    proxy_list.append(ProxyFactory.make(self, object_id, guide))
-
-                entity.__setattr__(property_name, proxy_list)
+                entity.__setattr__(property_name, ProxyCollection(self, entity, guide))
             else:
                 raise IntegrityConstraintError('Unknown type of entity association')

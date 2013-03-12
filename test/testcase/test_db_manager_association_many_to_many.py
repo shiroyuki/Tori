@@ -52,7 +52,9 @@ class TestDbManagerAssociationManyToMany(TestCase):
 
         group_a = collection.filter_one({'name': 'group a'})
 
+        self.assertTrue(group_a.members._loaded, 'The IDs should be loaded by UOW.')
         self.assertEqual(2, len(group_a.members))
+        self.assertTrue(group_a.members._loaded)
         self.assertEqual('member a', group_a.members[0].name)
         self.assertEqual('member b', group_a.members[1].name)
 

@@ -162,6 +162,70 @@ class ProxyObject(object):
 
         self.__get_object().__setattr__(key, value)
 
+class ProxyCollection(list):
+    def __init__(self, session, origin, guide):
+        self._session = session
+        self._origin  = origin
+        self._guide   = guide
+        self._loaded  = False
+
+    def reload(self):
+        while len(self):
+            self.pop(0)
+
+        self._loaded = False
+
+        self._prepare_list()
+
+    def _prepare_list(self):
+        if self._loaded:
+            return
+
+        self._loaded = True
+
+        mapping_list = self._session\
+            .collection(self._guide.association_class.cls)\
+            .filter({'origin': self._origin.id})
+
+        for association in mapping_list:
+            proxy = ProxyFactory.make(
+                self._session,
+                association.destination,
+                self._guide
+            )
+
+            self.append(proxy)
+
+    def __iter__(self):
+        self._prepare_list()
+
+        return super(ProxyCollection, self).__iter__()
+
+    def __len__(self):
+        self._prepare_list()
+
+        return super(ProxyCollection, self).__len__()
+
+    def __contains__(self, item):
+        self._prepare_list()
+
+        return super(ProxyCollection, self).__contains__(item)
+
+    def __delitem__(self, key):
+        self._prepare_list()
+
+        return super(ProxyCollection, self).__delitem__(key)
+
+    def __getitem__(self, item):
+        self._prepare_list()
+
+        return super(ProxyCollection, self).__getitem__(item)
+
+    def __setitem__(self, key, value):
+        self._prepare_list()
+
+        super(ProxyCollection, self).__setitem__(key, value)
+
 class ProxyFactory(object):
     @staticmethod
     def make(session, id, mapping_guide):

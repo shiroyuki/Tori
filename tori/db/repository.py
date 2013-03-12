@@ -53,7 +53,10 @@ class Repository(object):
                 continue
 
             default_to_list = argument_name in rmap\
-                and (rmap[argument_name].association in [AssociationType.ONE_TO_MANY, AssociationType.MANY_TO_MANY])
+                and rmap[argument_name].association in [
+                    AssociationType.ONE_TO_MANY,
+                    AssociationType.MANY_TO_MANY
+                ]
 
             attributes[argument_name] = [] if default_to_list else None
 
@@ -139,7 +142,6 @@ class Repository(object):
         document.__session__ = self._session
 
         self._session.apply_relational_map(document)
-
         self._session._uow.register_clean(document)
 
         return document
