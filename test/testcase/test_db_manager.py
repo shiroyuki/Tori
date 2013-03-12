@@ -101,6 +101,8 @@ class TestDbManager(TestCase):
         reference_map = self.__inject_data_with_cascading()
 
         doc = self.session.collection(TestNode).filter_one({'name': 'a'})
+
+        id = doc.id
         doc.left.name = 'left'
 
         self.session.persist(doc)
@@ -114,6 +116,7 @@ class TestDbManager(TestCase):
 
         doc = self.session.collection(TestNode).filter_one({'name': 'a'})
 
+        self.assertEqual(id, doc.id)
         self.assertEqual(reference_map['b'].id, doc.left.id)
 
     def test_commit_with_update_without_cascading(self):

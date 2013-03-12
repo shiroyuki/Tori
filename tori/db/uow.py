@@ -180,7 +180,7 @@ class UnitOfWork(object):
 
         self.unfreeze()
 
-    def register_dirty(self, entity):
+    def register_dirty(self, entity, can_register_new=False):
         self.freeze()
 
         record = self.retrieve_record(entity)
@@ -188,8 +188,10 @@ class UnitOfWork(object):
         if record.status == Record.STATUS_DELETED:
             raise UOWUpdateError('Could not update the deleted entity.')
 
-        if record.status != Record.STATUS_NEW and self.compute_change_set(record):
+        if record.status == Record.STATUS_CLEAN:
             record.mark_as(Record.STATUS_DIRTY)
+        elif record.status == Record.STATUS_NEW and can_register_new:
+            return self.register_new(entity)
 
         self.cascade_property_registration_of(entity, CascadingType.PERSIST)
 
@@ -275,7 +277,7 @@ class UnitOfWork(object):
                 except UOWRepeatedRegistrationError as exception:
                     pass
             else:
-                self.register_dirty(reference)
+                self.register_dirty(reference, True)
         elif cascading_type == CascadingType.DELETE:
             self.register_deleted(reference)
 
@@ -313,7 +315,7 @@ class UnitOfWork(object):
                     record.entity,
                     change_set
                 )
-            elif record.status == Record.STATUS_DIRTY:
+            elif record.status == Record.STATUS_DIRTY and change_set:
                 self.synchronize_update(
                     collection,
                     record.entity.id,

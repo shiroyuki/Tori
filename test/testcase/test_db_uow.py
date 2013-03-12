@@ -57,7 +57,7 @@ class TestDbUnitOfWork(TestCase):
 
         record = self.uow.retrieve_record(test_object)
 
-        self.assertEqual(Record.STATUS_CLEAN, record.status)
+        self.assertEqual(Record.STATUS_DIRTY, record.status)
 
     def test_dirty_with_existing_data_and_no_changes(self):
         test_object = TestClass()
