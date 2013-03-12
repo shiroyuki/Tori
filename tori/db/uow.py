@@ -188,7 +188,7 @@ class UnitOfWork(object):
         if record.status == Record.STATUS_DELETED:
             raise UOWUpdateError('Could not update the deleted entity.')
 
-        if record.status != Record.STATUS_NEW and self.compute_change_set(record):
+        if record.status != Record.STATUS_NEW:
             record.mark_as(Record.STATUS_DIRTY)
 
         self.cascade_property_registration_of(entity, CascadingType.PERSIST)
