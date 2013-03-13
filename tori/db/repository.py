@@ -8,7 +8,7 @@ Repository
 import inspect
 from tori.db.exception import MissingObjectIdException
 from tori.db.mapper import AssociationType
-
+from tori.db.uow import Record
 
 class Repository(object):
     """
@@ -87,7 +87,18 @@ class Repository(object):
         if length and isinstance(length, int):
             data_list = data_list[offset:(offset + length)]
 
-        return [self._dehydrate_object(data) for data in data_list]
+        entity_list = []
+
+        for data in data_list:
+            entity = self._dehydrate_object(data)
+            record = self._session._uow.find_recorded_entity(id)
+
+            if record and record.status == Record.STATUS_DELETED:
+                continue
+
+            entity_list.append(entity)
+
+        return entity_list
 
     def filter_one(self, criteria={}):
         raw_data = self._api.find_one(criteria)

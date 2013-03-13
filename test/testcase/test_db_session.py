@@ -193,11 +193,7 @@ class TestDbSession(TestCase):
         self.session.delete(reference_map['e'], reference_map['h'])
         self.session.flush()
 
-        self.assertEqual(
-            expected_max_size - 2,
-            len(collection.filter()),
-            'Expected for %s nodes remaining' % (expected_max_size - 2)
-        )
+        self.assertEqual(expected_max_size - 2, len(collection.filter()))
 
     def test_commit_with_delete_with_cascading_with_no_dependency_left(self):
         reference_map = self.__inject_data_with_cascading()
