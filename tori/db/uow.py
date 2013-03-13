@@ -292,6 +292,8 @@ class UnitOfWork(object):
 
         self._freeze()
 
+        self._add_or_remove_associations()
+
         # Load the sub graph of supervised collections.
         for c in self._em.collections:
             if not c.has_cascading():
@@ -460,51 +462,53 @@ class UnitOfWork(object):
 
         return change_set
 
-    def _compute_change_set_for_extra_association(self, record):
-        extra_association = Record.serializer.extra_associations(record.entity)
+    def _compute_connection_changes(self, record):
+        """ Compute changes in external associations originated from the entity
+        of the current record
 
-        if record.status == Record.STATUS_NEW:
-            return extra_association
-        elif record.status == Record.STATUS_DELETED:
-            return record.entity.id
+        This method is designed specifically to deal with many-to-many
+        association by adding or removing associative entities which their
+        origin is from the entity from the current record.
 
-        original_set = dict(record.original_data_set)
+        :param record: the UOW record
+        :type  record: tori.db.uow.Record
+        """
+        current  = Record.serializer.extra_associations(record.entity)
+        original = dict(record.original_extra_association)
 
-        change_set = {
-            '$set':   {},
-            '$push':  {}, # Ignored until the multiple-link association is implemented.
-            '$unset': {}
-        }
+        change_set = {}
 
-        original_property_set = set(original_set.keys())
-        current_property_set  = set(current_set.keys())
+        original_property_set = set(original.keys())
+        current_property_set  = set(current.keys())
 
         expected_property_list = original_property_set.intersection(current_property_set)
         expected_property_list = expected_property_list.union(current_property_set.difference(original_property_set))
 
         unexpected_property_list = original_property_set.difference(current_property_set)
 
-        # Add or update properties
+        # Find new associations
         for name in expected_property_list:
-            if name in original_set and original_set[name] == current_set[name]:
-                continue
+            current_set  = set(current[name])
+            original_set = set(original[name])
 
-            change_set['$set'][name] = current_set[name]
+            change_set[name] = {
+                'action':   'update',
+                'new':      current_set.difference(original_set),
+                'deleted':  original_set.difference(current_set)
+            }
 
-        # Remove unwanted properties
+        # Find new associations
         for name in unexpected_property_list:
-            change_set['$unset'][name] = 1
-
-        directive_list = list(change_set.keys())
-
-        # Clean up the change set
-        for directive in directive_list:
-            if change_set[directive]:
-                continue
-
-            del change_set[directive]
+            change_set[name] = {
+                'action':   'remove'
+            }
 
         return change_set
+
+    def _add_or_remove_associations(self):
+        # Find out if UOW needs to deal with extra records (associative collection).
+        for uid in self._record_map.keys():
+            change_set = self._compute_connection_changes(self._record_map[uid])
 
     def _retrieve_entity_guid(self, entity):
         return self._retrieve_entity_guid_by_id(entity.id)\
