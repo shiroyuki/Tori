@@ -96,7 +96,7 @@ class AssociationFactory(object):
         return self.__class
 
     def hash_content(self, content):
-        return hashlib.sha224(content).hexdigest()
+        return hashlib.sha224(content.encode('ascii')).hexdigest()
 
 class BasicGuide(object):
     def __init__(self, target_class, association):

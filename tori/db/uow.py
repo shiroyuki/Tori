@@ -579,7 +579,9 @@ class UnitOfWork(object):
 
     def _add_or_remove_associations(self):
         # Find out if UOW needs to deal with extra records (associative collection).
-        for uid in self._record_map.keys():
+        uid_list = list(self._record_map.keys())
+
+        for uid in uid_list:
             record = self._record_map[uid]
 
             if record.status == Record.STATUS_CLEAN:
