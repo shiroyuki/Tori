@@ -3,11 +3,12 @@
 Unit of Work
 ############
 """
-from time import time
+from time      import time
 from threading import Lock as ThreadLock
 from tori.db.common    import Serializer, PseudoObjectId, ProxyObject
+from tori.db.entity    import BasicAssociation
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUpdateError, UOWUnknownRecordError, IntegrityConstraintError
-from tori.db.mapper import CascadingType
+from tori.db.mapper    import CascadingType
 
 class Record(object):
     serializer = Serializer(0)
@@ -16,14 +17,19 @@ class Record(object):
     STATUS_DELETED   = 2
     STATUS_DIRTY     = 3
     STATUS_NEW       = 4
+    STATUS_IGNORED   = 5
 
     def __init__(self, entity, status):
         self.entity  = entity
         self.status  = status
         self.updated = time()
+        self.changes = 0
 
         self.original_data_set = Record.serializer.encode(self.entity)
         self.original_extra_association = Record.serializer.extra_associations(self.entity)
+
+    def is_processed(self):
+        return self.changes == 0
 
     def mark_as(self, status):
         self.status  = status
@@ -34,6 +40,8 @@ class Record(object):
         self.original_extra_association = Record.serializer.extra_associations(self.entity)
 
         self.mark_as(Record.STATUS_CLEAN)
+
+        self.changes = 0
 
 class DependencyNode(object):
     """ Dependency Node
@@ -163,6 +171,18 @@ class UnitOfWork(object):
     def register_new(self, entity):
         self._freeze()
 
+        self._register_new(entity)
+
+        self._unfreeze()
+
+    def _register_new(self, entity):
+        """ Register a entity as new (protected)
+
+            .. warning:: This method bypasses the thread lock imposed in the public method. It is for internal use only.
+
+            :param entity: the target entity
+            :type  entity: object
+        """
         uid = self._retrieve_entity_guid(entity)
 
         if self.has_record(entity):
@@ -178,20 +198,15 @@ class UnitOfWork(object):
 
         self._cascade_property_registration_of(entity, CascadingType.PERSIST)
 
-        self._unfreeze()
-
     def register_dirty(self, entity, can_register_new=False):
         self._freeze()
 
         record = self.retrieve_record(entity)
 
-        if record.status == Record.STATUS_DELETED:
-            raise UOWUpdateError('Could not update the deleted entity.')
-
-        if record.status == Record.STATUS_CLEAN:
-            record.mark_as(Record.STATUS_DIRTY)
-        elif record.status == Record.STATUS_NEW and can_register_new:
+        if record.status == Record.STATUS_NEW and can_register_new:
             return self.register_new(entity)
+        elif record.status in [Record.STATUS_CLEAN, Record.STATUS_DELETED]:
+            record.mark_as(Record.STATUS_DIRTY)
 
         self._cascade_property_registration_of(entity, CascadingType.PERSIST)
 
@@ -211,16 +226,26 @@ class UnitOfWork(object):
     def register_deleted(self, entity):
         self._freeze()
 
+        self._register_deleted(entity)
+
+        self._unfreeze()
+
+    def _register_deleted(self, entity):
+        """ Register a entity as deleted (no lock)
+
+            .. warning:: This method bypasses the thread lock imposed in the public method. It is for internal use only.
+
+            :param entity: the target entity
+            :type  entity: object
+        """
         record = self.retrieve_record(entity)
 
-        if record.status == Record.STATUS_NEW:
-            self.delete_record(entity)
+        if record.status == Record.STATUS_NEW or isinstance(entity.id, PseudoObjectId):
+            record.mark_as(Record.STATUS_IGNORED)
         else:
             record.mark_as(Record.STATUS_DELETED)
 
         self._cascade_property_registration_of(entity, CascadingType.DELETE)
-
-        self._unfreeze()
 
     def _cascade_property_registration_of(self, reference, cascading_type):
         entity = reference
@@ -292,8 +317,19 @@ class UnitOfWork(object):
 
         self._freeze()
 
-        self._add_or_remove_associations()
+        # Make changes on the normal entities.
+        self._commit_changes()
 
+        # Then, make changes on external associations.
+        self._add_or_remove_associations()
+        self._commit_changes(BasicAssociation)
+
+        self._synchronize_records()
+        self._unfreeze()
+
+        self._blocker_activated = False
+
+    def _commit_changes(self, expected_class=None):
         # Load the sub graph of supervised collections.
         for c in self._em.collections:
             if not c.has_cascading():
@@ -307,6 +343,9 @@ class UnitOfWork(object):
         for commit_node in commit_order:
             uid    = self._retrieve_entity_guid_by_id(commit_node.object_id)
             record = self._record_map[uid]
+
+            if expected_class and not isinstance(record.entity, expected_class):
+                continue
 
             collection = self._em.collection(record.entity.__class__)
             change_set = self._compute_change_set(record)
@@ -324,15 +363,12 @@ class UnitOfWork(object):
                     record.original_data_set,
                     change_set
                 )
+            elif record.status == Record.STATUS_DIRTY and not change_set:
+                record.mark_as(Record.STATUS_CLEAN)
             elif record.status == Record.STATUS_DELETED and commit_node.score == 0:
                 self._synchronize_delete(collection, record.entity.id)
             elif record.status == Record.STATUS_DELETED and commit_node.score > 0:
                 record.mark_as(Record.STATUS_CLEAN)
-
-        self._synchronize_records()
-        self._unfreeze()
-
-        self._blocker_activated = False
 
     def _synchronize_new(self, collection, entity, change_set):
         pseudo_id = self._convert_object_id_to_str(entity.id)
@@ -361,12 +397,13 @@ class UnitOfWork(object):
 
     def _synchronize_records(self):
         writing_statuses = [Record.STATUS_NEW, Record.STATUS_DIRTY]
+        removed_statuses = [Record.STATUS_DELETED, Record.STATUS_IGNORED]
         uid_list         = list(self._record_map.keys())
 
         for uid in uid_list:
             record = self._record_map[uid]
 
-            if record.status == Record.STATUS_DELETED:
+            if record.status in removed_statuses:
                 del self._record_map[uid]
             elif record.status in writing_statuses:
                 record.update()
@@ -484,7 +521,7 @@ class UnitOfWork(object):
         expected_property_list = original_property_set.intersection(current_property_set)
         expected_property_list = expected_property_list.union(current_property_set.difference(original_property_set))
 
-        unexpected_property_list = original_property_set.difference(current_property_set)
+        unexpected_property_list = expected_property_list if record.status == Record.STATUS_DELETED else original_property_set.difference(current_property_set)
 
         # Find new associations
         for name in expected_property_list:
@@ -492,23 +529,68 @@ class UnitOfWork(object):
             original_set = set(original[name])
 
             change_set[name] = {
-                'action':   'update',
-                'new':      current_set.difference(original_set),
-                'deleted':  original_set.difference(current_set)
+                'action':  'update',
+                'new':     current_set.difference(original_set),
+                'deleted': original_set.difference(current_set)
             }
 
         # Find new associations
         for name in unexpected_property_list:
             change_set[name] = {
-                'action':   'remove'
+                'action': 'purge'
             }
 
         return change_set
 
+    def _load_extra_associations(self, record, change_set):
+        origin_id      = record.entity.id
+        relational_map = record.entity.__relational_map__
+
+        for property_name in relational_map:
+            if property_name not in change_set:
+                continue
+
+            property_change_set = change_set[property_name]
+            guide      = relational_map[property_name]
+            repository = self._em.collection(guide.association_class.cls)
+
+            if property_change_set['action'] == 'update':
+                for unlinked_destination_id in property_change_set['deleted']:
+                    association = repository.filter_one({'origin': origin_id, 'destination': unlinked_destination_id})
+
+                    if not association:
+                        continue
+
+                    self._register_deleted(association)
+
+                for new_destination_id in property_change_set['new']:
+                    association = repository.new(origin=origin_id, destination=new_destination_id)
+
+                    self._register_new(association)
+
+                return
+            elif property_change_set['action'] == 'purge':
+                for association in repository.filter({'origin': origin_id}):
+                    self._register_deleted(association)
+
+                return
+
+            raise RuntimeError('Unknown changes on external associations for {}'.format(origin_id))
+
     def _add_or_remove_associations(self):
         # Find out if UOW needs to deal with extra records (associative collection).
         for uid in self._record_map.keys():
-            change_set = self._compute_connection_changes(self._record_map[uid])
+            record = self._record_map[uid]
+
+            if record.status == Record.STATUS_CLEAN:
+                continue
+
+            change_set = self._compute_connection_changes(record)
+
+            if not change_set:
+                continue
+
+            self._load_extra_associations(record, change_set)
 
     def _retrieve_entity_guid(self, entity):
         return self._retrieve_entity_guid_by_id(entity.id)\
@@ -535,9 +617,6 @@ class UnitOfWork(object):
         for uid in self._record_map:
             record = self._record_map[uid]
 
-            if not record.entity.__relational_map__:
-                continue
-
             object_id = self._convert_object_id_to_str(record.entity.id)
 
             current_set       = Record.serializer.encode(record.entity)
@@ -547,6 +626,9 @@ class UnitOfWork(object):
             # been registered or eventually has no dependencies.
             if object_id not in self._dependency_map:
                 self._dependency_map[object_id] = DependencyNode(record)
+
+            if not record.entity.__relational_map__:
+                continue
 
             # Go through the relational map to establish relationship between dependency nodes.
             for property_name in record.entity.__relational_map__:

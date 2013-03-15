@@ -124,6 +124,9 @@ class PseudoObjectId(ObjectId):
     This class extends from :class:`bson.objectid.ObjectId`.
     """
 
+    def __str__(self):
+        return 'P-{}'.format(super(PseudoObjectId, self).__str__())
+
     def __repr__(self):
         return "PseudoObjectId('%s')" % (str(self),)
 

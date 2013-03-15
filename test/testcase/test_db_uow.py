@@ -87,13 +87,15 @@ class TestDbUnitOfWork(TestCase):
 
         self.assertEqual(Record.STATUS_CLEAN, record.status)
 
-    def test_delete_with_new_data(self):
+    def test_delete_new_data(self):
         test_object = TestClass()
 
         self.uow.register_new(test_object)
         self.uow.register_deleted(test_object)
 
-        self.assertRaises(UOWUnknownRecordError, self.uow.retrieve_record, (test_object))
+        record = self.uow.retrieve_record(test_object)
+
+        self.assertEqual(record.status, Record.STATUS_IGNORED)
 
     def test_delete_with_existing_data(self):
         test_object = TestClass()

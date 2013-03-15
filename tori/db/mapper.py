@@ -12,6 +12,7 @@ This is a module handling object association.
     entity manager.
 
 """
+import hashlib
 from imagination.loader import Loader
 from tori.db.exception import DuplicatedRelationalMapping
 
@@ -33,8 +34,8 @@ class CascadingType(object):
     DETACH  = 4 # Not supported in Tori 2.1
 
 class AssociationFactory(object):
-    class_name_tmpl      = '{origin}{destination}Association'
-    collection_name_tmpl = '{origin}_{destination}'
+    class_name_tmpl      = '{origin_module}{origin}{destination_module}{destination}'
+    collection_name_tmpl = '{origin_module}_{origin}_{destination_module}_{destination}'
     code_template        = '\n'.join([
         'from tori.db.entity import BasicAssociation, entity',
         '@entity("{collection_name}")',
@@ -52,20 +53,26 @@ class AssociationFactory(object):
     @property
     def class_name(self):
         if not self.__class_name:
-            self.__class_name = self.class_name_tmpl.format(
+            self.__class_name = self.hash_content(self.class_name_tmpl.format(
+                origin_module=self.__origin.__module__,
+                destination_module=self.__destination.__module__,
                 origin=self.__origin.__name__,
                 destination=self.__destination.__name__
-            )
+            ))
+
+            self.__class_name = 'Association{}'.format(self.__class_name)
 
         return self.__class_name
 
     @property
     def collection_name(self):
         if not self.__collection_name:
-            self.__collection_name = self.collection_name_tmpl.format(
+            self.__collection_name = self.hash_content(self.collection_name_tmpl.format(
+                origin_module=self.__origin.__module__,
+                destination_module=self.__destination.__module__,
                 origin=self.__origin.__collection_name__,
                 destination=self.__destination.__collection_name__
-            )
+            ))
 
         return self.__collection_name
 
@@ -77,8 +84,6 @@ class AssociationFactory(object):
                 class_name=self.class_name
             )
 
-            print(source)
-
             code = compile(source, '<string>', 'exec')
 
             exec(code, globals())
@@ -89,6 +94,9 @@ class AssociationFactory(object):
                 raise RuntimeError('Unable to auto-generation associative collection class.')
 
         return self.__class
+
+    def hash_content(self, content):
+        return hashlib.sha224(content).hexdigest()
 
 class BasicGuide(object):
     def __init__(self, target_class, association):

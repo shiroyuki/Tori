@@ -93,7 +93,7 @@ class Repository(object):
             entity = self._dehydrate_object(data)
             record = self._session._uow.find_recorded_entity(id)
 
-            if record and record.status == Record.STATUS_DELETED:
+            if record and record.status in [Record.STATUS_DELETED, Record.STATUS_IGNORED]:
                 continue
 
             entity_list.append(entity)
@@ -121,7 +121,7 @@ class Repository(object):
         self._session._uow.register_dirty(document)
 
     def delete(self, document):
-        self._session._uow.register_new(document)
+        self._session._uow.register_deleted(document)
 
     def commit(self):
         self._session.commit()
