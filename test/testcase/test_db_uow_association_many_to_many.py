@@ -106,6 +106,9 @@ class TestDbUowAssociationManyToMany(TestCase):
 
         group_a.members.pop(0)
 
+        self.assertEqual(3, groups._api.count())
+        self.assertEqual(6, associations._api.count())
+
         self.session.flush()
 
         self.assertEqual(2, groups._api.count())
