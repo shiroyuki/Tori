@@ -155,7 +155,7 @@ class UnitOfWork(object):
             raise NonRefreshableEntity('The current record is not refreshable.')
 
         collection       = self._em.collection(entity.__class__)
-        updated_data_set = collection._api({'_id': entity.id})
+        updated_data_set = collection._api.find_one({'_id': entity.id})
 
         # Reset the attributes.
         for attribute_name in updated_data_set:
@@ -303,10 +303,14 @@ class UnitOfWork(object):
     def _forward_operation(self, reference, cascading_type, expected_class):
         if cascading_type == CascadingType.PERSIST:
             if type(reference) is not expected_class:
+                reference_type = type(reference)
+
                 raise IntegrityConstraintError(
-                    'Expected an instance of class {} but received one of {}'.format(
+                    'Expected an instance of class {} ({}) but received one of {} ({})'.format(
                         expected_class.__name__,
-                        type(reference).__name__
+                        expected_class.__module__,
+                        reference_type.__name__,
+                        reference_type.__module__
                     )
                 )
 
@@ -656,6 +660,12 @@ class UnitOfWork(object):
 
             # Go through the relational map to establish relationship between dependency nodes.
             for property_name in record.entity.__relational_map__:
+                guide = record.entity.__relational_map__[property_name]
+
+                # Ignore a property from reverse mapping.
+                if guide.inverted_by:
+                    continue
+
                 # ``data`` can be either an object ID or list.
                 data = current_set[property_name]
 
