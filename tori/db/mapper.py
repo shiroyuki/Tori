@@ -30,8 +30,9 @@ class AssociationType(object):
 class CascadingType(object):
     PERSIST = 1
     DELETE  = 2
-    MERGE   = 3 # Not supported in Tori 2.1
-    DETACH  = 4 # Not supported in Tori 2.1
+    MERGE   = 3 # Supported in Tori 2.2
+    DETACH  = 4 # Supported in Tori 2.2
+    REFRESH = 5
 
 class AssociationFactory(object):
     class_name_tmpl      = '{origin_module}{origin}{destination_module}{destination}'

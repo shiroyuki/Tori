@@ -23,13 +23,9 @@ class Record(object):
         self.entity  = entity
         self.status  = status
         self.updated = time()
-        self.changes = 0
 
         self.original_data_set = Record.serializer.encode(self.entity)
         self.original_extra_association = Record.serializer.extra_associations(self.entity)
-
-    def is_processed(self):
-        return self.changes == 0
 
     def mark_as(self, status):
         self.status  = status
@@ -40,8 +36,6 @@ class Record(object):
         self.original_extra_association = Record.serializer.extra_associations(self.entity)
 
         self.mark_as(Record.STATUS_CLEAN)
-
-        self.changes = 0
 
 class DependencyNode(object):
     """ Dependency Node
@@ -128,24 +122,39 @@ class UnitOfWork(object):
 
         # Locks
         self._blocker_activated = False
-        self._tlock = ThreadLock()
+        self._blocking_lock     = ThreadLock()
+        self._operational_lock  = ThreadLock()
 
     def _freeze(self):
         if not self._blocker_activated:
             return
 
-        self._tlock.acquire()
+        self._operational_lock.acquire()
 
     def _unfreeze(self):
         if not self._blocker_activated:
             return
 
-        self._tlock.release()
+        self._operational_lock.release()
 
     def refresh(self, entity):
-        collection = self._em.collection(entity.__class__)
-        record     = self.retrieve_record(entity)
+        """ Refresh the entity
 
+            .. note:: This method
+
+            :param entity: the target entity
+            :type  entity: object
+        """
+        self._freeze()
+
+        record = self.retrieve_record(entity)
+
+        if record.status == Record.STATUS_DELETED:
+            return # Ignore the entity marked as deleted.
+        elif record.status not in [Record.STATUS_CLEAN, Record.STATUS_DIRTY]:
+            raise NonRefreshableEntity('The current record is not refreshable.')
+
+        collection       = self._em.collection(entity.__class__)
         updated_data_set = collection._api({'_id': entity.id})
 
         # Reset the attributes.
@@ -161,12 +170,17 @@ class UnitOfWork(object):
 
         # Update the original data set and reset the status if necessary.
         record.original_data_set = Record.serializer.encode(entity)
+        record.extra_association = Record.serializer.extra_associations(entity)
 
         if record.status == Record.STATUS_DIRTY:
             record.mark_as(Record.STATUS_CLEAN)
 
-        # Remap the object.
+        # Remap any one-to-many or many-to-many relationships.
         self._em.apply_relational_map(entity)
+
+        self._cascade_operation(entity, CascadingType.REFRESH)
+
+        self._unfreeze()
 
     def register_new(self, entity):
         self._freeze()
@@ -196,7 +210,7 @@ class UnitOfWork(object):
         # Map the pseudo object ID to the entity.
         self._object_id_map[self._convert_object_id_to_str(entity.id)] = uid
 
-        self._cascade_property_registration_of(entity, CascadingType.PERSIST)
+        self._cascade_operation(entity, CascadingType.PERSIST)
 
     def register_dirty(self, entity, can_register_new=False):
         self._freeze()
@@ -208,7 +222,7 @@ class UnitOfWork(object):
         elif record.status in [Record.STATUS_CLEAN, Record.STATUS_DELETED]:
             record.mark_as(Record.STATUS_DIRTY)
 
-        self._cascade_property_registration_of(entity, CascadingType.PERSIST)
+        self._cascade_operation(entity, CascadingType.PERSIST)
 
         self._unfreeze()
 
@@ -245,9 +259,9 @@ class UnitOfWork(object):
         else:
             record.mark_as(Record.STATUS_DELETED)
 
-        self._cascade_property_registration_of(entity, CascadingType.DELETE)
+        self._cascade_operation(entity, CascadingType.DELETE)
 
-    def _cascade_property_registration_of(self, reference, cascading_type):
+    def _cascade_operation(self, reference, cascading_type):
         entity = reference
 
         if isinstance(reference, ProxyObject):
@@ -272,7 +286,7 @@ class UnitOfWork(object):
 
             if isinstance(reference, list):
                 for sub_reference in actual_data:
-                    self._register_by_cascading_type(
+                    self._forward_operation(
                         self.hydrate_entity(sub_reference),
                         cascading_type,
                         guide.target_class
@@ -280,13 +294,13 @@ class UnitOfWork(object):
 
                 continue
 
-            self._register_by_cascading_type(
+            self._forward_operation(
                 reference,
                 cascading_type,
                 guide.target_class
             )
 
-    def _register_by_cascading_type(self, reference, cascading_type, expected_class):
+    def _forward_operation(self, reference, cascading_type, expected_class):
         if cascading_type == CascadingType.PERSIST:
             if type(reference) is not expected_class:
                 raise IntegrityConstraintError(
@@ -305,6 +319,8 @@ class UnitOfWork(object):
                 self.register_dirty(reference, True)
         elif cascading_type == CascadingType.DELETE:
             self.register_deleted(reference)
+        elif cascading_type == CascadingType.REFRESH:
+            self.refresh(reference)
 
     def is_new(self, reference):
         return not reference.id or isinstance(reference.id, PseudoObjectId)
@@ -313,6 +329,8 @@ class UnitOfWork(object):
         return reference._actual if isinstance(reference, ProxyObject) else reference
 
     def commit(self):
+        self._blocking_lock.acquire()
+
         self._blocker_activated = True
 
         self._freeze()
@@ -324,10 +342,14 @@ class UnitOfWork(object):
         self._add_or_remove_associations()
         self._commit_changes(BasicAssociation)
 
+        # Synchronize all records
         self._synchronize_records()
+
         self._unfreeze()
 
         self._blocker_activated = False
+
+        self._blocking_lock.release()
 
     def _commit_changes(self, expected_class=None):
         # Load the sub graph of supervised collections.

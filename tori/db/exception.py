@@ -24,3 +24,6 @@ class ReadOnlyProxyException(Exception):
 
 class IntegrityConstraintError(RuntimeError):
     """ Runtime Error raised when the given value violates a integrity constraint. """
+
+class NonRefreshableEntity(Exception):
+    """ Exception thrown when the UOW attempts to refresh a non-refreshable entity """
