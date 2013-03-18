@@ -8,7 +8,7 @@ Repository
 """
 import inspect
 from tori.db.exception import MissingObjectIdException
-from tori.db.mapper import AssociationType
+from tori.db.mapper import AssociationType, CascadingType
 from tori.db.uow import Record
 
 class Repository(object):
@@ -160,7 +160,7 @@ class Repository(object):
         for property_name in self._class.__relational_map__:
             cascading_options = self._class.__relational_map__[property_name].cascading_options
 
-            if cascading_options:
+            if cascading_options and CascadingType.DELETE in cascading_options:
                 self._has_cascading = True
 
                 break

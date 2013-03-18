@@ -57,16 +57,16 @@ class Session(object):
         for entity in entities:
             self._uow.register_deleted(entity)
 
-    def persist(self, *entities):
-        for entity in entities:
-            self.persist_one(entity)
-
     def refresh(self, *entities):
         for entity in entities:
             self.refresh_one(entity)
 
     def refresh_one(self, entity):
         self._uow.refresh(entity)
+
+    def persist(self, *entities):
+        for entity in entities:
+            self.persist_one(entity)
 
     def persist_one(self, entity):
         registering_action = self._uow.register_new \

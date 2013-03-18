@@ -19,12 +19,20 @@ class Record(object):
     STATUS_NEW       = 4
     STATUS_IGNORED   = 5
 
+    STATUS_LABEL_MAP = {
+        1: 'clean',
+        2: 'deleted',
+        3: 'dirty',
+        4: 'new',
+        5: 'ignored'
+    }
+
     def __init__(self, entity, status):
         self.entity  = entity
         self.status  = status
         self.updated = time()
 
-        self.original_data_set = Record.serializer.encode(self.entity)
+        self.original_data_set          = Record.serializer.encode(self.entity)
         self.original_extra_association = Record.serializer.extra_associations(self.entity)
 
     def mark_as(self, status):
@@ -32,7 +40,7 @@ class Record(object):
         self.updated = time()
 
     def update(self):
-        self.original_data_set = Record.serializer.encode(self.entity)
+        self.original_data_set          = Record.serializer.encode(self.entity)
         self.original_extra_association = Record.serializer.extra_associations(self.entity)
 
         self.mark_as(Record.STATUS_CLEAN)
@@ -74,10 +82,10 @@ class DependencyNode(object):
         return score
 
     def __eq__(self, other):
-        return self.object_id == other.object_id
+        return self.record.entity.__class__ == other.record.entity.__class__ and self.object_id == other.object_id
 
     def __ne__(self, other):
-        return self.object_id != other.object_id
+        return self.record.entity.__class__ != other.record.entity.__class__ or self.object_id != other.object_id
 
     def __lt__(self, other):
         return self.score < other.score
@@ -367,7 +375,7 @@ class UnitOfWork(object):
 
         # Commit changes to nodes.
         for commit_node in commit_order:
-            uid    = self._retrieve_entity_guid_by_id(commit_node.object_id, commit_node.record.entity)
+            uid    = self._retrieve_entity_guid_by_id(commit_node.object_id, commit_node.record.entity.__class__)
             record = self._record_map[uid]
 
             if expected_class and not isinstance(record.entity, expected_class):
@@ -412,6 +420,7 @@ class UnitOfWork(object):
         :param old_data_set: the original data (for event interception)
         :param new_data_set: the updated data
         """
+
         collection._api.update(
             {'_id': object_id},
             new_data_set,
@@ -491,7 +500,6 @@ class UnitOfWork(object):
 
         change_set = {
             '$set':   {},
-            '$push':  {}, # Ignored until the multiple-link association is implemented.
             '$unset': {}
         }
 
@@ -660,7 +668,10 @@ class UnitOfWork(object):
             if object_id not in self._dependency_map:
                 self._dependency_map[object_id] = DependencyNode(record)
 
+
+
             if not record.entity.__relational_map__:
+
                 continue
 
             # Go through the relational map to establish relationship between dependency nodes.
@@ -678,7 +689,7 @@ class UnitOfWork(object):
                     # Ignore anything evaluated as False.
                     continue
                 elif not isinstance(data, list):
-                    other_uid    = self._retrieve_entity_guid_by_id(data, cls=guide.target_class)
+                    other_uid    = self._retrieve_entity_guid_by_id(data, guide.target_class)
                     other_record = self._record_map[other_uid]
 
                     self._register_dependency(record, other_record)
@@ -686,7 +697,7 @@ class UnitOfWork(object):
                     continue
 
                 for dependency_object_id in data:
-                    other_uid    = self._retrieve_entity_guid_by_id(dependency_object_id, cls=guide.target_class)
+                    other_uid    = self._retrieve_entity_guid_by_id(dependency_object_id, guide.target_class)
                     other_record = self._record_map[other_uid]
 
                     self._register_dependency(record, other_record)

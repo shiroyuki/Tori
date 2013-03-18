@@ -56,16 +56,10 @@ class TestDbUowCascadeOnRefresh(TestCase):
         for region in data_set['regions']:
             self.session.collection(Region)._api.insert(region)
 
-        for region in self.session.collection(Region)._api.find():
-            print(region)
-
         self.session.collection(Country)._api.remove()
 
         for country in data_set['countries']:
             self.session.collection(Country)._api.insert(country)
-
-        for country in self.session.collection(Country)._api.find():
-            print(country)
 
     def test_cascade_from_owning_side(self):
         japan = self.session.collection(Country).get(3)
@@ -94,12 +88,8 @@ class TestDbUowCascadeOnRefresh(TestCase):
         self.assertEqual(u'日本', japan.name)
         self.assertEqual('Asia and Oceanic', japan.region.name)
 
-    def test_cascade_from_inverted_side(self):
+    def _test_cascade_from_inverted_side(self):
         europe = self.session.collection(Region).get(2)
-
-        for country in europe.countries:
-            print(type(country._actual))
-            print(country.name)
 
         self.assertEqual('Europe', europe.name)
         self.assertEqual('England', europe.countries[0].name)
