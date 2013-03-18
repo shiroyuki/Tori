@@ -132,6 +132,7 @@ class PseudoObjectId(ObjectId):
 
 class ProxyObject(object):
     def __init__(self, session, cls, object_id, read_only, cascading_options, is_reverse_proxy):
+        self.__dict__['_class']      = cls
         self.__dict__['_collection'] = session.collection(cls)
         self.__dict__['_object_id']  = object_id
         self.__dict__['_object']     = None

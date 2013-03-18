@@ -92,7 +92,7 @@ class Repository(object):
 
         for data in data_list:
             entity = self._dehydrate_object(data)
-            record = self._session._uow.find_recorded_entity(id)
+            record = self._session._uow.find_recorded_entity(id, cls=self._class)
 
             if record and record.status in [Record.STATUS_DELETED, Record.STATUS_IGNORED]:
                 continue
@@ -132,7 +132,7 @@ class Repository(object):
             raise MissingObjectIdException('The key _id in the raw data is not found.')
 
         id     = raw_data['_id']
-        record = self._session._uow.find_recorded_entity(id)
+        record = self._session._uow.find_recorded_entity(id, self._class)
 
         # Returned the known document from the record.
         if record:

@@ -208,7 +208,7 @@ class UnitOfWork(object):
         self._record_map[uid] = Record(entity, Record.STATUS_NEW)
 
         # Map the pseudo object ID to the entity.
-        self._object_id_map[self._convert_object_id_to_str(entity.id)] = uid
+        self._object_id_map[self._convert_object_id_to_str(entity.id, entity)] = uid
 
         self._cascade_operation(entity, CascadingType.PERSIST)
 
@@ -235,7 +235,7 @@ class UnitOfWork(object):
         self._record_map[uid] = Record(entity, Record.STATUS_CLEAN)
 
         # Map the real object ID to the entity
-        self._object_id_map[self._convert_object_id_to_str(entity.id)] = uid
+        self._object_id_map[self._convert_object_id_to_str(entity.id, entity)] = uid
 
     def register_deleted(self, entity):
         self._freeze()
@@ -367,7 +367,7 @@ class UnitOfWork(object):
 
         # Commit changes to nodes.
         for commit_node in commit_order:
-            uid    = self._retrieve_entity_guid_by_id(commit_node.object_id)
+            uid    = self._retrieve_entity_guid_by_id(commit_node.object_id, commit_node.record.entity)
             record = self._record_map[uid]
 
             if expected_class and not isinstance(record.entity, expected_class):
@@ -397,12 +397,12 @@ class UnitOfWork(object):
                 record.mark_as(Record.STATUS_CLEAN)
 
     def _synchronize_new(self, collection, entity, change_set):
-        pseudo_id = self._convert_object_id_to_str(entity.id)
-        object_id = collection._api.insert(change_set)
-        entity.id = object_id # update the entity ID
-        key       = self._convert_object_id_to_str(object_id)
+        pseudo_key = self._convert_object_id_to_str(entity.id, entity)
+        object_id  = collection._api.insert(change_set)
+        entity.id  = object_id # update the entity ID
+        actual_key = self._convert_object_id_to_str(object_id, entity)
 
-        self._object_id_map[key] = self._object_id_map[pseudo_id]
+        self._object_id_map[actual_key] = self._object_id_map[pseudo_key]
 
     def _synchronize_update(self, collection, object_id, old_data_set, new_data_set):
         """Synchronize the updated data
@@ -453,8 +453,8 @@ class UnitOfWork(object):
     def has_record(self, entity):
         return self._retrieve_entity_guid(entity) in self._record_map
 
-    def find_recorded_entity(self, object_id):
-        object_key = self._convert_object_id_to_str(object_id)
+    def find_recorded_entity(self, object_id, cls):
+        object_key = self._convert_object_id_to_str(object_id, cls=cls)
 
         if object_key in self._object_id_map:
             try:
@@ -621,21 +621,26 @@ class UnitOfWork(object):
             self._load_extra_associations(record, change_set)
 
     def _retrieve_entity_guid(self, entity):
-        return self._retrieve_entity_guid_by_id(entity.id)\
+        return self._retrieve_entity_guid_by_id(entity.id, entity.__class__)\
             if isinstance(entity, ProxyObject)\
             else hash(entity)
 
-    def _retrieve_entity_guid_by_id(self, id):
-        return self._object_id_map[self._convert_object_id_to_str(id)]
+    def _retrieve_entity_guid_by_id(self, id, cls):
+        return self._object_id_map[self._convert_object_id_to_str(id, cls=cls)]
 
     def _generate_pseudo_object_id(self):
         return PseudoObjectId()
 
-    def _convert_object_id_to_str(self, object_id):
-        object_key = str(object_id)
+    def _convert_object_id_to_str(self, object_id, entity=None, cls=None):
+        class_hash = 'generic'
 
-        if isinstance(object_id, PseudoObjectId):
-            object_key = 'pseudo/{}'.format(object_key)
+        if not cls and entity:
+            cls = entity.__class__
+
+        if cls:
+            class_hash = cls.__collection_name__
+
+        object_key = '{}/{}'.format(class_hash, str(object_id))
 
         return object_key
 
@@ -645,7 +650,7 @@ class UnitOfWork(object):
         for uid in self._record_map:
             record = self._record_map[uid]
 
-            object_id = self._convert_object_id_to_str(record.entity.id)
+            object_id = self._convert_object_id_to_str(record.entity.id, record.entity)
 
             current_set       = Record.serializer.encode(record.entity)
             extra_association = Record.serializer.extra_associations(record.entity)
@@ -673,7 +678,7 @@ class UnitOfWork(object):
                     # Ignore anything evaluated as False.
                     continue
                 elif not isinstance(data, list):
-                    other_uid    = self._retrieve_entity_guid_by_id(data)
+                    other_uid    = self._retrieve_entity_guid_by_id(data, cls=guide.target_class)
                     other_record = self._record_map[other_uid]
 
                     self._register_dependency(record, other_record)
@@ -681,7 +686,7 @@ class UnitOfWork(object):
                     continue
 
                 for dependency_object_id in data:
-                    other_uid    = self._retrieve_entity_guid_by_id(dependency_object_id)
+                    other_uid    = self._retrieve_entity_guid_by_id(dependency_object_id, cls=guide.target_class)
                     other_record = self._record_map[other_uid]
 
                     self._register_dependency(record, other_record)
@@ -703,8 +708,8 @@ class UnitOfWork(object):
             priority_order.append(node)
 
     def _register_dependency(self, a, b):
-        key_a = self._convert_object_id_to_str(a.entity.id)
-        key_b = self._convert_object_id_to_str(b.entity.id)
+        key_a = self._convert_object_id_to_str(a.entity.id, a.entity)
+        key_b = self._convert_object_id_to_str(b.entity.id, b.entity)
 
         if key_a not in self._dependency_map:
             self._dependency_map[key_a] = DependencyNode(a)

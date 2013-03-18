@@ -91,6 +91,7 @@ class Session(object):
             self.register(entity_class)
 
     def apply_relational_map(self, entity):
+        """ Wire connections according to the relational map """
         for property_name in entity.__relational_map__:
             guide = entity.__relational_map__[property_name]
             """ :type: tori.db.mapper.RelatingGuide """
