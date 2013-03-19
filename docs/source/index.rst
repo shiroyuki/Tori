@@ -10,6 +10,13 @@ Tori Framework
 
 Tori is a micro framework based on Facebook's Tornado framework 2.x and supports both Python 2.6+, including Python 3.3+.
 
+Before using
+------------
+
+Please note that this framework/library is released under MIT license copyrighted by Juti Noppornpitak. The distributed
+version of this license is available at https://github.com/shiroyuki/Tori/blob/master/readme.md.
+
+
 Differences in Idea
 -------------------
 
