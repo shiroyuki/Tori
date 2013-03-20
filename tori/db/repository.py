@@ -7,7 +7,7 @@ Repository
 :Status: Stable
 """
 import inspect
-from tori.db.exception import MissingObjectIdException
+from tori.db.exception import MissingObjectIdException, NonPostableEntity, NonPutableEntity
 from tori.db.mapper import AssociationType, CascadingType
 from tori.db.uow import Record
 
@@ -19,15 +19,19 @@ class Repository(object):
     :type  em: tori.db.session.Session
     :param api: collection API
     :type  api: pymongo.collection.Collection
-    :param document_class: the document class
-    :type  document_class: type
+    :param representing_class: the representing class
+    :type  representing_class: type
 
     """
-    def __init__(self, session, api, document_class):
-        self._class   = document_class
+    def __init__(self, session, representing_class):
+        self._class   = representing_class
         self._session = session
-        self._api     = api
+
         self._has_cascading = None
+
+        # Retrieve the collection
+        self._api = session.db[representing_class.__collection_name__]
+        self._session.register_class(representing_class)
 
     @property
     def name(self):
@@ -61,16 +65,16 @@ class Repository(object):
 
             attributes[argument_name] = [] if default_to_list else None
 
+        attribute_name_list = list(attributes.keys())
+
         # Remove unwanted arguments/attributes/properties
-        for attribute_name in attributes:
+        for attribute_name in attribute_name_list:
             if argument_name == 'self' or attribute_name in spec.args:
                 continue
 
             del attributes[attribute_name]
 
-        document = self._class(**attributes)
-
-        return document
+        return self._class(**attributes)
 
     def get(self, id):
         data = self._api.find_one({'_id': id})
@@ -78,9 +82,7 @@ class Repository(object):
         if not data:
             return None
 
-        document = self._dehydrate_object(data)
-
-        return document
+        return self._dehydrate_object(data)
 
     def filter(self, criteria={}, offset=0, length=None):
         data_list = self._api.find(criteria)
@@ -92,7 +94,7 @@ class Repository(object):
 
         for data in data_list:
             entity = self._dehydrate_object(data)
-            record = self._session._uow.find_recorded_entity(id, cls=self._class)
+            record = self._session.find_record(id, self._class)
 
             if record and record.status in [Record.STATUS_DELETED, Record.STATUS_IGNORED]:
                 continue
@@ -107,32 +109,43 @@ class Repository(object):
         if not raw_data:
             return None
 
-        document = self._dehydrate_object(raw_data)
+        return self._dehydrate_object(raw_data)
 
-        return document
+    def post(self, entity):
+        if entity.id or entity.__session__:
+            raise NonPostableEntity('')
 
-    def post(self, document):
-        self._session._uow.register_new(document)
+        self._session.persist(entity)
 
-        document.__session__ = self._session
+        entity.__session__ = self._session
 
-        return document.id
+        self.commit()
 
-    def put(self, document):
-        self._session._uow.register_dirty(document)
+        return entity.id
 
-    def delete(self, document):
-        self._session._uow.register_deleted(document)
+    def put(self, entity):
+        if not entity.id or not entity.__session__:
+            raise NonPutableEntity('')
+
+        self._session.persist(entity)
+        self.commit()
+
+    def delete(self, entity):
+        self._session.delete(entity)
+        self.commit()
+
+    def persist(self, entity):
+        self._session.persist(entity)
 
     def commit(self):
-        self._session.commit()
+        self._session.flush()
 
     def _dehydrate_object(self, raw_data):
         if '_id' not in raw_data:
             raise MissingObjectIdException('The key _id in the raw data is not found.')
 
         id     = raw_data['_id']
-        record = self._session._uow.find_recorded_entity(id, self._class)
+        record = self._session.find_record(id, self._class)
 
         # Returned the known document from the record.
         if record:
@@ -147,7 +160,7 @@ class Repository(object):
         document.__session__ = self._session
 
         self._session.apply_relational_map(document)
-        self._session._uow.register_clean(document)
+        self._session.recognize(document)
 
         return document
 

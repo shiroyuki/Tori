@@ -45,13 +45,28 @@ class Session(object):
         """
         key = entity_class.__collection_name__
 
-        if key not in self._registered_types:
-            self._registered_types[key] = entity_class
+        self.register_class(entity_class)
 
         if key not in self._collections:
-            self._collections[key] = Repository(self, self._database[key], self._registered_types[key])
+            self._collections[key] = Repository(
+                session=self,
+                representing_class=entity_class
+            )
 
         return self._collections[key]
+
+    def register_class(self, entity_class):
+        """Register the entity class
+
+        :param entity_class: the class of document/entity
+        :type  entity_class: type
+
+        :rtype: tori.db.repository.Repository
+        """
+        key = entity_class.__collection_name__
+
+        if key not in self._registered_types:
+            self._registered_types[key] = entity_class
 
     def delete(self, *entities):
         for entity in entities:
@@ -75,20 +90,14 @@ class Session(object):
 
         registering_action(entity)
 
+    def recognize(self, entity):
+        self._uow.register_clean(entity)
+
     def flush(self):
         self._uow.commit()
 
-    def register(self, entity_class):
-        key = hash(entity_class)
-
-        if key in self._collections:
-            return
-
-        self._collections[key] = Repository(self.database, entity_class)
-
-    def register_multiple(self, *entity_classes):
-        for entity_class in entity_classes:
-            self.register(entity_class)
+    def find_record(self, id, cls):
+        return self._uow.find_recorded_entity(id, cls)
 
     def apply_relational_map(self, entity):
         """ Wire connections according to the relational map """
