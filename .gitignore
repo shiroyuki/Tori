@@ -6,3 +6,5 @@ dist
 docs/build/*
 *.komodoproject
 build
+.coverage
+test/report

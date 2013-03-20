@@ -7,7 +7,8 @@ Repository
 :Status: Stable
 """
 import inspect
-from tori.db.exception import MissingObjectIdException, NonPostableEntity, NonPutableEntity
+from tori.db.common import PseudoObjectId
+from tori.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
 from tori.db.mapper import AssociationType, CascadingType
 from tori.db.uow import Record
 
@@ -112,8 +113,8 @@ class Repository(object):
         return self._dehydrate_object(raw_data)
 
     def post(self, entity):
-        if entity.id or entity.__session__:
-            raise NonPostableEntity('')
+        if entity.__session__:
+            raise EntityAlreadyRecognized('The entity has already been recognized by this session.')
 
         self._session.persist(entity)
 
@@ -124,13 +125,12 @@ class Repository(object):
         return entity.id
 
     def put(self, entity):
-        if not entity.id or not entity.__session__:
-            raise NonPutableEntity('')
-
+        self._recognize_entity(entity)
         self._session.persist(entity)
         self.commit()
 
     def delete(self, entity):
+        self._recognize_entity(entity)
         self._session.delete(entity)
         self.commit()
 
@@ -139,6 +139,10 @@ class Repository(object):
 
     def commit(self):
         self._session.flush()
+
+    def _recognize_entity(self, entity):
+        if not entity.id or not entity.__session__ or isinstance(entity.id, PseudoObjectId):
+            raise EntityNotRecognized('The entity is not recognized by this session.')
 
     def _dehydrate_object(self, raw_data):
         if '_id' not in raw_data:

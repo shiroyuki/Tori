@@ -28,8 +28,8 @@ class IntegrityConstraintError(RuntimeError):
 class NonRefreshableEntity(Exception):
     """ Exception thrown when the UOW attempts to refresh a non-refreshable entity """
 
-class NonPostableEntity(Warning):
+class EntityAlreadyRecognized(Warning):
     """ Warning raised when the entity with either a designated ID or a designated session is provided to Repository.post """
 
-class NonPutableEntity(Warning):
-    """ Warning raised when the entity without either a designated ID or a designated session is provided to Repository.post """
+class EntityNotRecognized(Warning):
+    """ Warning raised when the entity without either a designated ID or a designated session is provided to Repository.put or Repository.delete """

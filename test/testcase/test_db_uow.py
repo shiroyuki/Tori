@@ -1,12 +1,6 @@
 from unittest import TestCase
 from pymongo import Connection
 from tori.db.session import Session
-
-try:
-    from unittest.mock import Mock, MagicMock # Python 3.3
-except ImportError as exception:
-    from mock import Mock, MagicMock # Python 2.7
-
 from tori.db.entity import entity
 from tori.db.manager import Manager
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUnknownRecordError
