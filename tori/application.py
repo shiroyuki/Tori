@@ -46,7 +46,7 @@ class BaseApplication(object):
     """
 
     def __init__(self, **settings):
-        self._logger = get_logger('%s.%s' % (__name__, self.__class__.__name__))
+        self._logger = get_logger('{}.{}'.format(__name__, self.__class__.__name__))
 
         self._hierarchy_level = len(self.__class__.__mro__) - 1
 

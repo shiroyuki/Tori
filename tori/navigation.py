@@ -22,12 +22,14 @@ from kotoba.kotoba      import Kotoba
 from tornado.web        import RedirectHandler
 
 # Internal libraries
+from tori.common    import get_logger
 from tori.exception import *
 
 class RoutingMap(object):
     """ Routing Map """
 
     def __init__(self):
+        self._logger         = get_logger('{}.{}'.format(__name__, self.__class__.__name__))
         self._sequence       = []
         self._raw_map        = {}
         self._id_map         = {}
@@ -51,6 +53,8 @@ class RoutingMap(object):
 
         # Reset the final sequence.
         self._final_sequence = None
+        
+        self._logger.debug('Added route for "{}"'.format(route.pattern))
 
     def find_by_pattern(self, routing_pattern):
         """ Get the route by *routing_pattern* where it is a string. """

@@ -11,11 +11,23 @@ Directive   Description
 controller  A routing directive for dynamic content handled by a controller.
 resource    A routing directive for static content/resource.
 redirection A routing directive for relaying requests with redirection.
-proxy       A routing directive for proxying requests.
+proxy       A routing directive for proxying requests. (not implemented)
 =========== =================================================================
 
-In general, the attribute ``pattern`` of any routing directives is to indicate the routing pattern where the directive intercepts,
-process and respond to any requests to the pattern. Each routing pattern is unique from each other.
+In general, the attribute ``pattern`` of any routing directives is to indicate the routing pattern where the directive
+intercepts, process and respond to any requests to the pattern. Each routing pattern is unique from each other.
+
+.. versionadded:: 2.1
+
+By default, similar to Tornado, Tori Framework uses the normal regular expression for routing. However, this could introduce an error-prone routing table for anyone that does not know the regular expression. Here are the simple versions of routing patterns.::
+
+    /abc/def/ghi/** = /abc/def/ghi/(.+)
+    /abc/def/ghi/*/jkl = /abc/def/ghi/([^/]+)/jkl
+    /abc/def/ghi/{key}/jkl = /abc/def/ghi/(?P<key>.+)/jkl
+
+To enable the simple routing pattern, the ``regexp`` attribute must be ``false`` (not default).
+
+In addition to the simple routing, the default route for ``/favicon.ico`` is available if not assigned.
 
 Controller
 ==========
