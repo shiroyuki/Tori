@@ -104,7 +104,6 @@ class Home(Controller):
 <p>Powered by Tori Framework</p>
 </body>
 </html>
-}
 """
 }
 
