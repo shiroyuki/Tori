@@ -562,10 +562,17 @@ class UnitOfWork(object):
             current_set  = set(current[name])
             original_set = set(original[name])
 
+            diff_additions = current_set
+            diff_deletions = []
+
+            if record.status != Record.STATUS_NEW:
+                diff_additions = current_set.difference(original_set)
+                diff_deletions = original_set.difference(current_set)
+
             change_set[name] = {
                 'action':  'update',
-                'new':     current_set.difference(original_set),
-                'deleted': original_set.difference(current_set)
+                'new':     diff_additions,
+                'deleted': diff_deletions
             }
 
         # Find new associations

@@ -60,6 +60,26 @@ class TestDbUowAssociationManyToMany(TestCase):
         self.assertEqual('member a', group_a.members[0].name)
         self.assertEqual('member b', group_a.members[1].name)
 
+    def test_with_new_entites(self):
+        groups  = self.session.collection(Group)
+        members = self.session.collection(Member)
+
+        associations = self.session.collection(Group.__relational_map__['members'].association_class.cls)
+
+        group = groups.new(name='From Up On Poppy Hill')
+
+        umi   = members.new(name='Umi')
+        shun  = members.new(name='Shun')
+        shiro = members.new(name='Shiro')
+
+        group.members.extend([umi, shun, shiro])
+        
+        groups.post(group)
+        
+        self.assertEqual(4, groups._api.count())
+        self.assertEqual(7, members._api.count())
+        self.assertEqual(9, associations._api.count())
+
     def test_commit(self):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)

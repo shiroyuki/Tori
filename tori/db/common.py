@@ -220,6 +220,11 @@ class ProxyCollection(list):
 
         return super(ProxyCollection, self).__getitem__(item)
 
+    def __getslice__(self, i, j):
+        self._prepare_list()
+
+        return super(ProxyCollection, self).__getslice__(i, j)
+
     def __setitem__(self, key, value):
         self._prepare_list()
 
