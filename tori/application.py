@@ -13,11 +13,12 @@ import os
 import sys
 
 # Third-party libraries
-from imagination.entity import Entity  as ImaginationEntity
-from imagination.helper import retrieve_module_path
-from imagination.loader import Loader  as ImaginationLoader
+from imagination.entity  import Entity as ImaginationEntity
+from imagination.helper  import retrieve_module_path
+from imagination.loader  import Loader as ImaginationLoader
+from imagination.locator import Locator as ImaginationLocator
 from imagination.helper.assembler import Assembler   as ImaginationAssembler
-from imagination.helper.assembler import Transformer as ImaginationTransformer
+from imagination.helper.data      import Transformer as ImaginationTransformer
 from kotoba             import load_from_file
 from tornado.autoreload import watch
 from tornado.ioloop     import IOLoop
@@ -137,6 +138,7 @@ class Application(BaseApplication):
         ('session', 'tori.session.repository.memory.Memory', [], {}),
         ('routing_map', 'tori.navigation.RoutingMap', [], {})
     ]
+    _data_transformer         = ImaginationTransformer(ImaginationLocator())
 
     def __init__(self, configuration_location, **settings):
         BaseApplication.__init__(self, **settings)
@@ -144,7 +146,7 @@ class Application(BaseApplication):
         self._config_main_path = os.path.join(self._base_path, configuration_location)
         self._config_base_path = os.path.dirname(self._config_main_path)
 
-        self._config      = load_from_file(self._config_main_path)
+        self._config = load_from_file(self._config_main_path)
 
         # Initialize the routing map
         self._routing_map = RoutingMap()
@@ -198,6 +200,16 @@ class Application(BaseApplication):
 
         if len(configuration.children('settings')) > 1:
             raise InvalidConfigurationError('Too many setting groups (limited to 1).')
+
+        # Load the general settings
+        for config in configuration.find('server config'):
+            key  = config.attribute('key')
+            kind = config.attribute('type')
+            
+            if not key:
+                raise InvalidConfigurationError('Invalid server configuration key')
+            
+            self._settings[key] = self._data_transformer.cast(config, kind)
 
         # Set the cookie secret for secure cookies.
         client_secret = configuration.find('server secret')

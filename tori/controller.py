@@ -305,6 +305,7 @@ class ResourceService(RequestHandler):
 
     def _retrieve_resource_entity(self):
         request_uri = self.request.uri
+        path        = sub('\?.*$', '', request_uri)
 
         if request_uri in self._cache_objects:
             return self._cache_objects[request_uri]
@@ -319,7 +320,7 @@ class ResourceService(RequestHandler):
         # When the resource is not loaded, try to get from the wildcard pattern.
         self._logger.debug('Retrieving from the wildcard pattern.')
 
-        return self._get_resource_on_non_precalculated_pattern(request_uri)
+        return self._get_resource_on_non_precalculated_pattern(path)
 
     def _create_resource_entity(self, real_path, cachable):
         return ResourceEntity(real_path, cachable)
