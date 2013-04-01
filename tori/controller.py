@@ -38,6 +38,10 @@ class Controller(RequestHandler):
 
         self._session = None
 
+    @property
+    def is_xhr(self):
+        return 'X-Requested-With' in self.request.headers and self.request.headers['X-Requested-With'] == 'XMLHttpRequest'
+
     def component(self, name, fork_component=False):
         """
         Get the (re-usable) component from the initialized Imagination
