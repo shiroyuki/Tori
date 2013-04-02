@@ -46,7 +46,7 @@ class Serializer(ArraySerializer):
 
         return extra_associations
 
-    def encode(self, data, stack_depth=0):
+    def encode(self, data, stack_depth=0, convert_object_id_to_str=False):
         if not isinstance(data, object):
             raise TypeError('The provided data must be an object')
 
@@ -78,15 +78,15 @@ class Serializer(ArraySerializer):
                 value = []
 
                 for item in property_reference:
-                    value.append(self._process_value(data, item, stack_depth))
+                    value.append(self._process_value(data, item, stack_depth, convert_object_id_to_str))
             else:
-                value = self._process_value(data, property_reference, stack_depth)
+                value = self._process_value(data, property_reference, stack_depth, convert_object_id_to_str)
 
             returnee[name] = value
 
         # If this is not a pseudo object ID, add the reserved key '_id' with the property 'id' .
         if data.id and not isinstance(data.id, PseudoObjectId):
-            returnee['_id'] = data.id
+            returnee['_id'] = self._process_value(data, data, stack_depth, convert_object_id_to_str)
 
         return returnee
 
@@ -99,7 +99,7 @@ class Serializer(ArraySerializer):
     def _is_entity(self, data):
         return '__relational_map__' in dir(data)
 
-    def _process_value(self, data, value, stack_depth):
+    def _process_value(self, data, value, stack_depth, convert_object_id_to_str):
         is_proxy    = isinstance(value, ProxyObject)
         is_document = isinstance(data, object) and self._is_entity(data)
 
@@ -107,11 +107,16 @@ class Serializer(ArraySerializer):
 
         if value and not self._is_primitive_type(value):
             if self._max_depth and stack_depth >= self._max_depth:
-                processed_data = value
+                processed_data = value.encode('utf-8', 'replace') if self._is_string(value) else value
             elif is_proxy or is_document:
                 processed_data = value.id
+
+                if isinstance(processed_data, ObjectId) and convert_object_id_to_str:
+                    processed_data = str(processed_data)
             else:
                 processed_data = self.encode(value, stack_depth + 1)
+        elif isinstance(value, ObjectId) and convert_object_id_to_str:
+            processed_data = str(value)
 
         return processed_data
 

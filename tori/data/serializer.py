@@ -5,6 +5,7 @@ class ArraySerializer(object):
     def __init__(self, max_depth=2):
         self._max_depth = max_depth
         self._primitive_types = []
+        self._string_types = []
 
     def set_max_depth(self, max_depth):
         self._max_depth = max_depth
@@ -26,7 +27,7 @@ class ArraySerializer(object):
 
             if value and not self._is_primitive_type(value):
                 if self._max_depth and stack_depth >= self._max_depth:
-                    value = u'%s' % value
+                    value = value.encode('utf8', 'ignore')
                 else:
                     value = self.encode(value, stack_depth + 1)
 
@@ -39,6 +40,18 @@ class ArraySerializer(object):
             self._primitive_types = self.default_primitive_types()
 
         return type(value) in self._primitive_types
+    
+    def _is_string(self, value):
+        if not self._string_types:
+            self._string_types = self.default_string_types()
+
+        return type(value) in self._string_types
+    
+    def default_string_types(self, value):
+        try:
+            return [str, unicode]
+        except NameError as exception:
+            return [str]
 
     def default_primitive_types(self):
         try:
