@@ -116,7 +116,7 @@ class BaseApplication(object):
         Start a server/service.
         """
         try:
-            self._backend_app.listen(self._listening_port)
+            self._backend_app.listen(self._listening_port, self._listening_addr)
 
             self._logger.info("Start the application based at %s." % self._base_path)
             IOLoop.instance().start()
