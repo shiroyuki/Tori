@@ -4,8 +4,6 @@ Database APIs
 Tori Framework supports both relational databases via SQLAlchemy and MongoDB databases via PyMongo. Please note that
 any modules related to relational databases are experimental and not supported by the project.
 
-.. warning:: This is experimental. Those with heart condition must not use these APIs.
-
 .. automodule:: tori.db.common
     :members:
 
