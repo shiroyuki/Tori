@@ -54,6 +54,8 @@ class BaseApplication(object):
         # Setting for the application.
         self._settings          = settings
         self._settings['debug'] = False
+        self._listening_addr    = '0.0.0.0'
+        self._listening_port    = 8888
 
         if 'base_path' not in self._settings:
             # Get the reference to the calling function
@@ -91,7 +93,7 @@ class BaseApplication(object):
         # Instantiate the backend application.
         self._backend_app = TornadoNormalApplication(self._routes, **self._settings)
 
-    def listen(self, port_number=8888):
+    def listen(self, port_number=None, bind_address=None):
         """
         Tell the app to listen on the given port number.
 
@@ -99,9 +101,13 @@ class BaseApplication(object):
         This setting is however only used in a standalone mode.
         """
 
-        self._listening_port = int(port_number)
+        if port_number:
+            self._listening_port = int(port_number)
 
-        self._logger.debug("Listen on port %d." % self._listening_port)
+        if bind_address:
+            self._listening_addr = bind_address
+
+        self._logger.debug('Listen at {} on port {}.'.format(self._listening_addr, self._listening_port))
 
         return self
 
@@ -205,10 +211,10 @@ class Application(BaseApplication):
         for config in configuration.find('server config'):
             key  = config.attribute('key')
             kind = config.attribute('type')
-            
+
             if not key:
                 raise InvalidConfigurationError('Invalid server configuration key')
-            
+
             self._settings[key] = self._data_transformer.cast(config, kind)
 
         # Set the cookie secret for secure cookies.
