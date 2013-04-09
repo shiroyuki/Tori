@@ -1,48 +1,5 @@
-Object-relational Mapping (ORM)
-*******************************
-
-Tori Framework introduces the object-relational mapping module for MongoDB 2.0 or newer.
-
-.. versionadded: 2.1
-
-Architecture
-============
-
-There are a few points to highlight.
-
-* The ORM uses the unit-of-work pattern.
-* Although MongoDB does not has transaction support like MySQL, the ORM uses sessions to manage the object graph
-  within the same memory space.
-
-Setup
-=====
-
-First, we define the entity (document) class.
-
-.. code-block:: python
-
-    from tori.db.entity import entity
-
-    # Alternatively, @entity('name_of_collection') is to set the name of the collection.
-    @entity
-    class Character(object):
-        def __init__(self, name):
-            self.name = name
-
-where an entity of class ``Character`` automatically has a readable and writable property ``id`` which can be set
-only once.
-
-.. warning:: It is not recommended to the ID manually. Leave setting the ID to the backend database.
-
-Then, define the entity manager.
-
-.. code-block:: python
-
-    from pymongo import Connection
-    from tori.db.manager import Manager
-
-    connection = Connection()
-    entity_manager = Manager('default')
+Basic Usage
+***********
 
 Create a new entity
 ===================
@@ -172,10 +129,3 @@ example on how the transaction works.
     # or session.flush()
 
 .. note:: Both ``collection.commit`` and ``session.flush`` commit changes of the whole object graph.
-
-(TODO: Write about associations)
-
-See also
-========
-
-* :doc:`../api/db/index`
