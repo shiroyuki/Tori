@@ -83,7 +83,7 @@ def recompile(update_files):
     subprocess.call(['make', 'html'])
     print('Updated')
  
-book_manager = FileSystemManager(recompile, 'source')
+book_manager = FileSystemManager(recompile, 'source', '../tori')
  
 print('Monitoring changes...')
  

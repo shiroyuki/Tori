@@ -1,6 +1,8 @@
 Getting Started
 ***************
 
+The chapter illustrates how to define entities and set up an entity manager.
+
 Define an Entity
 ================
 

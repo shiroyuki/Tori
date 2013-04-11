@@ -12,19 +12,25 @@ Tori Framework introduces the object-relational mapping module for MongoDB 2.0 o
     setup
     basic-usage
     working-with-association
+    handling-transaction
+    *
 
-.. note::
+Testing Environments
+====================
 
-    The ORM is tested with the following configurations.
+The ORM is tested with the following configurations.
     
-    ================= ===================================
-    MongoDB Version   Operating System / Platform
-    ================= ===================================
-    2.2+              Mac OS X 10.8 Server
-    2.2+              GNU/Linux Debian stable and testing
-    2.2+              Fedora Core 18 or newer
-    anything versions Travis CI.
-    ================= ===================================
+================= ===========================
+MongoDB Version   Operating System / Platform
+================= ===========================
+2.2+              Mac OS X 10.8 Server
+2.2+              GNU/Linux Debian*
+2.2+              Fedora Core*
+anything versions Travis CI
+================= ===========================
+
+.. note:: Only test on the latest stable version of OSs running on the latest
+version of VirtualBox 4.2 on Mac OS X.
 
 See also
 ========

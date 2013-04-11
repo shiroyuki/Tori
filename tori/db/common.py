@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Common Module
-#############
-
 :Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
 :Stability: Stable
 """

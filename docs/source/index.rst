@@ -25,6 +25,13 @@ Read :doc:`api/index` if you want to get the documentation of APIs and methods.
    manual/index
    api/index
 
+Special Thanks
+--------------
+
+This project is not possible without helps and guidance from
+`Guilherme Blanco <http://phpork.net/>`_ from
+`Doctrine (PHP) <http://doctrine-project.org>`_.
+
 Indices and Modules
 -------------------
 
