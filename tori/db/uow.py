@@ -220,13 +220,16 @@ class UnitOfWork(object):
 
         self._cascade_operation(entity, CascadingType.PERSIST)
 
-    def register_dirty(self, entity, can_register_new=False):
+    def register_dirty(self, entity):
         self._freeze()
 
         record = self.retrieve_record(entity)
 
-        if record.status == Record.STATUS_NEW and can_register_new:
-            return self.register_new(entity)
+        if record.status == Record.STATUS_NEW:
+            try:
+                return self.register_new(entity)
+            except UOWRepeatedRegistrationError as exception:
+                pass
         elif record.status in [Record.STATUS_CLEAN, Record.STATUS_DELETED]:
             record.mark_as(Record.STATUS_DIRTY)
 
@@ -328,7 +331,7 @@ class UnitOfWork(object):
                 except UOWRepeatedRegistrationError as exception:
                     pass
             else:
-                self.register_dirty(reference, True)
+                self.register_dirty(reference)
         elif cascading_type == CascadingType.DELETE:
             self.register_deleted(reference)
         elif cascading_type == CascadingType.REFRESH:

@@ -47,7 +47,7 @@ class TestDbUowAssociationManyToMany(TestCase):
 
         self.__set_fixtures()
 
-    def _test_load(self):
+    def test_load(self):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 
@@ -73,9 +73,9 @@ class TestDbUowAssociationManyToMany(TestCase):
         shiro = members.new(name='Shiro')
 
         group.members.extend([umi, shun, shiro])
-        
+
         groups.post(group)
-        
+
         self.assertEqual(4, groups._api.count())
         self.assertEqual(7, members._api.count())
         self.assertEqual(9, associations._api.count())
@@ -104,7 +104,45 @@ class TestDbUowAssociationManyToMany(TestCase):
         self.assertEqual(2, groups._api.count())
         self.assertEqual(5, associations._api.count())
 
-    def _test_commit_with_new_element_on_explicit_persistence(self):
+    def test_commit_with_new_element_on_explicit_persistence_and_repository(self):
+        groups  = self.session.collection(Group)
+        members = self.session.collection(Member)
+
+        associations = self.session.collection(Group.__relational_map__['members'].association_class.cls)
+
+        group_a  = groups.filter_one({'name': 'group a'})
+        group_b  = groups.filter_one({'name': 'group b'})
+        group_c  = groups.filter_one({'name': 'group c'})
+        member_d = members.filter_one({'name': 'member d'})
+
+        member_d.name = 'extra member'
+
+        member_e = members.new(name='member e')
+
+        groups.delete(group_c)
+
+        group_a.members.append(member_d)
+        group_a.members.pop(0)
+        groups.put(group_a)
+
+        group_b.members.append(member_e)
+        groups.put(group_b)
+
+        self.assertEqual(2, groups._api.count())
+
+        print('groups')
+        for g in groups._api.find():
+            print(g)
+        print('members')
+        for m in members._api.find():
+            print(m)
+        print('associations')
+        for a in associations._api.find():
+            print(a)
+
+        self.assertEqual(5, associations._api.count())
+
+    def test_commit_with_new_element_on_explicit_persistence_and_session(self):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 
@@ -126,12 +164,22 @@ class TestDbUowAssociationManyToMany(TestCase):
 
         group_a.members.pop(0)
 
-        self.assertEqual(3, groups._api.count())
-        self.assertEqual(6, associations._api.count())
-
+        self.session.persist(group_a)
+        self.session.persist(group_b)
         self.session.flush()
 
         self.assertEqual(2, groups._api.count())
+
+        print('groups')
+        for g in groups._api.find():
+            print(g)
+        print('members')
+        for m in members._api.find():
+            print(m)
+        print('associations')
+        for a in associations._api.find():
+            print(a)
+
         self.assertEqual(5, associations._api.count())
 
     def __set_fixtures(self):
