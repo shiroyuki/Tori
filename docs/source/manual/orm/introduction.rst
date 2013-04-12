@@ -35,6 +35,9 @@ There are a few points to highlight.
 
 * The object ID cannot be changed via the ORM interfaces.
 * The ORM supports cascading operations on deleting, persisting, and refreshing.
+* Heavily rely on **public properties**, which does not have leading underscores
+  (``_``) to map between class properties and document keys, except the property
+  **id** will be converted to the key **_id**.
 
 Limitation
 ==========
