@@ -17,7 +17,7 @@ from tori.db.exception import DuplicatedRelationalMapping
 class AssociationType(object):
     """ Association Type """
     AUTO_DETECT  = 1 # Not supported in the near future
-    """ Auto detection (disabled) """
+    """ Auto detection (default, disabled and raising exception) """
     ONE_TO_ONE   = 2
     """ One-to-one association mode """
     ONE_TO_MANY  = 3

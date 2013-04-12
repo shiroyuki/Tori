@@ -14,6 +14,16 @@ references to objects:
 * A collection of objects is represented by many object IDs pointing to the
   object holding the collection
 
+.. note::
+
+    As **lazy loading** is the heart of architectural design of the ORM,
+    when an entity is mapped to an existing document, each property of
+    the entity *in the clean state* will be a reference to either
+    :class:`tori.db.common.ProxyObject`, which loads the data on demand for any
+    **non-many-to-many mappings**, or :class:`tori.db.common.ProxyCollection`,
+    which loads the list of proxy objects to the respective entities on demand
+    only for any **many-to-many mappings**.
+
 There are two sections in this chapter:
 
 * types of associations
@@ -332,6 +342,17 @@ Under development for Tori 2.1 (https://github.com/shiroyuki/Tori/issues/27).
 Options for Associations
 ========================
 
-(...)
+The decorator :meth:`tori.db.mapper.link` has the following options:
+
+=========== ============================================================================================
+Option      Description
+=========== ============================================================================================
+association the type of associations (See :class:`tori.db.mapper.AssociationType`.)
+cascading   the list of allowed cascading operations (See :class:`tori.db.mapper.CascadingType`.)
+inverted_by the name of property used where **enable the reverse mapping if defined**
+mapped_by   the name of property to be map
+read_only   the flag to disable property setters (only usable with :class:`tori.db.common.ProxyObject`.)
+target      the full name of class or the actual class
+=========== ============================================================================================
 
 .. seealso:: :doc:`../../api/db/index`
