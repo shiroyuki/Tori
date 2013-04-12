@@ -67,13 +67,25 @@ class AssociationFactory(object):
         'class {class_name}(BasicAssociation): pass'
     ])
 
-    def __init__(self, origin, destination, cascading_options):
+    def __init__(self, origin, guide, cascading_options):
         self.__origin      = origin
-        self.__destination = destination
+        self.__guide       = guide
+        self.__destination = None
         self.__cascading_options = cascading_options
         self.__class       = None
         self.__class_name  = None
         self.__collection_name = None
+
+    @property
+    def destination(self):
+        """ Destination
+
+            :rtype: type
+        """
+        if not self.__destination:
+            self.__destination = self.__guide.target_class
+        
+        return self.__destination
 
     @property
     def class_name(self):
@@ -86,9 +98,9 @@ class AssociationFactory(object):
         if not self.__class_name:
             self.__class_name = self.hash_content(self.class_name_tmpl.format(
                 origin_module      = self.__origin.__module__,
-                destination_module = self.__destination.__module__,
+                destination_module = self.destination.__module__,
                 origin             = self.__origin.__name__,
-                destination        = self.__destination.__name__
+                destination        = self.destination.__name__
             ))
 
             self.__class_name = 'Association{}'.format(self.__class_name)
@@ -106,9 +118,9 @@ class AssociationFactory(object):
         if not self.__collection_name:
             self.__collection_name = self.hash_content(self.collection_name_tmpl.format(
                 origin_module      = self.__origin.__module__,
-                destination_module = self.__destination.__module__,
+                destination_module = self.destination.__module__,
                 origin             = self.__origin.__collection_name__,
-                destination        = self.__destination.__collection_name__
+                destination        = self.destination.__collection_name__
             ))
 
         return self.__collection_name
@@ -197,7 +209,7 @@ class RelatingGuide(BasicGuide):
         # This is only used for many-to-many association.
         self.association_class = AssociationFactory(
                 entity_class,
-                self.target_class,
+                self,
                 cascading_options
             )\
             if association == AssociationType.MANY_TO_MANY\
