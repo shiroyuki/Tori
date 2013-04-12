@@ -129,17 +129,6 @@ class TestDbUowAssociationManyToMany(TestCase):
         groups.put(group_b)
 
         self.assertEqual(2, groups._api.count())
-
-        print('groups')
-        for g in groups._api.find():
-            print(g)
-        print('members')
-        for m in members._api.find():
-            print(m)
-        print('associations')
-        for a in associations._api.find():
-            print(a)
-
         self.assertEqual(5, associations._api.count())
 
     def test_commit_with_new_element_on_explicit_persistence_and_session(self):
@@ -218,7 +207,7 @@ class TestDbUowAssociationManyToMany(TestCase):
             object_id   = api.insert(data)
             data['_id'] = object_id
 
-        api = self.session.db['378900d37908d31ef2aa5a12c1a8443d612719e9ac8ef2625dee448c']
+        api = self.session.db['groups_members']
 
         api.remove()
 
@@ -232,4 +221,4 @@ class TestDbUowAssociationManyToMany(TestCase):
 
         self.assertIn('members', collection_names)
         self.assertIn('groups', collection_names)
-        self.assertIn('378900d37908d31ef2aa5a12c1a8443d612719e9ac8ef2625dee448c', collection_names)
+        self.assertIn('groups_members', collection_names)

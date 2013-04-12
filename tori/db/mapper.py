@@ -60,7 +60,7 @@ class CascadingType(object):
 class AssociationFactory(object):
     """ Association Factory """
     class_name_tmpl      = '{origin_module}{origin}{destination_module}{destination}'
-    collection_name_tmpl = '{origin_module}_{origin}_{destination_module}_{destination}'
+    collection_name_tmpl = '{origin}_{destination}'
     code_template        = '\n'.join([
         'from tori.db.entity import BasicAssociation, entity',
         '@entity("{collection_name}")',
@@ -116,12 +116,10 @@ class AssociationFactory(object):
             .. note:: This is a read-only property.
         """
         if not self.__collection_name:
-            self.__collection_name = self.hash_content(self.collection_name_tmpl.format(
-                origin_module      = self.__origin.__module__,
-                destination_module = self.destination.__module__,
-                origin             = self.__origin.__collection_name__,
-                destination        = self.destination.__collection_name__
-            ))
+            self.__collection_name = self.collection_name_tmpl.format(
+                origin      = self.__origin.__collection_name__,
+                destination = self.destination.__collection_name__
+            )
 
         return self.__collection_name
 
