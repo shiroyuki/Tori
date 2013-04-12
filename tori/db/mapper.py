@@ -212,7 +212,7 @@ class RelatingGuide(BasicGuide):
                 self,
                 cascading_options
             )\
-            if association == AssociationType.MANY_TO_MANY\
+            if association == AssociationType.MANY_TO_MANY and not self.inverted_by\
             else None
 
 def __prevent_duplicated_mapping(cls, property_name):
