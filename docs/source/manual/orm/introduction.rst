@@ -22,8 +22,12 @@ There are a few points to highlight.
 
 * The lazy-loading strategy and proxy objects are used for loading data wherever
   applicable.
-* The ORM uses **the unit-of-work pattern** as used by `Hibernate <http://www.hibernate.org/>`_
-  in Java or `Doctrine <http://www.doctrine-project.org/>`_ in PHP.
+* The ORM uses **the Unit Of Work pattern** as used by:
+
+  * `Hibernate <http://www.hibernate.org/>`_ (Java)
+  * `Doctrine <http://www.doctrine-project.org/>`_ (PHP)
+  * `SQLAlchemy <http://www.sqlalchemy.org/>`_ (Python)
+
 * Although MongoDB does not has transaction support like MySQL, the ORM has
   sessions to manage the object graph within the same memory space.
 * By containing a similar logic to determine whether a given entity is new or
@@ -44,9 +48,8 @@ Limitation
 
 * As **sessions** are not supported by MongoDB, the ORM cannot roll back in case
   that an exception are raisen or a writing operation is interrupted.
-* Sessions cannot merge together. (Issue `#24 <https://github.com/shiroyuki/Tori/issues/24>`_
-  by **spanote**)
-* **Cascading operations on deleting** force the ORM to load the whole graph
+* Sessions cannot merge together.
+* **Cascading operations on deleting** forces the ORM to load the whole graph
   which potentially introduces performance issue on a large data set.
 * **Cascading operations on persisting** force the ORM to load the data of all
   proxy objects but commiting changes will still be made only if there are changes.

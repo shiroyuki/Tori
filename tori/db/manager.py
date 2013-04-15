@@ -2,7 +2,6 @@ from pymongo import Connection
 from bson.objectid import ObjectId
 from tori.db.session import Session
 
-
 class Manager(object):
     def __init__(self, name, connection=None, document_types=[]):
         """Entity Manager
@@ -37,7 +36,10 @@ class Manager(object):
         """
         return self._database
 
-    def open_session(self, id=None, supervised=True):
+    def open_session(self, id=None, supervised=False):
+        if not supervised:
+            return Session(0, self.db, self._registered_types)
+
         if not id:
             id = ObjectId()
 

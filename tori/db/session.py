@@ -6,11 +6,18 @@ from tori.db.mapper import AssociationType
 from tori.db.uow import UnitOfWork
 
 class Session(object):
+    """ Database Session
+
+        :param id: the unique identifier of the session
+        :type  id: int or bson.objectid.ObjectId
+        :param database: the database connection
+        :type  database:
+    """
     def __init__(self, id, database, registered_types={}):
-        self._id               = id
-        self._uow              = UnitOfWork(self)
-        self._database         = database
-        self._collections      = {}
+        self._id  = id
+        self._uow = UnitOfWork(self)
+        self._database = database
+        self._repository_map   = {}
         self._registered_types = registered_types
 
     @property
@@ -33,27 +40,43 @@ class Session(object):
 
     @property
     def collections(self):
-        return [self.collection(self._registered_types[key]) for key in self._registered_types]
+        """ Alias to ``repositories`` """
+        return self.repositories
 
     def collection(self, entity_class):
-        """Retrieve the collection
+        """ Alias to ``repository()`` """
+        return self.repository(entity_class)
 
-        :param entity_class: the class of document/entity
-        :type  entity_class: type
+    @property
+    def repositories(self):
+        """ Retrieve the list of used repositories.
 
-        :rtype: tori.db.repository.Repository
+            :rtype: list
+        """
+        return [
+            self.collection(self._registered_types[key])
+            for key in self._registered_types
+        ]
+
+    def repository(self, entity_class):
+        """ Retrieve the collection
+
+            :param entity_class: an entity class
+            :type  entity_class: type
+
+            :rtype: tori.db.repository.Repository
         """
         key = entity_class.__collection_name__
 
         self.register_class(entity_class)
 
-        if key not in self._collections:
-            self._collections[key] = Repository(
+        if key not in self._repository_map:
+            self._repository_map[key] = Repository(
                 session=self,
                 representing_class=entity_class
             )
 
-        return self._collections[key]
+        return self._repository_map[key]
 
     def register_class(self, entity_class):
         """Register the entity class
@@ -69,10 +92,20 @@ class Session(object):
             self._registered_types[key] = entity_class
 
     def delete(self, *entities):
+        """ Delete entities
+
+            :param entities: one or more entities
+            :type  entities: type of list of type
+        """
         for entity in entities:
             self._uow.register_deleted(entity)
 
     def refresh(self, *entities):
+        """ Refresh entities
+
+            :param entities: one or more entities
+            :type  entities: type of list of type
+        """
         for entity in entities:
             self.refresh_one(entity)
 
@@ -80,6 +113,11 @@ class Session(object):
         self._uow.refresh(entity)
 
     def persist(self, *entities):
+        """ Persist entities
+
+            :param entities: one or more entities
+            :type  entities: type of list of type
+        """
         for entity in entities:
             self.persist_one(entity)
 
@@ -94,6 +132,8 @@ class Session(object):
         self._uow.register_clean(entity)
 
     def flush(self):
+        """ Flush all changes of the session.
+        """
         self._uow.commit()
 
     def find_record(self, id, cls):

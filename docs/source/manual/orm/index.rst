@@ -6,14 +6,13 @@ Tori Framework introduces the object-relational mapping module for MongoDB 2.0 o
 .. versionadded: 2.1
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
     
     introduction
     setup
     basic-usage
     working-with-association
-    handling-transaction
-    *
+    handling-transactions
 
 Testing Environments
 ====================
@@ -29,8 +28,10 @@ MongoDB Version   Operating System / Platform
 anything versions Travis CI
 ================= ===========================
 
-.. note:: Only test on the latest stable version of OSs running on the latest
-version of VirtualBox 4.2 on Mac OS X.
+.. note::
+
+    Only test on the latest stable version of OSs running on the latest
+    version of VirtualBox 4.2 on Mac OS X.
 
 See also
 ========

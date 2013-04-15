@@ -224,8 +224,8 @@ One-to-many
 
 Let's restart the example from the many-to-one section.
 
-Unidirectional
-~~~~~~~~~~~~~~
+Unidirectional with Built-in List
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The one-to-many unidirectional mapping takes advantage of the built-in list.
 
@@ -271,7 +271,7 @@ and the data stored in the database can be like this:
     ``inverted_by`` (see below for more information).
 
     Without a proper checker, which is not provided for performance sake, this
-    mapping results the same effect as the **many-to-many mapping**.
+    mapping can be used like the **many-to-many join-collection mapping**.
 
 Bidirectional
 ~~~~~~~~~~~~~
