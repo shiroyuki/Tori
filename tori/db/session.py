@@ -160,14 +160,23 @@ class Session(object):
                     ]
 
                     entity.__setattr__(property_name, proxy_list)
+                elif guide.association == AssociationType.MANY_TO_MANY:
+                    entity.__setattr__(property_name, ProxyCollection(self, entity, guide))
                 else:
-                    raise IntegrityConstraintError('Unknown type of entity association')
+                    raise IntegrityConstraintError('Unknown type of entity association (reverse mapping)')
 
                 return # Done the application
 
             # In the direct mapping, the lazy loading is applied wherever applicable.
             if guide.association in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
-                entity.__setattr__(property_name, ProxyFactory.make(self, entity.__getattribute__(property_name), guide))
+                entity.__setattr__(
+                    property_name,
+                    ProxyFactory.make(
+                        self,
+                        entity.__getattribute__(property_name),
+                        guide
+                    )
+                )
             elif guide.association == AssociationType.ONE_TO_MANY:
                 proxy_list = [
                     ProxyFactory.make(self, object_id, guide)

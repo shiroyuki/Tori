@@ -188,9 +188,27 @@ class ProxyCollection(list):
 
         self._loaded = True
 
-        mapping_list = self._session\
-            .collection(self._guide.association_class.cls)\
-            .filter({'origin': self._origin.id})
+        association_class = self._guide.association_class.cls
+        collection        = self._session.collection(association_class)
+
+        print(self._guide.association_class.collection_name)
+
+        if self._guide.inverted_by:
+            criteria     = {'destination': self._origin.id}
+            mapping_list = collection.filter(criteria)
+
+            for item in collection._api.find():
+                print(item)
+
+            self.extend([
+                ProxyFactory.make(self._session, association.origin, self._guide)
+                for association in mapping_list
+            ])
+
+            return
+
+        criteria     = {'origin': self._origin.id}
+        mapping_list = collection.filter(criteria)
 
         self.extend([
             ProxyFactory.make(self._session, association.destination, self._guide)

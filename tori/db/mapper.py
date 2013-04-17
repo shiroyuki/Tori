@@ -67,7 +67,8 @@ class AssociationFactory(object):
         'class {class_name}(BasicAssociation): pass'
     ])
 
-    def __init__(self, origin, guide, cascading_options):
+    def __init__(self, origin, guide, cascading_options, is_reverse_mapping):
+        self.__is_reverse_mapping = is_reverse_mapping
         self.__origin      = origin
         self.__guide       = guide
         self.__destination = None
@@ -75,6 +76,22 @@ class AssociationFactory(object):
         self.__class       = None
         self.__class_name  = None
         self.__collection_name = None
+
+        if is_reverse_mapping:
+            self.__origin      = None
+            self.__destination = origin
+            self.__cascading_options = []
+
+    @property
+    def origin(self):
+        """ Origin
+
+            :rtype: type
+        """
+        if not self.__origin:
+            self.__origin = self.__guide.target_class
+
+        return self.__origin
 
     @property
     def destination(self):
@@ -84,7 +101,7 @@ class AssociationFactory(object):
         """
         if not self.__destination:
             self.__destination = self.__guide.target_class
-        
+
         return self.__destination
 
     @property
@@ -97,9 +114,9 @@ class AssociationFactory(object):
         """
         if not self.__class_name:
             self.__class_name = self.hash_content(self.class_name_tmpl.format(
-                origin_module      = self.__origin.__module__,
+                origin_module      = self.origin.__module__,
                 destination_module = self.destination.__module__,
-                origin             = self.__origin.__name__,
+                origin             = self.origin.__name__,
                 destination        = self.destination.__name__
             ))
 
@@ -117,7 +134,7 @@ class AssociationFactory(object):
         """
         if not self.__collection_name:
             self.__collection_name = self.collection_name_tmpl.format(
-                origin      = self.__origin.__collection_name__,
+                origin      = self.origin.__collection_name__,
                 destination = self.destination.__collection_name__
             )
 
@@ -200,6 +217,7 @@ class RelatingGuide(BasicGuide):
                  read_only, cascading_options):
         BasicGuide.__init__(self, target_class, association)
 
+        self.origin_class      = entity_class
         self.inverted_by       = inverted_by
         self.read_only         = read_only
         self.cascading_options = cascading_options
@@ -208,9 +226,10 @@ class RelatingGuide(BasicGuide):
         self.association_class = AssociationFactory(
                 entity_class,
                 self,
-                cascading_options
+                cascading_options,
+                self.inverted_by != None
             )\
-            if association == AssociationType.MANY_TO_MANY and not self.inverted_by\
+            if association == AssociationType.MANY_TO_MANY\
             else None
 
 def __prevent_duplicated_mapping(cls, property_name):

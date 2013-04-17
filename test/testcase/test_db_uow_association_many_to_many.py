@@ -159,16 +159,6 @@ class TestDbUowAssociationManyToMany(TestCase):
 
         self.assertEqual(2, groups._api.count())
 
-        print('groups')
-        for g in groups._api.find():
-            print(g)
-        print('members')
-        for m in members._api.find():
-            print(m)
-        print('associations')
-        for a in associations._api.find():
-            print(a)
-
         self.assertEqual(5, associations._api.count())
 
     def __set_fixtures(self):

@@ -21,7 +21,7 @@ from tori.db.mapper import link, CascadingType, AssociationType
 )
 @entity('members')
 class Member(object):
-    def __init__(self, name, groups):
+    def __init__(self, name, groups=[]):
         self.name = name
         self.groups = groups
 
@@ -54,7 +54,7 @@ class TestDbUowAssociationManyToMany(TestCase):
 
         self.__set_fixtures()
 
-    @skip('Skip until issue 27 is resolved')
+    #@skip('Skip until issue 27 is resolved')
     def test_load(self):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
@@ -64,6 +64,8 @@ class TestDbUowAssociationManyToMany(TestCase):
 
         self.assertTrue(group_a.members._loaded, 'The IDs should be loaded by UOW.')
         self.assertEqual(2, len(group_a.members))
+        self.assertEqual(2, len(group_a.members[0].groups))
+        self.assertEqual(0, len(member_d.groups))
         self.assertTrue(group_a.members._loaded)
         self.assertEqual('member a', group_a.members[0].name)
         self.assertEqual('member b', group_a.members[1].name)
@@ -181,7 +183,7 @@ class TestDbUowAssociationManyToMany(TestCase):
             object_id   = api.insert(data)
             data['_id'] = object_id
 
-        api = self.session.db['378900d37908d31ef2aa5a12c1a8443d612719e9ac8ef2625dee448c']
+        api = self.session.db['groups_members']
 
         api.remove()
 
@@ -195,4 +197,4 @@ class TestDbUowAssociationManyToMany(TestCase):
 
         self.assertIn('members', collection_names)
         self.assertIn('groups', collection_names)
-        self.assertIn('378900d37908d31ef2aa5a12c1a8443d612719e9ac8ef2625dee448c', collection_names)
+        self.assertIn('groups_members', collection_names)
