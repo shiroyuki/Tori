@@ -11,6 +11,12 @@ tori.db.common
 .. automodule:: tori.db.common
     :members:
 
+tori.db.criteria
+================
+
+.. automodule:: tori.db.criteria
+    :members:
+
 tori.db.entity
 ==============
 

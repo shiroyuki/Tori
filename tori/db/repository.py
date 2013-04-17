@@ -8,6 +8,7 @@ Repository
 """
 import inspect
 from tori.db.common import PseudoObjectId
+from tori.db.criteria import Criteria
 from tori.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
 from tori.db.mapper import AssociationType, CascadingType
 from tori.db.uow import Record
@@ -16,10 +17,8 @@ class Repository(object):
     """
     Repository (Entity AbstractRepository) for Mongo DB
 
-    :param em: the entity manager
-    :type  em: tori.db.session.Session
-    :param api: collection API
-    :type  api: pymongo.collection.Collection
+    :param session: the entity manager
+    :type  session: tori.db.session.Session
     :param representing_class: the representing class
     :type  representing_class: type
 
@@ -33,6 +32,14 @@ class Repository(object):
         # Retrieve the collection
         self._api = session.db[representing_class.__collection_name__]
         self._session.register_class(representing_class)
+
+    @property
+    def api(self):
+        """ Database API
+
+            :rtype: pymongo.collection.Collection
+        """
+        return self._api
 
     @property
     def name(self):
@@ -85,11 +92,16 @@ class Repository(object):
 
         return self._dehydrate_object(data)
 
-    def filter(self, criteria={}, offset=0, length=None):
-        data_list = self._api.find(criteria)
+    def find(self, criteria):
+        """ Find entity with criteria
 
-        if length and isinstance(length, int):
-            data_list = data_list[offset:(offset + length)]
+            :param criteria: the search criteria
+            :type  criteria: tori.db.orm.criteria.Criteria
+
+            :returns: the result based on the given criteria
+            :rtype: object or list of objects
+        """
+        data_list = criteria.build_cursor(self)
 
         entity_list = []
 
@@ -102,15 +114,30 @@ class Repository(object):
 
             entity_list.append(entity)
 
+        if criteria.limit == 1 and entity_list:
+            return entity_list[0]
+
         return entity_list
 
-    def filter_one(self, criteria={}):
-        raw_data = self._api.find_one(criteria)
+    def count(self, criteria):
+        """ Count the number of entities satisfied the given criteria
 
-        if not raw_data:
-            return None
+            :param criteria: the search criteria
+            :type  criteria: tori.db.orm.criteria.Criteria
 
-        return self._dehydrate_object(raw_data)
+            :rtype: int
+        """
+        return criteria.build_cursor(self).count()
+
+    def filter(self, condition={}, order_by={}, offset=0, limit=0):
+        criteria  = Criteria(condition, order_by, offset, limit)
+
+        return self.find(criteria)
+
+    def filter_one(self, condition={}, order_by={}, offset=0):
+        criteria  = Criteria(condition, order_by, offset, 1)
+
+        return self.find(criteria)
 
     def post(self, entity):
         if entity.__session__:
