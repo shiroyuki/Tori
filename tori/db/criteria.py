@@ -16,13 +16,28 @@ class Criteria(object):
         self.order_by  = order_by
         self.offset    = offset
         self.limit     = limit
+        self.index_generated_on_the_fly = False
 
     def build_cursor(self, repository):
         api    = repository.api
         cursor = api.find(self.condition)
 
-        if self.order_by:
-            cursor.sort(self.order_by)
+        try:
+            if self.order_by:
+                cursor.sort(self.order_by)
+        except TypeError as exception:
+            # If it fails to tell the cursor to sort the result, automatically
+            # generate the corresponding index.
+            if self.index_generated_on_the_fly:
+                return []
+
+            self.index_generated_on_the_fly = True
+
+            api.create_index([
+                (name, self.order_by[name]) for name in self.order_by
+            ])
+
+            return self.build_cursor(repository)
 
         if self.offset and self.offset > 0:
             cursor.skip(self.offset)

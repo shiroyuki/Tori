@@ -96,7 +96,7 @@ class Repository(object):
         """ Find entity with criteria
 
             :param criteria: the search criteria
-            :type  criteria: tori.db.orm.criteria.Criteria
+            :type  criteria: tori.db.criteria.Criteria
 
             :returns: the result based on the given criteria
             :rtype: object or list of objects
@@ -123,7 +123,7 @@ class Repository(object):
         """ Count the number of entities satisfied the given criteria
 
             :param criteria: the search criteria
-            :type  criteria: tori.db.orm.criteria.Criteria
+            :type  criteria: tori.db.criteria.Criteria
 
             :rtype: int
         """
