@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Repository
-==========
-
 :Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
 :Status: Stable
 """
@@ -101,11 +98,11 @@ class Repository(object):
             :returns: the result based on the given criteria
             :rtype: object or list of objects
         """
-        data_list = criteria.build_cursor(self)
+        cursor = criteria.build_cursor(self)
 
         entity_list = []
 
-        for data in data_list:
+        for data in cursor:
             entity = self._dehydrate_object(data)
             record = self._session.find_record(id, self._class)
 
@@ -210,6 +207,9 @@ class Repository(object):
                 break
 
         return self._has_cascading
+
+    def new_criteria(self, *args, **kwargs):
+        return Criteria(*args, **kwargs)
 
     def __len__(self):
         return self._api.count()

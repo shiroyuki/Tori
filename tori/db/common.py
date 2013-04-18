@@ -192,8 +192,8 @@ class ProxyCollection(list):
         collection        = self._session.collection(association_class)
 
         if self._guide.inverted_by:
-            criteria     = {'destination': self._origin.id}
-            mapping_list = collection.filter(criteria)
+            criteria     = collection.new_criteria({'destination': self._origin.id})
+            mapping_list = collection.find(criteria)
 
             self.extend([
                 ProxyFactory.make(self._session, association.origin, self._guide)

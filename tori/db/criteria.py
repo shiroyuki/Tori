@@ -24,18 +24,14 @@ class Criteria(object):
 
         try:
             if self.order_by:
-                cursor.sort(self.order_by)
+                cursor.sort(self.ordering_sequence)
         except TypeError as exception:
             # If it fails to tell the cursor to sort the result, automatically
             # generate the corresponding index.
             if self.index_generated_on_the_fly:
-                return []
+                api.create_index(self.ordering_sequence)
 
             self.index_generated_on_the_fly = True
-
-            api.create_index([
-                (name, self.order_by[name]) for name in self.order_by
-            ])
 
             return self.build_cursor(repository)
 
@@ -46,3 +42,26 @@ class Criteria(object):
             cursor.limit(self.limit)
 
         return cursor
+
+    @property
+    def ordering_sequence(self):
+        return [
+            (name, self.order_by[name]) for name in self.order_by
+        ]
+
+    def __str__(self):
+        statements = []
+
+        if self.condition:
+            statements.append('WHERE ' + str(self.condition))
+
+        if self.order_by:
+            statements.append('ORDER BY ' + str(self.order_by))
+
+        if self.offset:
+            statements.append('OFFSET ' + str(self.offset))
+
+        if self.limit:
+            statements.append('LIMIT ' + str(self.limit))
+
+        return ' '.join(statements)
