@@ -16,7 +16,7 @@ test_local: cache_clean
 	nosetests-3.3 -c local.cfg
 
 install:
-	sudo python setup.py install --optimize 2 --compile
+	python setup.py install --optimize 2 --compile
 
 cache_clean:
 	find . -name *.pyc -exec rm {} \;
