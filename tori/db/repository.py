@@ -4,7 +4,7 @@
 :Status: Stable
 """
 import inspect
-from tori.db.common import PseudoObjectId
+from tori.db.common import PseudoObjectId, ProxyObject
 from tori.db.criteria import Criteria
 from tori.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
 from tori.db.mapper import AssociationType, CascadingType
@@ -103,7 +103,16 @@ class Repository(object):
         entity_list = []
 
         for data in cursor:
-            entity = self._dehydrate_object(data)
+            entity = self._dehydrate_object(data) \
+                if len(data.keys()) > 1 \
+                else ProxyObject(
+                    self._session,
+                    self._class,
+                    data['_id'],
+                    False,
+                    None,
+                    False
+                )
             record = self._session.find_record(id, self._class)
 
             if record and record.status in [Record.STATUS_DELETED, Record.STATUS_IGNORED]:

@@ -11,7 +11,7 @@ class Criteria(object):
     """ Criteria
     """
     @restrict_type(condition=dict, order_by=dict, offset=int, limit=int)
-    def __init__(self, condition={}, order_by={}, offset=0, limit=0):
+    def __init__(self, condition={}, order_by={}, offset=0, limit=0, force_loaded=False):
         self.condition = condition
         self.order_by  = order_by
         self.offset    = offset
@@ -21,6 +21,9 @@ class Criteria(object):
     def build_cursor(self, repository):
         api    = repository.api
         cursor = api.find(self.condition)
+
+        if self.limit != 1:
+            cursor = api.find(self.condition, fields=[])
 
         try:
             if self.order_by:

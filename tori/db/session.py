@@ -98,7 +98,9 @@ class Session(object):
             :type  entities: type of list of type
         """
         for entity in entities:
-            self._uow.register_deleted(entity)
+            targeted_entity = self._force_load(entity)
+
+            self._uow.register_deleted(targeted_entity)
 
     def refresh(self, *entities):
         """ Refresh entities
@@ -110,7 +112,7 @@ class Session(object):
             self.refresh_one(entity)
 
     def refresh_one(self, entity):
-        self._uow.refresh(entity)
+        self._uow.refresh(self._force_load(entity))
 
     def persist(self, *entities):
         """ Persist entities
@@ -122,14 +124,15 @@ class Session(object):
             self.persist_one(entity)
 
     def persist_one(self, entity):
+        targeted_entity    = self._force_load(entity)
         registering_action = self._uow.register_new \
-            if self._uow.is_new(entity) \
+            if self._uow.is_new(targeted_entity) \
             else self._uow.register_dirty
 
-        registering_action(entity)
+        registering_action(targeted_entity)
 
     def recognize(self, entity):
-        self._uow.register_clean(entity)
+        self._uow.register_clean(self._force_load(entity))
 
     def flush(self):
         """ Flush all changes of the session.
@@ -188,3 +191,8 @@ class Session(object):
                 entity.__setattr__(property_name, ProxyCollection(self, entity, guide))
             else:
                 raise IntegrityConstraintError('Unknown type of entity association')
+
+    def _force_load(self, entity):
+        return entity._actual \
+            if isinstance(entity, ProxyObject) \
+            else entity

@@ -447,7 +447,7 @@ class UnitOfWork(object):
                 record.update()
 
     def retrieve_record(self, entity):
-        uid = self._retrieve_entity_guid(entity)
+        uid = self._retrieve_entity_guid(self._em._force_load(entity))
 
         if uid not in self._record_map:
             raise UOWUnknownRecordError('Unable to retrieve the record for this entity.')
