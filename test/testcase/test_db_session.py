@@ -187,13 +187,22 @@ class TestDbSession(TestCase):
 
         collection = self.session.collection(TestNode)
 
-        # Added an extra node that relies on node "f" without using the collection.
-        collection._api.insert({'left': None, 'right': reference_map['f'].id, 'name': 'extra'})
+        # Added an extra node that relies on node "f" without using the
+        # repository.
+        collection._api.insert(
+            {'left': None, 'right': reference_map['f'].id, 'name': 'extra'}
+        )
 
         self.session.delete(reference_map['e'], reference_map['h'])
         self.session.flush()
 
-        self.assertEqual(expected_max_size - 2, len(collection.filter()))
+        remainings = collection.filter()
+
+        self.assertEqual(
+            expected_max_size - 2,
+            len(remainings),
+            ', '.join([d.name for d in remainings])
+        )
 
     def test_commit_with_delete_with_cascading_with_no_dependency_left(self):
         reference_map = self.__inject_data_with_cascading()
