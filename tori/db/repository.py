@@ -89,16 +89,18 @@ class Repository(object):
 
         return self._dehydrate_object(data)
 
-    def find(self, criteria):
+    def find(self, criteria, force_loading=False):
         """ Find entity with criteria
 
             :param criteria: the search criteria
             :type  criteria: tori.db.criteria.Criteria
+            :param force_loading: the flag to force loading all references behind the proxy
+            :type  force_loading: bool
 
             :returns: the result based on the given criteria
             :rtype: object or list of objects
         """
-        cursor = criteria.build_cursor(self)
+        cursor = criteria.build_cursor(self, force_loading)
 
         entity_list = []
 
@@ -135,15 +137,15 @@ class Repository(object):
         """
         return criteria.build_cursor(self).count()
 
-    def filter(self, condition={}, order_by={}, offset=0, limit=0):
+    def filter(self, condition={}, order_by={}, offset=0, limit=0, force_loading=False):
         criteria  = Criteria(condition, order_by, offset, limit)
 
-        return self.find(criteria)
+        return self.find(criteria, force_loading)
 
-    def filter_one(self, condition={}, order_by={}, offset=0):
+    def filter_one(self, condition={}, order_by={}, offset=0, force_loading=False):
         criteria  = Criteria(condition, order_by, offset, 1)
 
-        return self.find(criteria)
+        return self.find(criteria, force_loading)
 
     def post(self, entity):
         if entity.__session__:
@@ -210,7 +212,11 @@ class Repository(object):
         for property_name in self._class.__relational_map__:
             cascading_options = self._class.__relational_map__[property_name].cascading_options
 
-            if cascading_options and CascadingType.DELETE in cascading_options:
+            if cascading_options \
+              and (
+                  CascadingType.DELETE in cascading_options \
+                  or CascadingType.PERSIST in cascading_options
+              ):
                 self._has_cascading = True
 
                 break

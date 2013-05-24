@@ -1,10 +1,11 @@
+import pymongo
 from imagination.decorator.validator import restrict_type
 
 class Order(object):
     """ Sorting Order Definition """
-    ASC  = 1
+    ASC  = pymongo.ASCENDING
     """ Ascending Order """
-    DESC = -1
+    DESC = pymongo.DESCENDING
     """ Descending Order """
 
 class Criteria(object):
@@ -18,11 +19,11 @@ class Criteria(object):
         self.limit     = limit
         self.index_generated_on_the_fly = False
 
-    def build_cursor(self, repository):
+    def build_cursor(self, repository, force_loading=False):
         api    = repository.api
         cursor = api.find(self.condition)
 
-        if self.limit != 1:
+        if not force_loading and self.limit != 1:
             cursor = api.find(self.condition, fields=[])
 
         try:

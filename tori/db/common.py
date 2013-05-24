@@ -134,7 +134,7 @@ class PseudoObjectId(ObjectId):
 
 class ProxyObject(object):
     def __init__(self, session, cls, object_id, read_only, cascading_options, is_reverse_proxy):
-        if isinstance(cls, ProxyObject):
+        if isinstance(cls, ProxyObject) or not object_id:
             raise RuntimeError('Cannot initiate a proxy')
 
         self.__dict__['_class']      = cls
@@ -146,6 +146,9 @@ class ProxyObject(object):
         self.__dict__['_is_reverse_proxy']  = is_reverse_proxy
 
     def __get_object(self):
+        if not self.__dict__['_object_id']:
+            raise RuntimeError('Cannot load the proxy')
+
         if not self.__dict__['_object']:
             entity = self._collection.get(self.__dict__['_object_id'])
 

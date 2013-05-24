@@ -172,6 +172,9 @@ class Session(object):
 
             # In the direct mapping, the lazy loading is applied wherever applicable.
             if guide.association in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
+                if not entity.__getattribute__(property_name):
+                    continue
+
                 entity.__setattr__(
                     property_name,
                     ProxyFactory.make(
@@ -181,10 +184,13 @@ class Session(object):
                     )
                 )
             elif guide.association == AssociationType.ONE_TO_MANY:
-                proxy_list = [
-                    ProxyFactory.make(self, object_id, guide)
-                    for object_id in entity.__getattribute__(property_name)
-                ]
+                proxy_list = []
+
+                for object_id in entity.__getattribute__(property_name):
+                    if not object_id:
+                        continue
+
+                    proxy_list.append(ProxyFactory.make(self, object_id, guide))
 
                 entity.__setattr__(property_name, proxy_list)
             elif guide.association == AssociationType.MANY_TO_MANY:
