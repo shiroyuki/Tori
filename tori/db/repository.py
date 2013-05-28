@@ -4,11 +4,11 @@
 :Status: Stable
 """
 import inspect
-from tori.db.common import PseudoObjectId, ProxyObject
-from tori.db.criteria import Criteria
+from tori.db.common    import PseudoObjectId, ProxyObject
+from tori.db.criteria  import Criteria, Order
 from tori.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
-from tori.db.mapper import AssociationType, CascadingType
-from tori.db.uow import Record
+from tori.db.mapper    import AssociationType, CascadingType
+from tori.db.uow       import Record
 
 class Repository(object):
     """
@@ -20,6 +20,7 @@ class Repository(object):
     :type  representing_class: type
 
     """
+
     def __init__(self, session, representing_class):
         self._class   = representing_class
         self._session = session
@@ -122,7 +123,7 @@ class Repository(object):
 
             entity_list.append(entity)
 
-        if criteria.limit == 1 and entity_list:
+        if criteria._limit == 1 and entity_list:
             return entity_list[0]
 
         return entity_list
@@ -137,13 +138,18 @@ class Repository(object):
         """
         return criteria.build_cursor(self).count()
 
-    def filter(self, condition={}, order_by={}, offset=0, limit=0, force_loading=False):
-        criteria  = Criteria(condition, order_by, offset, limit)
+    def filter(self, condition={}, force_loading=False):
+        criteria = Criteria()
+
+        criteria.where(condition)
 
         return self.find(criteria, force_loading)
 
-    def filter_one(self, condition={}, order_by={}, offset=0, force_loading=False):
-        criteria  = Criteria(condition, order_by, offset, 1)
+    def filter_one(self, condition={}, force_loading=False):
+        criteria = Criteria()
+
+        criteria.where(condition)
+        criteria.limit(1)
 
         return self.find(criteria, force_loading)
 
@@ -223,8 +229,28 @@ class Repository(object):
 
         return self._has_cascading
 
-    def new_criteria(self, *args, **kwargs):
-        return Criteria(*args, **kwargs)
+    def new_criteria(self):
+        return Criteria()
+
+    def index(self, order_list, force_index=False):
+        """ Index data
+
+            :param order_list: the list of orders
+            :type  order_list: list
+            :param force_index: force indexing if necessary
+            :type  force_index: bool
+        """
+        self.api.ensure_index(
+            order_list,
+            background=(not force_index)
+        )
+
+    def auto_index(self):
+        """ Automatically index data (based on the ``entity`` decorator)
+        """
+        index_list = self._class.__indexes__
+
+        pass # TBC
 
     def __len__(self):
         return self._api.count()
