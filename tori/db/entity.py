@@ -2,6 +2,7 @@
 :Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
 """
 import inspect
+from imagination.decorator.validator import restrict_type
 from tori.db.common    import PseudoObjectId
 from tori.db.exception import LockedIdException
 
@@ -14,11 +15,11 @@ def entity(*args, **kwargs):
         :rtype:  object
     """
     # Get the first parameter.
-    first_param = args[0]
+    first_param = args[0] if args else None
 
     # If the first parameter is really a reference to a class, then instantiate
     # the singleton instance.
-    if len(args) == 1 and inspect.isclass(first_param) and isinstance(first_param, type):
+    if args and inspect.isclass(first_param) and isinstance(first_param, type):
         class_reference = first_param
 
         return prepare_entity_class(class_reference)
@@ -29,7 +30,7 @@ def entity(*args, **kwargs):
 
     return decorator
 
-def prepare_entity_class(cls, collection_name=None):
+def prepare_entity_class(cls, collection_name=None, indexes=[]):
     """ Create a entity class
 
     :param cls: the document class
@@ -48,7 +49,8 @@ def prepare_entity_class(cls, collection_name=None):
     id                  Instance Document Identifier Yes  Yes, ONLY ``id`` is undefined.
     __collection_name__ Static   Collection Name     Yes  Yes, but NOT recommended.
     __relational_map__  Static   Relational Map      Yes  Yes, but NOT recommended.
-    __session__         Static   DB Session          Yes  Yes, but NOT recommended.
+    __session__         Instance DB Session          Yes  Yes, but NOT recommended.
+    __indexes__         Static   Indexing List       Yes  Yes, but NOT recommended.
     =================== ======== =================== ==== ==============================
 
     For example,
@@ -60,11 +62,11 @@ def prepare_entity_class(cls, collection_name=None):
             def __init__(self, content, title=''):
                 self.content = content
                 self.title   = title
-                
+
     where the collection name is automatically defined as "note".
-    
+
     .. tip::
-    
+
         You can define it as "notes" by replacing ``@entity`` with ``@entity('notes')``.
     """
     if not cls:
@@ -88,13 +90,14 @@ def prepare_entity_class(cls, collection_name=None):
     cls.__collection_name__ = collection_name or cls.__name__.lower()
     cls.__relational_map__  = {}
     cls.__session__         = None
+    cls.__indexes__         = indexes
 
     cls.id = property(get_id, set_id)
 
     return cls
 
 class Entity(object):
-    """ Dynamic-attribute Base Document
+    """ Dynamic-attribute Basic Entity
 
         :param attributes: key-value dictionary
         :type  attributes: dict
@@ -110,6 +113,30 @@ class Entity(object):
     def __init__(self, **attributes):
         for name in attributes:
             self.__setattr__(name, attributes[name])
+
+class Index(object):
+    """ Index
+
+        :param field_list: the list of field
+        :type  field_list: list
+        :param unique: the unique flag
+        :type  unique: bool
+
+        Unless a field is not in the map of fixed orders, the index will
+        instruct the repository to ensure all combinations of indexes are
+        defined whenever is necessary.
+    """
+    def __init__(self, field_list, unique=False):
+        self._field_list = field_list
+        self._unique     = unique
+
+    @property
+    def field_list(self):
+        return self._field_list
+
+    @property
+    def unique(self):
+        return self._unique
 
 class BasicAssociation(object):
     """ Basic Association

@@ -71,10 +71,14 @@ class Session(object):
         self.register_class(entity_class)
 
         if key not in self._repository_map:
-            self._repository_map[key] = Repository(
+            repository = Repository(
                 session=self,
                 representing_class=entity_class
             )
+
+            repository.auto_index()
+
+            self._repository_map[key] = repository
 
         return self._repository_map[key]
 

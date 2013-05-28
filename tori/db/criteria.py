@@ -10,62 +10,124 @@ class Order(object):
 
 class Criteria(object):
     """ Criteria
+
+        .. note::
+
+            The current implementation does not support filtering on
+            associated entities.
+
     """
-    @restrict_type(condition=dict, order_by=dict, offset=int, limit=int)
-    def __init__(self, condition={}, order_by={}, offset=0, limit=0, force_loaded=False):
-        self.condition = condition
-        self.order_by  = order_by
-        self.offset    = offset
-        self.limit     = limit
-        self.index_generated_on_the_fly = False
+    @restrict_type()
+    def __init__(self):
+        self._condition = {}
+        self._order_by  = []
+        self._offset    = 0
+        self._limit     = 0
+        self._indexed    = False
 
-    def build_cursor(self, repository, force_loading=False):
+    def where(self, key_or_full_condition, filter_data=None):
+        """ Define the condition
+
+            :type  key_or_full_condition: str or dict
+            :param key_or_full_condition: either the key of the condition
+                                          (e.g., a field name, $or, $gt etc.)
+            :param filter_data: the filter data associating to the key
+        """
+        if isinstance(key_or_full_condition, dict):
+            if filter_data:
+                raise ValueError('Assuming that the full condition is given, the looking value is not required.')
+
+            self._condition = key_or_full_condition
+
+            return self
+
+        self._condition[key_or_full_condition] = filter_data
+
+        return self
+
+    def order(self, field, direction=Order.ASC):
+        """ Define the returning order
+
+            :param field: the sorting field
+            :type  field: str
+            :param direction: the sorting direction
+        """
+        self._order_by.append((field, direction))
+
+        return self
+
+    def start(self, offset):
+        """ Define the filter offset
+
+            :param offset: the filter offset
+            :type  offset: int
+        """
+        self._offset = offset
+
+        return self
+
+    def limit(self, limit):
+        """ Define the filter limit
+
+            :param limit: the filter limit
+            :type  limit: int
+        """
+        self._limit = limit
+
+        return self
+
+    def build_cursor(self, repository, force_loading=False, force_index=False):
+        """ Build the cursor
+            
+            :param repository: the repository
+            :type  repository: tori.db.repository.Repository
+            :param force_loading: force loading on any returned entities
+            :type  force_loading: bool
+            :param force_index: force indexing if necessary
+            :type  force_index: bool
+            
+            .. note:: This is mainly used by a repository internally.
+        """
         api    = repository.api
-        cursor = api.find(self.condition)
+        cursor = api.find(self._condition)
 
-        if not force_loading and self.limit != 1:
-            cursor = api.find(self.condition, fields=[])
+        if not force_loading and self._limit != 1:
+            cursor = api.find(self._condition, fields=[])
 
-        try:
-            if self.order_by:
-                cursor.sort(self.ordering_sequence)
-        except TypeError as exception:
-            # If it fails to tell the cursor to sort the result, automatically
-            # generate the corresponding index.
-            if self.index_generated_on_the_fly:
-                api.create_index(self.ordering_sequence)
+        if self._order_by:
+            if not self._indexed:
+                repository.index(
+                    self._order_by,
+                    force_index=force_index
+                )
 
-            self.index_generated_on_the_fly = True
+                self._indexed = True
 
-            return self.build_cursor(repository)
+                return self.build_cursor(repository, force_index=True)
+                
+            cursor.sort(self._order_by)
 
-        if self.offset and self.offset > 0:
-            cursor.skip(self.offset)
+        if self._offset and self._offset > 0:
+            cursor.skip(self._offset)
 
-        if self.limit and self.limit > 0:
-            cursor.limit(self.limit)
+        if self._limit and self._limit > 0:
+            cursor.limit(self._limit)
 
         return cursor
-
-    @property
-    def ordering_sequence(self):
-        return [
-            (name, self.order_by[name]) for name in self.order_by
-        ]
 
     def __str__(self):
         statements = []
 
-        if self.condition:
-            statements.append('WHERE ' + str(self.condition))
+        if self._condition:
+            statements.append('WHERE ' + str(self._condition))
 
-        if self.order_by:
-            statements.append('ORDER BY ' + str(self.order_by))
+        if self._order_by:
+            statements.append('ORDER BY ' + str(self._order_by))
 
-        if self.offset:
-            statements.append('OFFSET ' + str(self.offset))
+        if self._offset:
+            statements.append('OFFSET ' + str(self._offset))
 
-        if self.limit:
-            statements.append('LIMIT ' + str(self.limit))
+        if self._limit:
+            statements.append('LIMIT ' + str(self._limit))
 
         return ' '.join(statements)
