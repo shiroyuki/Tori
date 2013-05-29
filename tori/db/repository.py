@@ -5,6 +5,7 @@
 """
 import inspect
 from tori.db.common    import PseudoObjectId, ProxyObject
+from tori.db.entity    import Index
 from tori.db.criteria  import Criteria, Order
 from tori.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
 from tori.db.mapper    import AssociationType, CascadingType
@@ -257,17 +258,24 @@ class Repository(object):
         """
         return Criteria()
 
-    def index(self, order_list, force_index=False):
+    def index(self, index, force_index=False, unique=False):
         """ Index data
 
-            :param order_list: the list of orders
-            :type  order_list: list
+            :param index: the index
+            :type  index: list, tori.db.entity.Index or str
             :param force_index: force indexing if necessary
             :type  force_index: bool
+            :param unique: enforce uniqueness
+            :type  unique: bool
         """
         options = {
+            'unique':     unique,
             'background': (not force_index)
         }
+        order_list = index.to_list() if isinstance(index, Index) else index
+        
+        if isinstance(index, Index):
+            options['unique'] = index.unique
         
         if isinstance(order_list, list):
             indexed_field_list = ['{}_{}'.format(field, order) for field, order in order_list]
@@ -281,11 +289,16 @@ class Repository(object):
         """
         # Apply the relational indexes.
         for field in self._class.__relational_map__:
-            self.index(field)
+            guide = self._class.__relational_map__[field]
+            
+            if guide.inverted_by or guide.association != AssociationType.ONE_TO_ONE:
+                continue
+            
+            self.index(field, unique=True)
         
         # Apply the manual indexes.
         for index in self._class.__indexes__:
-            self.index(index.to_list())
+            self.index(index)
 
     def __len__(self):
         return self._api.count()
