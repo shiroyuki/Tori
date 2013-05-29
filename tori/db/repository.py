@@ -275,7 +275,7 @@ class Repository(object):
         order_list = index.to_list() if isinstance(index, Index) else index
         
         if isinstance(index, Index):
-            options['unique'] = index.unique
+            options['unique'] = unique or index.unique
         
         if isinstance(order_list, list):
             indexed_field_list = ['{}_{}'.format(field, order) for field, order in order_list]
