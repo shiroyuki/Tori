@@ -258,32 +258,23 @@ class Repository(object):
         """
         return Criteria()
 
-    def index(self, index, force_index=False, unique=False):
+    def index(self, index, force_index=False):
         """ Index data
 
             :param index: the index
             :type  index: list, tori.db.entity.Index or str
             :param force_index: force indexing if necessary
             :type  force_index: bool
-            :param unique: enforce uniqueness
-            :type  unique: bool
         """
         options = {
-            'unique':     unique,
             'background': (not force_index)
         }
         order_list = index.to_list() if isinstance(index, Index) else index
-        
-        if isinstance(index, Index):
-            options['unique'] = unique or index.unique
         
         if isinstance(order_list, list):
             indexed_field_list = ['{}_{}'.format(field, order) for field, order in order_list]
             indexed_field_list.sort()
             options['index_identifier'] = '-'.join(indexed_field_list)
-
-        if options['unique']:
-            options['sparse'] = True
 
         self.api.ensure_index(order_list, **options)
 
@@ -297,7 +288,7 @@ class Repository(object):
             if guide.inverted_by or guide.association != AssociationType.ONE_TO_ONE:
                 continue
             
-            self.index(field, unique=True)
+            self.index(field)
         
         # Apply the manual indexes.
         for index in self._class.__indexes__:
