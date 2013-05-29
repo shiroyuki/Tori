@@ -11,12 +11,6 @@ tori.db.common
 .. automodule:: tori.db.common
     :members:
 
-tori.db.criteria
-================
-
-.. automodule:: tori.db.criteria
-    :members:
-
 tori.db.entity
 ==============
 
@@ -59,8 +53,8 @@ tori.db.uow
 .. automodule:: tori.db.uow
     :members:
 
-tori.db.repository
-==================
+.. toctree::
+   :maxdepth: 1
+   :glob:
 
-.. automodule:: tori.db.repository
-    :members:
+   *
