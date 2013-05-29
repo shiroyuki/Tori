@@ -15,6 +15,13 @@ test_local: cache_clean
 	nosetests -c local.cfg
 	nosetests-3.3 -c local.cfg
 
+reset_mongodb:
+	mongo test_tori_db_manager --eval 'db.dropDatabase()'
+	mongo test_tori_db_mapper_link --eval 'db.dropDatabase()'
+	mongo test_tori_db_session --eval 'db.dropDatabase()'
+	mongo test_tori_db_session_assoc_m2m --eval 'db.dropDatabase()'
+	mongo test_tori_db_uow_cascade_on_refresh --eval 'db.dropDatabase()'
+
 install:
 	python setup.py install --optimize 2 --compile
 
