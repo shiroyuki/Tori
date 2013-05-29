@@ -23,7 +23,7 @@ class Criteria(object):
         self._order_by  = []
         self._offset    = 0
         self._limit     = 0
-        self._indexed    = False
+        self._indexed   = False
 
     def where(self, key_or_full_condition, filter_data=None):
         """ Define the condition
@@ -76,16 +76,16 @@ class Criteria(object):
 
         return self
 
-    def build_cursor(self, repository, force_loading=False, force_index=False):
+    def build_cursor(self, repository, force_loading=False, auto_index=False):
         """ Build the cursor
-            
+
             :param repository: the repository
             :type  repository: tori.db.repository.Repository
             :param force_loading: force loading on any returned entities
             :type  force_loading: bool
-            :param force_index: force indexing if necessary
-            :type  force_index: bool
-            
+            :param auto_index: the flag to automatically index sorting fields
+            :type  auto_index: bool
+
             .. note:: This is mainly used by a repository internally.
         """
         api    = repository.api
@@ -95,16 +95,14 @@ class Criteria(object):
             cursor = api.find(self._condition, fields=[])
 
         if self._order_by:
-            if not self._indexed:
+            if auto_index and not self._indexed:
                 repository.index(
                     self._order_by,
-                    force_index=force_index
+                    force_index=False
                 )
 
                 self._indexed = True
 
-                return self.build_cursor(repository, force_index=True)
-                
             cursor.sort(self._order_by)
 
         if self._offset and self._offset > 0:

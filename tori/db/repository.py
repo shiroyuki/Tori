@@ -26,6 +26,7 @@ class Repository(object):
         self._session = session
 
         self._has_cascading = None
+        self._auto_index    = False
 
         # Retrieve the collection
         self._api = session.db[representing_class.__collection_name__]
@@ -42,6 +43,9 @@ class Repository(object):
     @property
     def name(self):
         return self._class.__collection_name__
+
+    def auto_index(self, auto_index):
+        self._auto_index = auto_index
 
     def new(self, **attributes):
         """ Create a new document/entity

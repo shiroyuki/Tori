@@ -29,9 +29,12 @@ class Series(object):
 class TestDbFetchingWithIndice(TestCase):
     connection = Connection()
     session    = Session('test', connection['db_fetching_with_indice'])
+    base_index_count   = 2
+    manual_index_count = 2
+    auto_index_count   = 4
 
     def setUp(self):
-        #self.connection.drop_indexes()
+        self.indexes = self.session.db['system.indexes']
 
         authors = self.session.repository(Author)
         series  = self.session.repository(Series)
@@ -94,7 +97,6 @@ class TestDbFetchingWithIndice(TestCase):
                 repository._api.insert(fixture)
 
     def test_auto_index_on_normal_sorting(self):
-        indexes    = self.session.db['system.indexes']
         repository = self.session.repository(Series)
         criteria   = Criteria()
 
@@ -103,10 +105,9 @@ class TestDbFetchingWithIndice(TestCase):
         series_list = repository.find(criteria)
 
         self.assertEqual('RDG Red Data Girl', series_list[0].name)
-        self.assertEqual(4, indexes.count())
+        self.assertEqual(self.manual_index_count, self.indexes.count())
 
     def test_auto_index_on_combined_sorting(self):
-        indexes    = self.session.db['system.indexes']
         repository = self.session.repository(Series)
         criteria   = Criteria()
 
@@ -116,10 +117,9 @@ class TestDbFetchingWithIndice(TestCase):
         series_list = repository.find(criteria)
 
         self.assertEqual(4, series_list[2].id)
-        self.assertEqual(4, indexes.count())
+        self.assertEqual(self.manual_index_count, self.indexes.count())
 
     def test_auto_index_on_normal_sorting_with_predefined_indexes(self):
-        indexes    = self.session.db['system.indexes']
         repository = self.session.repository(Series)
         criteria   = Criteria()
 
@@ -129,4 +129,4 @@ class TestDbFetchingWithIndice(TestCase):
         series_list = repository.find(criteria)
         
         self.assertEqual('Library War', series_list[0].name)
-        self.assertEqual(4, indexes.count())
+        self.assertEqual(self.manual_index_count, self.indexes.count())
