@@ -269,7 +269,7 @@ class Repository(object):
             :type  unique: bool
         """
         options = {
-            'unique':     unique,
+            'unique':     False, #unique,
             'background': (not force_index)
         }
         order_list = index.to_list() if isinstance(index, Index) else index
