@@ -269,7 +269,7 @@ class Repository(object):
             :type  unique: bool
         """
         options = {
-            'unique':     False, #unique,
+            'unique':     unique,
             'background': (not force_index)
         }
         order_list = index.to_list() if isinstance(index, Index) else index
@@ -281,6 +281,9 @@ class Repository(object):
             indexed_field_list = ['{}_{}'.format(field, order) for field, order in order_list]
             indexed_field_list.sort()
             options['index_identifier'] = '-'.join(indexed_field_list)
+
+        if options['unique']:
+            options['sparse'] = True
 
         self.api.ensure_index(order_list, **options)
 
