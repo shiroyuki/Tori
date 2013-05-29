@@ -117,8 +117,8 @@ class Entity(object):
 class Index(object):
     """ Index
 
-        :param field_list: the list of field
-        :type  field_list: list
+        :param field_map: the map of field to index type
+        :type  field_map: dict
         :param unique: the unique flag
         :type  unique: bool
 
@@ -126,17 +126,25 @@ class Index(object):
         instruct the repository to ensure all combinations of indexes are
         defined whenever is necessary.
     """
-    def __init__(self, field_list, unique=False):
-        self._field_list = field_list
-        self._unique     = unique
+    def __init__(self, field_map, unique=False):
+        self._field_map = field_map
+        self._unique    = unique
 
     @property
-    def field_list(self):
-        return self._field_list
+    def field_map(self):
+        return self._field_map
 
     @property
     def unique(self):
         return self._unique
+
+    def to_list(self):
+        index_map = []
+
+        for field in self._field_map:
+            index_map.append((field, self._field_map[field]))
+
+        return index_map
 
 class BasicAssociation(object):
     """ Basic Association

@@ -19,6 +19,10 @@ class Repository(object):
     :param representing_class: the representing class
     :type  representing_class: type
 
+    A repository may automatically attempt to create an index if :meth:`auto_index`
+    define the auto-index flag. Please note that the auto-index feature is only
+    invoked when it tries to use a criteria with sorting or filtering with a
+    certain type of conditions.
     """
 
     def __init__(self, session, representing_class):
@@ -42,20 +46,29 @@ class Repository(object):
 
     @property
     def name(self):
+        """ Collection name
+
+            :rtype: str
+        """
         return self._class.__collection_name__
 
     def auto_index(self, auto_index):
+        """ Enable the auto-index feature
+
+            :param auto_index: the index flag
+            :type  auto_index: bool
+        """
         self._auto_index = auto_index
 
     def new(self, **attributes):
         """ Create a new document/entity
 
-        :param attributes: attribute map
-        :return: object
+            :param attributes: attribute map
+            :return: object
 
-        .. note::
+            .. note::
 
-            This method deal with data mapping
+                This method deal with data mapping.
 
         """
         spec = inspect.getargspec(self._class.__init__) # constructor contract
@@ -105,7 +118,11 @@ class Repository(object):
             :returns: the result based on the given criteria
             :rtype: object or list of objects
         """
-        cursor = criteria.build_cursor(self, force_loading)
+        cursor = criteria.build_cursor(
+            self,
+            force_loading=force_loading,
+            auto_index=self._auto_index
+        )
 
         entity_list = []
 
@@ -234,6 +251,10 @@ class Repository(object):
         return self._has_cascading
 
     def new_criteria(self):
+        """ Create a criteria
+
+            :rtype: :class:`tori.db.criteria.Criteria`
+        """
         return Criteria()
 
     def index(self, order_list, force_index=False):
@@ -244,17 +265,27 @@ class Repository(object):
             :param force_index: force indexing if necessary
             :type  force_index: bool
         """
-        self.api.ensure_index(
-            order_list,
-            background=(not force_index)
-        )
+        options = {
+            'background': (not force_index)
+        }
+        
+        if isinstance(order_list, list):
+            indexed_field_list = ['{}_{}'.format(field, order) for field, order in order_list]
+            indexed_field_list.sort()
+            options['index_identifier'] = '-'.join(indexed_field_list)
 
-    def auto_index(self):
-        """ Automatically index data (based on the ``entity`` decorator)
+        self.api.ensure_index(order_list, **options)
+
+    def setup_index(self):
+        """ Set up index for the entity based on the ``entity`` and ``link`` decorators
         """
-        index_list = self._class.__indexes__
-
-        pass # TBC
+        # Apply the relational indexes.
+        for field in self._class.__relational_map__:
+            self.index(field)
+        
+        # Apply the manual indexes.
+        for index in self._class.__indexes__:
+            self.index(index.to_list())
 
     def __len__(self):
         return self._api.count()

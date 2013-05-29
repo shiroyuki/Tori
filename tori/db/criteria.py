@@ -24,6 +24,7 @@ class Criteria(object):
         self._offset    = 0
         self._limit     = 0
         self._indexed   = False
+        self._indexed_target_list = []
 
     def where(self, key_or_full_condition, filter_data=None):
         """ Define the condition
@@ -40,6 +41,10 @@ class Criteria(object):
             self._condition = key_or_full_condition
 
             return self
+
+        # if this is not a special instruction, append for indexing.
+        if key_or_full_condition[0] != '$':
+            self._indexed_target_list.append(key_or_full_condition)
 
         self._condition[key_or_full_condition] = filter_data
 
@@ -94,15 +99,17 @@ class Criteria(object):
         if not force_loading and self._limit != 1:
             cursor = api.find(self._condition, fields=[])
 
-        if self._order_by:
+        if auto_index and not self._indexed:
+            if self._indexed_target_list:
+                for field in self._indexed_target_list:
+                    repository.index(field)
+
             if auto_index and not self._indexed:
-                repository.index(
-                    self._order_by,
-                    force_index=False
-                )
+                repository.index(self._order_by)
 
-                self._indexed = True
+            self._indexed = True
 
+        if self._order_by:
             cursor.sort(self._order_by)
 
         if self._offset and self._offset > 0:

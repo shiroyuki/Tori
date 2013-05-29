@@ -76,7 +76,7 @@ class Session(object):
                 representing_class=entity_class
             )
 
-            repository.auto_index()
+            repository.setup_index()
 
             self._repository_map[key] = repository
 
