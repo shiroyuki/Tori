@@ -7,20 +7,20 @@ doc: clean
 doc_update:
 	cd docs && make html
 
-test: cache_clean
+test: test_py3
+
+test_py2: cache_clean reset_mongodb
 	nosetests -c nose.cfg
+
+test_py3: cache_clean reset_mongodb
 	nosetests-3.3 -c nose.cfg
 
-test_local: cache_clean
-	nosetests -c local.cfg
-	nosetests-3.3 -c local.cfg
-
 reset_mongodb:
-	mongo test_tori_db_manager --eval 'db.dropDatabase()'
-	mongo test_tori_db_mapper_link --eval 'db.dropDatabase()'
-	mongo test_tori_db_session --eval 'db.dropDatabase()'
-	mongo test_tori_db_session_assoc_m2m --eval 'db.dropDatabase()'
-	mongo test_tori_db_uow_cascade_on_refresh --eval 'db.dropDatabase()'
+	mongo test_tori_db_manager --eval 'db.dropDatabase()' > /dev/null
+	mongo test_tori_db_mapper_link --eval 'db.dropDatabase()' > /dev/null
+	mongo test_tori_db_session --eval 'db.dropDatabase()' > /dev/null
+	mongo test_tori_db_session_assoc_m2m --eval 'db.dropDatabase()' > /dev/null
+	mongo test_tori_db_uow_cascade_on_refresh --eval 'db.dropDatabase()' > /dev/null
 
 install:
 	python setup.py install --optimize 2 --compile
