@@ -344,15 +344,15 @@ Options for Associations
 
 The decorator :meth:`tori.db.mapper.link` has the following options:
 
-=========== ============================================================================================
+=========== ======================================================================================================
 Option      Description
-=========== ============================================================================================
+=========== ======================================================================================================
 association the type of associations (See :class:`tori.db.mapper.AssociationType`.)
-cascading   the list of allowed cascading operations (See :class:`tori.db.mapper.CascadingType`.)
+cascading   the list of allowed cascading operations (See :doc:`cascading` :class:`tori.db.mapper.CascadingType`.)
 inverted_by the name of property used where **enable the reverse mapping if defined**
 mapped_by   the name of property to be map
 read_only   the flag to disable property setters (only usable with :class:`tori.db.common.ProxyObject`.)
 target      the full name of class or the actual class
-=========== ============================================================================================
+=========== ======================================================================================================
 
 .. seealso:: :doc:`../../api/db/index`

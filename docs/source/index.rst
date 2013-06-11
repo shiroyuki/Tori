@@ -11,6 +11,11 @@ Tori Framework
 Tori is a micro framework based on Facebook's Tornado framework 2.x and supports
 both Python 2.6+, including Python 3.3+. (Read more from the :doc:`manual/introduction`.)
 
+.. note::
+
+    If the document is unclear or missing or needs improvement, please help us
+    by contributing to the codebase of `Tori on GitHub <https://github.com/shiroyuki/Tori>`_.
+
 What next?
 ----------
 

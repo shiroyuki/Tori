@@ -7,12 +7,14 @@ Tori Framework introduces the object-relational mapping module for MongoDB 2.0 o
 
 .. toctree::
     :maxdepth: 3
+    :glob:
     
     introduction
     setup
     basic-usage
     working-with-association
     handling-transactions
+    *
 
 Testing Environments
 ====================
