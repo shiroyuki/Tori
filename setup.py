@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name         = 'Tori',
     version      = '2.1',
-    description  = 'Micro Web Framework',
+    description  = 'Micro Web Framework and ORM for MongoDB',
     author       = 'Juti Noppornpitak',
     author_email = 'juti_n@yahoo.co.jp',
     url          = 'http://shiroyuki.com/work/projects-tori',
@@ -18,6 +18,6 @@ setup(
         'tori.socket',
         'tori.template'
     ],
-    scripts      = ['bin/nest'],
+    scripts          = ['bin/nest'],
     install_requires = ['imagination', 'kotoba', 'tornado', 'jinja2', 'pymongo']
 )
