@@ -17,7 +17,6 @@ class Criteria(object):
             associated entities.
 
     """
-    @restrict_type()
     def __init__(self):
         self._condition = {}
         self._order_by  = []

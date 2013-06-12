@@ -1,9 +1,9 @@
 Introduction
 ************
 
-Tori is a micro web framework, based on the latest release of Facebook's
-Tornado Framework, and a collection of libraries, e.g. ORM for MongoDB. It
-supports both Python 2.6, 2.7, and 3.3+.
+Tori is a collection of libraries, a micro web framework based on Facebook's
+Tornado framework 2.x and the ORM for MongoDB and supports Python 2.7+ and
+Python 3.3+.
 
 Before using
 ------------

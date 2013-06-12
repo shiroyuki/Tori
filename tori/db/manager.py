@@ -3,8 +3,7 @@ from bson.objectid import ObjectId
 from tori.db.session import Session
 
 class Manager(object):
-    def __init__(self, name, connection=None, document_types=[]):
-        """Entity Manager
+    """ Entity Manager
 
         :param name: the name of the database
         :type  name: str
@@ -12,7 +11,8 @@ class Manager(object):
         :type  connection: pymongo.Connection
         :param document_types: the list of document classes/types
         :type  document_types: list
-        """
+    """
+    def __init__(self, name, connection=None, document_types=[]):
         self._name             = name
         self._connection       = connection or Connection()
         self._database         = self._connection[self._name]
@@ -37,6 +37,16 @@ class Manager(object):
         return self._database
 
     def open_session(self, id=None, supervised=False):
+        """ Open a session
+
+            :param id: the session ID
+            :param supervised: the flag to indicate that the opening session
+                               will be observed and supervised by the manager.
+                               This allows the session to be reused by multiple
+                               components. However, it is not **thread-safe**.
+                               It is disabled by default.
+            :type  supervised: bool
+        """
         if not supervised:
             return Session(0, self.db, self._registered_types)
 
@@ -54,6 +64,13 @@ class Manager(object):
         return session
 
     def close_session(self, id_or_session):
+        """ Close the managed session
+
+            .. warning::
+
+                This method is designed to bypass errors when the given ID is
+                unavailable or already closed.
+        """
         id = id_or_session.id if isinstance(id_or_session, Session) else id_or_session
 
         if not id or id not in self._session_map:

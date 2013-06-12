@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-:Author: Juti Noppornpitak <jnopporn@shiroyuki.com>
-
-This is a module handling object association.
-
 .. note::
 
     The current implementation doesn't support merging or detaching a document

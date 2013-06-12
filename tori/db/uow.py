@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Unit of Work
-############
-"""
 from time      import time
 from threading import Lock as ThreadLock
 from tori.db.common    import Serializer, PseudoObjectId, ProxyObject
@@ -48,7 +44,8 @@ class Record(object):
 class DependencyNode(object):
     """ Dependency Node
 
-    This is designed to be bi-directional to maximize flexibility on traversing the graph.
+        This is designed to be bi-directional to maximize flexibility on
+        traversing the graph.
     """
     def __init__(self, record):
         self.created_at     = int(time() * 1000000)
@@ -191,6 +188,11 @@ class UnitOfWork(object):
         self._unfreeze()
 
     def register_new(self, entity):
+        """ Register a new entity
+
+            :param entity: the entity to register
+            :type  entity: object
+        """
         self._freeze()
 
         self._register_new(entity)
@@ -200,7 +202,10 @@ class UnitOfWork(object):
     def _register_new(self, entity):
         """ Register a entity as new (protected)
 
-            .. warning:: This method bypasses the thread lock imposed in the public method. It is for internal use only.
+            .. warning::
+
+                This method bypasses the thread lock imposed in the public
+                method. It is for internal use only.
 
             :param entity: the target entity
             :type  entity: object
@@ -221,6 +226,12 @@ class UnitOfWork(object):
         self._cascade_operation(entity, CascadingType.PERSIST)
 
     def register_dirty(self, entity):
+        """ Register the entity with the dirty bit
+
+            :param entity: the entity to register
+            :type  entity: object
+        """
+
         self._freeze()
 
         record = self.retrieve_record(entity)
@@ -238,6 +249,12 @@ class UnitOfWork(object):
         self._unfreeze()
 
     def register_clean(self, entity):
+        """ Register the entity with the clean bit
+
+            :param entity: the entity to register
+            :type  entity: object
+        """
+
         uid = self._retrieve_entity_guid(entity)
 
         if uid in self._record_map:
@@ -249,6 +266,12 @@ class UnitOfWork(object):
         self._object_id_map[self._convert_object_id_to_str(entity.id, entity)] = uid
 
     def register_deleted(self, entity):
+        """ Register the entity with the removal bit
+
+            :param entity: the entity to register
+            :type  entity: object
+        """
+
         self._freeze()
 
         self._register_deleted(entity)

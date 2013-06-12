@@ -10,6 +10,8 @@ from tori.data.serializer import ArraySerializer
 from tori.db.exception import ReadOnlyProxyException
 
 class Serializer(ArraySerializer):
+    """ Object Serializer for Entity
+    """
     def extra_associations(self, data, stack_depth=0):
         if not isinstance(data, object):
             raise TypeError('The provided data must be an object')
@@ -44,6 +46,12 @@ class Serializer(ArraySerializer):
         return extra_associations
 
     def encode(self, data, stack_depth=0, convert_object_id_to_str=False):
+        """ Encode data into dictionary and list.
+
+            :param data:        the data to encode
+            :param stack_depth: traversal depth limit
+            :param convert_object_id_to_str: flag to convert object ID into string
+        """
         if not isinstance(data, object):
             raise TypeError('The provided data must be an object')
 
@@ -121,9 +129,11 @@ class Serializer(ArraySerializer):
         return super(Serializer, self).default_primitive_types() + [PseudoObjectId, ObjectId]
 
 class PseudoObjectId(ObjectId):
-    """Pseudo Object ID
+    """ Pseudo Object ID
 
-    This class extends from :class:`bson.objectid.ObjectId`.
+        This class extends from :class:`bson.objectid.ObjectId`.
+
+        This is used to differentiate stored entities and new entities.
     """
 
     def __str__(self):
@@ -133,6 +143,23 @@ class PseudoObjectId(ObjectId):
         return "PseudoObjectId('%s')" % (str(self),)
 
 class ProxyObject(object):
+    """ Proxy Collection
+
+        This class is designed to only load the entity whenever the data access
+        is required.
+
+        :param session: the managed session
+        :type  session: tori.db.session.Session
+        :param cls: the class to map the data
+        :type  cls: type
+        :param object_id: the object ID
+        :param read_only: the read-only flag
+        :type  read_only: bool
+        :param cascading_options: the cascading options
+        :type  cascading_options: list or tuple
+        :param is_reverse_proxy: the reverse proxy flag
+        :type  is_reverse_proxy: bool
+    """
     def __init__(self, session, cls, object_id, read_only, cascading_options, is_reverse_proxy):
         if isinstance(cls, ProxyObject) or not object_id:
             raise RuntimeError('Cannot initiate a proxy')
@@ -176,6 +203,18 @@ class ProxyObject(object):
         self.__get_object().__setattr__(key, value)
 
 class ProxyCollection(list):
+    """ Proxy Collection
+
+        This collection is extended from the built-in class :class:`list`,
+        designed to only load the associated data whenever is required.
+
+        :param session: the managed session
+        :type  session: tori.db.session.Session
+        :param origin: the origin of the association
+        :type  origin: object
+        :param guide: the relational guide
+        :type  guide: tori.db.mapper.RelatingGuide
+    """
     def __init__(self, session, origin, guide):
         self._session = session
         self._origin  = origin
@@ -183,6 +222,14 @@ class ProxyCollection(list):
         self._loaded  = False
 
     def reload(self):
+        """ Reload the data list
+
+            .. warning::
+
+                This method is **not recommended** to be called directly. Use
+                :meth:`tori.db.session.Session.refresh` on the owned object
+                instead.
+        """
         while len(self):
             self.pop(0)
 
@@ -257,6 +304,16 @@ class ProxyCollection(list):
         super(ProxyCollection, self).__setitem__(key, value)
 
 class ProxyFactory(object):
+    """ Proxy Factory
+
+        This factory is to create a proxy object.
+
+        :param session: the managed session
+        :type  session: tori.db.session.Session
+        :param id: the object ID
+        :param mapping_guide: the relational guide
+        :type  mapping_guide: tori.db.mapper.RelatingGuide
+    """
     @staticmethod
     def make(session, id, mapping_guide):
         is_reverse_proxy = mapping_guide.inverted_by != None
