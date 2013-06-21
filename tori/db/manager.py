@@ -1,5 +1,10 @@
-from pymongo import Connection
 from bson.objectid import ObjectId
+
+try:
+    from pymongo import MongoClient
+except:
+    from pymongo import Connection
+
 from tori.db.session import Session
 
 class Manager(object):
@@ -8,13 +13,13 @@ class Manager(object):
         :param name: the name of the database
         :type  name: str
         :param connection: the connection object
-        :type  connection: pymongo.Connection
+        :type  connection: pymongo.MongoClient
         :param document_types: the list of document classes/types
         :type  document_types: list
     """
     def __init__(self, name, connection=None, document_types=[]):
         self._name             = name
-        self._connection       = connection or Connection()
+        self._connection       = connection or MongoClient()
         self._database         = self._connection[self._name]
         self._session_map      = {}
         self._registered_types = {}
