@@ -149,6 +149,7 @@ class Application(BaseApplication):
     def __init__(self, configuration_location, **settings):
         BaseApplication.__init__(self, **settings)
 
+        self._service_assembler = ImaginationAssembler(ImaginationTransformer(AppServices))
         self._config_main_path = os.path.join(self._base_path, configuration_location)
         self._config_base_path = os.path.dirname(self._config_main_path)
 
@@ -167,7 +168,9 @@ class Application(BaseApplication):
         # Add the main configuration to the watch list.
         watch(self._config_main_path)
 
-        # Configure the included files first.
+        # Configure with the configuration files
+        self._service_assembler.activate_passive_loading()
+
         for inclusion in self._config.children('include'):
             source_location = inclusion.attribute('src')
 
@@ -183,6 +186,8 @@ class Application(BaseApplication):
             self._logger.info('Included the configuration from %s' % source_location)
 
         self._configure(self._config)
+
+        self._service_assembler.deactivate_passive_loading()
 
         # Override the properties with the parameters.
         if 'port' in settings:
@@ -264,8 +269,6 @@ class Application(BaseApplication):
         """ Register services. """
         service_blocks = configuration.children('service')
 
-        assembler = ImaginationAssembler(ImaginationTransformer(AppServices))
-
         for service_block in service_blocks:
             service_config_path = service_block.data()
 
@@ -279,7 +282,7 @@ class Application(BaseApplication):
 
             self._logger.info('Loading services from {}'.format(config_file_path))
 
-            assembler.load(config_file_path)
+            self._service_assembler.load(config_file_path)
 
     def _map_routing_table(self, configuration):
         """
