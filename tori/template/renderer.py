@@ -76,7 +76,13 @@ class DefaultRenderer(Renderer):
         self.storage  = Environment(
             loader      = self.loader,
             trim_blocks = not debug_mode,
-            auto_reload = debug_mode
+            auto_reload = debug_mode,
+            extensions  = [
+                'jinja2.ext.do',
+                'jinja2.ext.i18n',
+                'jinja2.ext.loopcontrols',
+                'jinja2.ext.autoescape',
+            ]
         )
 
     def _get_filesystem_loader(self):
