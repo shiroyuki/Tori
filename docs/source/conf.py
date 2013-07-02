@@ -319,6 +319,8 @@ class Mock(object):
 
 MOCK_MODULES = [
     'tornado',
+    'tornado.autoreload',
+    'tornado.wsgi',
     'tornado.ioloop',
     'tornado.ioloop.IOLoop',
     'tornado.web',
@@ -334,6 +336,8 @@ MOCK_MODULES = [
     'kotoba.kotoba.Kami',
     'kotoba.load_from_file',
     'imagination',
+    'imagination.helper.assembler',
+    'imagination.helper.data',
     'imagination.locator',
     'imagination.locator.Locator',
     'imagination.loader',
