@@ -9,6 +9,7 @@ setup(
     url          = 'http://shiroyuki.com/work/projects-tori',
     packages     = [
         'tori',
+        'tori.cli',
         'tori.data',
         'tori.db',
         'tori.decorator',
