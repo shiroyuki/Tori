@@ -51,6 +51,8 @@ class BaseApplication(object):
 
         self._hierarchy_level = len(self.__class__.__mro__) - 1
 
+        self._ioloop = IOLoop.instance()
+
         # Setting for the application.
         self._settings          = settings
         self._settings['debug'] = False
@@ -111,6 +113,9 @@ class BaseApplication(object):
 
         return self
 
+    def add(self, callable_reference, timeout=500):
+        self._ioloop.add_timeout(timeout, callable_reference)
+
     def start(self):
         """
         Start a server/service.
@@ -119,7 +124,7 @@ class BaseApplication(object):
             self._backend_app.listen(self._listening_port, self._listening_addr)
 
             self._logger.info("Start the application based at %s." % self._base_path)
-            IOLoop.instance().start()
+            self._ioloop.start()
         except KeyboardInterrupt:
             self._logger.debug("Cleanly stopped.")
 
