@@ -2,10 +2,10 @@
 import argparse
 import re
 import sys
-from imagination.decorator import restrict_type
-from tori.application      import Application
-from tori.centre           import services
-from tori.cli.exception    import NotConfigured, TerminationSignal, CommandNotFound
+from imagination.decorator.validator import restrict_type
+from tori.application   import Application
+from tori.centre        import services
+from tori.cli.exception import NotConfigured, TerminationSignal, CommandNotFound
 
 class Console(object):
     """ Main Console
