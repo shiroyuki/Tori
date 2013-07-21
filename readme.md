@@ -2,7 +2,7 @@
 
 ## CI Build Status (Current Branch)
 
-[![Build Status](https://travis-ci.org/shiroyuki/Tori.png?branch=master)](https://travis-ci.org/shiroyuki/Tori)
+[![Build Status](https://travis-ci.org/shiroyuki/Tori.png?branch=v2.1)](https://travis-ci.org/shiroyuki/Tori)
 
 ## Manual/Reference
 
