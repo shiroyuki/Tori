@@ -7,6 +7,6 @@ services:
   - redis
 install:
   - "pip install kotoba tornado jinja2 sqlalchemy redis pymongo"
-  - "pip install https://bitbucket.org/shiroyuki/ossarchive/downloads/Imagination-1.6.1a.tar.gz"
-  #- "git clone https://github.com/shiroyuki/Imagination.git && cd Imagination && make install"
+  #- "pip install https://bitbucket.org/shiroyuki/ossarchive/downloads/Imagination-1.6a2.tar.gz"
+  - "git clone https://github.com/shiroyuki/Imagination.git && cd Imagination && make install && cd ../"
 script: "make clean && make reset_mongodb && nosetests -c nose.cfg"
