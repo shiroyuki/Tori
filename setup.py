@@ -1,8 +1,8 @@
 from distutils.core import setup
 
 setup(
-    name         = 'Tori',
-    version      = '2.1',
+    name         = 'tori',
+    version      = '2.1.1',
     description  = 'Micro Web Framework and ORM for MongoDB',
     author       = 'Juti Noppornpitak',
     author_email = 'juti_n@yahoo.co.jp',
