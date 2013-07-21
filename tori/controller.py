@@ -223,8 +223,8 @@ class ErrorController(Controller):
     def prepare(self):
         raise HTTPError(self._status_code)
 
-class ResourceService(RequestHandler):
-    """ Resource service is to serve a static resource via HTTP/S protocal. """
+class ResourceService(Controller):
+    """ Resource service is to serve a static resource via HTTP/S protocol. """
 
     _logger = get_logger('%s.ResourceService' % (__name__), logging.ERROR)
 
