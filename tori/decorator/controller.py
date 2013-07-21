@@ -51,6 +51,25 @@ def renderer(*args, **kwargs):
 
     return inner_decorator
 
+def _enable_custom_error(controller, template_name, **contexts):
+    def write_error(self, status_code, **kwargs):
+        debug_info = []
+
+        if self.settings.get("debug") and "exc_info" in kwargs:
+            # in debug mode, try to send a traceback
+            for line in traceback.format_exception(*kwargs["exc_info"]):
+                debug_info.append(line)
+
+        self.render(
+            template_name,
+            code       = status_code,
+            message    = httplib.responses[status_code],
+            debug_info = ''.join(debug_info),
+            **contexts
+        )
+
+    controller.write_error = write_error
+
 def custom_error(template_name, **contexts):
     """ Set up the controller to handle exceptions with a custom error page.
 
@@ -62,23 +81,7 @@ def custom_error(template_name, **contexts):
     :type  contexts:      dict
     """
     def updated_controller(controller):
-        def write_error(self, status_code, **kwargs):
-            debug_info = []
-
-            if self.settings.get("debug") and "exc_info" in kwargs:
-                # in debug mode, try to send a traceback
-                for line in traceback.format_exception(*kwargs["exc_info"]):
-                    debug_info.append(line)
-
-            self.render(
-                template_name,
-                code       = status_code,
-                message    = httplib.responses[status_code],
-                debug_info = ''.join(debug_info),
-                **contexts
-            )
-
-        controller.write_error = write_error
+        _enable_custom_error(controller, template_name, **contexts)
 
         return controller
 
