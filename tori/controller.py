@@ -159,10 +159,31 @@ class Controller(RequestHandler):
 
             return renderer
 
+class SimpleController(Controller):
+    """ Simplified Request Controller """
+    def rendering_prefix(self):
+        return None
+
+    def get(self, *args):
+        path = args[0] if args else 'index'
+
+        if '..' in path:
+            raise HTTPError(403)
+
+        rendering_path = '{}.html'.format(path)
+
+        if self.rendering_prefix():
+            rendering_path = p.join(self.rendering_prefix(), rendering_path)
+
+        rendered_data = self.render_template(rendering_path)
+
+        if not rendered_data:
+            raise HTTPError(404)
+
+        self.write(rendered_data)
+
 class RestController(Controller):
-    """
-    Abstract REST-capable controller based on a single primary key.
-    """
+    """ Abstract REST-capable controller based on a single primary key. """
     def list(self):
         """ Retrieve the list of all entities. """
         self.set_status(405)

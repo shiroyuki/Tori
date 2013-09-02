@@ -70,9 +70,9 @@ class DefaultRenderer(Renderer):
 
         self.name     = ':'.join(referers)
         self.referers = referers
-        self.loader   = (len(self.referers) == 1 and not path.exists(self.referers[0])) \
-            and self._get_package_loader() \
-            or  self._get_filesystem_loader()
+        self.loader   = self._get_package_loader() \
+            if   (len(self.referers) == 1 and not path.exists(self.referers[0])) \
+            else self._get_filesystem_loader()
         self.storage  = Environment(
             loader      = self.loader,
             trim_blocks = not debug_mode,
