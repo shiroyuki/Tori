@@ -13,6 +13,7 @@ from base64 import b64decode
 from os import path as p
 from re import match, sub
 
+from jinja2.exceptions import TemplateNotFound
 from tornado.web import HTTPError, RequestHandler
 
 from tori.centre             import services
@@ -170,12 +171,18 @@ class SimpleController(Controller):
         if '..' in path:
             raise HTTPError(403)
 
+        if '/' == path[-1]:
+            path = 'index'
+
         rendering_path = '{}.html'.format(path)
 
         if self.rendering_prefix():
             rendering_path = p.join(self.rendering_prefix(), rendering_path)
 
-        rendered_data = self.render_template(rendering_path)
+        try:
+            rendered_data = self.render_template(rendering_path)
+        except TemplateNotFound as e:
+            raise HTTPError(404)
 
         if not rendered_data:
             raise HTTPError(404)
