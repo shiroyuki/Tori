@@ -187,8 +187,8 @@ class ProxyObject(object):
     def __getattr__(self, item):
         if item == '_actual':
             return self.__get_object()
-        #elif item == 'id':
-        #    return self.__dict__['_object_id']
+        elif item == 'id':
+            return self.__dict__['_object_id']
         elif item[0] == '_':
             return self.__dict__[item]
         elif not self.__dict__['_object_id'] or not self.__get_object():
