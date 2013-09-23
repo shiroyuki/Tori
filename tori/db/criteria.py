@@ -56,6 +56,9 @@ class Criteria(object):
             :type  field: str
             :param direction: the sorting direction
         """
+        if field == 'id':
+            field = '_id'
+
         self._order_by.append((field, direction))
 
         return self
