@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-:Version: 0.1
+:Version: 0.3
 :Status: Experimental
 :Author: Juti Noppornpitak
 :OS Compatibility: Linux, FreeBSD, Mac OS X 10.7+
@@ -35,15 +35,22 @@ just execute ``nest``.
 """
 
 import os, time
+from sys import argv
 from sys import exit
 from sys import version_info as version
 from subprocess import call
 
 nest_meta = {
-    'version': 0.2,
+    'version': 0.3,
     'license': 'MIT',
     'author':  'Juti Noppornpitak',
     'email':   'juti_n@yahoo.co.jp'
+}
+
+flag_map = {
+    'help': False,
+    'dry-run': False,
+    'debug': False
 }
 
 app_name = None
@@ -58,26 +65,9 @@ dependencies = {
         'imagination': 'git://github.com/shiroyuki/Imagination.git'
     },
     'optional': {
+        'pymongo': None,
+        'redis': None,
         'sqlalchemy': None
-    }
-}
-
-vendors = {
-    'bootstrap':  {
-        'url': 'http://twitter.github.com/bootstrap/assets/bootstrap.zip',
-        'inst': ['mv %(temp_path)s/bootstrap/* %(install_path)s']
-    },
-    'foundation': {
-        'url': 'http://foundation.zurb.com/files/foundation-3.0.7.zip',
-        'inst':['mv %(temp_path)s/* %(install_path)s']
-    },
-    'foundation/icon': {
-        'url': 'http://www.zurb.com/playground/playground/foundation-icons/downloads/foundation-icons-all.zip',
-        'inst':[
-            'find . -name .DS_Store -exec rm {} \\;',
-            'find . -name ._* -exec rm {} \\;',
-            'mv %(temp_path)s/foundation-icons-all/* %(install_path)s'
-        ]
     }
 }
 
@@ -96,12 +86,17 @@ class Home(Controller):
     'view/index.html': """<!doctype html>
 <html lang="en">
 <head>
-<title>My first Tori app</title>
-<style>body{font-family:'Helvetica','Arial',sans-serif;}</style>
+    <meta charset="utf-8"/>
+    <title>My first Tori app</title>
+    <style>
+        body {
+            font-family:'Helvetica Neue','Arial',sans-serif;
+        }
+    </style>
 </head>
 <body>
-<h1>It just works!</h1>
-<p>Powered by Tori Framework</p>
+    <h1>It just works!</h1>
+    <p>Powered by Tori Framework</p>
 </body>
 </html>
 """
@@ -172,6 +167,10 @@ def console(context, marker=None):
 
 def fwrite(location, data=''):
     f = None
+
+    if flag_map['dry-run']:
+        console('Supposed to write to {}'.format(location), 's')
+        return
 
     try:
         f = open(location, 'w')
@@ -256,18 +255,25 @@ def manage_dependencies():
             answer = prompt(message, ['y', 'n'], 'y').lower()
 
             if answer == 'y':
+                command = 'sudo /usr/bin/easy_install -q {}'.format(' '.join(missing_dependencies))
+
                 console('Installing...')
-                call('sudo /usr/bin/easy_install -q %s' % ' '.join(missing_dependencies), shell=True)
+
+                if flag_map['dry-run']:
+                    console('Supposed to run {}'.format(command), 's')
+                else:
+                    call(command, shell=True)
+
                 console('Done')
 
 def create_app():
     global app_name
 
-    prompt_message = 'What is the name of your application? For example, "glassquit"'
+    prompt_message = 'What is the name of your application? For example, "webapp"'
 
     while True:
         try:
-            app_name = prompt(prompt_message, default='web')
+            app_name = prompt(prompt_message, default='webapp')
 
             if os.path.exists(app_name):
                 console('The folder is already existed.', '!')
@@ -310,46 +316,6 @@ def create_app():
     for path, data in initial_app_code.iteritems():
         fwrite('%s/%s' % (app_base_path, path), data % {'app_name':app_name})
 
-def install_vendors():
-    want_to_install = prompt('Do you want to install third-party front-end libraries?', ['y', 'n'], 'y').lower() == 'y'
-
-    if not want_to_install:
-        return
-
-    temp_path = '%s/tmp' % app_name
-
-    call('mkdir -p %s' % temp_path, shell=True)
-
-    for name, data in vendors.iteritems():
-        ok = prompt('Do you want to install "%s"?' % name.capitalize(), ['y', 'n'], 'y').lower() == 'y'
-
-        if not ok:
-            continue
-
-        default_install_path = '%s/resources/vendor/%s' % (app_name, name)
-
-        options = {
-            'temp_path': temp_path,
-            'install_path': prompt('Where do you want to install?', default=default_install_path),
-            'url': data['url']
-        }
-
-        console('Installing')
-
-        call('mkdir -p %(temp_path)s' % options, shell=True)
-        call('mkdir -p %(install_path)s' % options, shell=True)
-        call('rm -Rf %(temp_path)s/*' % options, shell=True)
-        call('curl %(url)s -o %(temp_path)s/package.zip 2> /dev/null' % options, shell=True)
-        call('cd %(temp_path)s; unzip -q package.zip' % options, shell=True)
-        call('rm -f %(temp_path)s/package.zip' % options, shell=True)
-
-        for inst in data['inst']:
-            call(inst % options, shell=True)
-
-        console('Installed')
-
-    call('rm -Rf %s' % temp_path, shell=True)
-
 print('Nest %(version)s by %(author)s <%(email)s>' % nest_meta)
 print("""
 Nest is a utility tool which allows you to quickly start the development by
@@ -367,10 +333,14 @@ if prompt('Now, are you ready?', ['y', 'n']).lower() == 'n':
     console('Nice to meet you. I hope to see you soon.', '!')
     exit(0)
 
+for flag in flag_map:
+    flag_map[flag] = bool(
+        '--{}'.format(flag) in argv
+    )
+
 detect_version()
 manage_dependencies()
 create_app()
-install_vendors()
 
 console('Now, may the force be with you.', '=')
 console('')
