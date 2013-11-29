@@ -30,8 +30,8 @@ Then, define the entity manager.
 
 .. code-block:: python
 
-    from pymongo import Connection
+    from pymongo         import MongoClient
     from tori.db.manager import Manager
 
-    connection = Connection()
-    entity_manager = Manager('default')
+    connection     = MongoClient()
+    entity_manager = Manager('default', connection)
