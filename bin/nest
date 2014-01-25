@@ -255,7 +255,7 @@ def manage_dependencies():
             answer = prompt(message, ['y', 'n'], 'y').lower()
 
             if answer == 'y':
-                command = 'sudo /usr/bin/easy_install -q {}'.format(' '.join(missing_dependencies))
+                command = 'sudo /usr/bin/env pip install {}'.format(' '.join(missing_dependencies))
 
                 console('Installing...')
 
