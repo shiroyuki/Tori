@@ -24,7 +24,7 @@ class Console(object):
                 <interception before="me" do="execute" with="init"/>
                 <interception after="me" do="execute" with="clean_up"/>
             </entity>
-        
+
         Then, the command will be referenced with anything after ":". From the
         previous example, the command "command:db" will be referred as "db".
     """
@@ -41,6 +41,10 @@ class Console(object):
         print(output)
 
     def show_console_usage(self):
+        if 'command' not in services._tag_to_entity_ids:
+            self.output('{} has no sub commands registered.'.format(self.namespace))
+            return
+
         self.output('USAGE: {} command'.format(self.namespace or sys.argv[0]))
         self.output('\nAvailable commands:')
 
@@ -61,7 +65,8 @@ class Console(object):
                 if longest_cmd_length < len(alias):
                     longest_cmd_length = len(alias)
 
-                command_desc_map[alias] = entity.loader.package.__doc__.strip()
+                command_doc = entity.loader.package.__doc__ or 'Unknown command'
+                command_desc_map[alias] = command_doc.strip()
 
         format_string = '  {:<%d}{}' % (longest_cmd_length + 4)
 
