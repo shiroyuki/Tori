@@ -45,7 +45,7 @@ class Console(object):
             self.output('{} has no sub commands registered.'.format(self.namespace))
             return
 
-        self.output('USAGE: {} command'.format(self.namespace or sys.argv[0]))
+        self.output('USAGE: {} <command>'.format(self.namespace or sys.argv[0]))
         self.output('\nAvailable commands:')
 
         # This is a hack to get the list of IDs from Imagination Framework.
