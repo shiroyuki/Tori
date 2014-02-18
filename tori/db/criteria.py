@@ -95,11 +95,11 @@ class Criteria(object):
 
             .. note:: This is mainly used by a repository internally.
         """
-        api    = repository.api
-        cursor = api.find(self._condition)
+        api    = repository.session.driver
+        cursor = api.find(repository.name, self._condition)
 
         if not force_loading and self._limit != 1:
-            cursor = api.find(self._condition, fields=[])
+            cursor = api.find(repository.name, self._condition, fields=[])
 
         if auto_index and not self._indexed:
             if self._indexed_target_list:

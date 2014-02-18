@@ -5,7 +5,6 @@
 """
 import inspect
 from tori.db.common    import PseudoObjectId, ProxyObject
-from tori.db.entity    import Index
 from tori.db.criteria  import Criteria, Order
 from tori.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
 from tori.db.mapper    import AssociationType, CascadingType
@@ -34,16 +33,15 @@ class Repository(object):
         self._auto_index    = False
 
         # Retrieve the collection
-        self._api = session.db[representing_class.__collection_name__]
         self._session.register_class(representing_class)
 
     @property
-    def api(self):
-        """ Database API
+    def session(self):
+        """ Session
 
-            :rtype: pymongo.collection.Collection
+            :rtype: tori.db.session.Session
         """
-        return self._api
+        return self._session
 
     @property
     def name(self):
@@ -101,7 +99,7 @@ class Repository(object):
         return self._class(**attributes)
 
     def get(self, id):
-        data = self._api.find_one({'_id': id})
+        data = self._session.driver.find_one(self.name, {'_id': id})
 
         if not data:
             return None
@@ -266,17 +264,7 @@ class Repository(object):
             :param force_index: force indexing if necessary
             :type  force_index: bool
         """
-        options = {
-            'background': (not force_index)
-        }
-        order_list = index.to_list() if isinstance(index, Index) else index
-        
-        if isinstance(order_list, list):
-            indexed_field_list = ['{}_{}'.format(field, order) for field, order in order_list]
-            indexed_field_list.sort()
-            options['index_identifier'] = '-'.join(indexed_field_list)
-
-        self.api.ensure_index(order_list, **options)
+        self._session.driver.ensure_index(self.name, index, force_index)
 
     def setup_index(self):
         """ Set up index for the entity based on the ``entity`` and ``link`` decorators
@@ -284,15 +272,15 @@ class Repository(object):
         # Apply the relational indexes.
         for field in self._class.__relational_map__:
             guide = self._class.__relational_map__[field]
-            
+
             if guide.inverted_by or guide.association != AssociationType.ONE_TO_ONE:
                 continue
-            
+
             self.index(field)
-        
+
         # Apply the manual indexes.
         for index in self._class.__indexes__:
             self.index(index)
 
     def __len__(self):
-        return self._api.count()
+        return self._session.driver.total_row_count(self.name)
