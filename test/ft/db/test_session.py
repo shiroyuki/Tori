@@ -30,11 +30,11 @@ class Developer(object):
         self.computer  = computer
         self.delegates = delegates
 
-class TestDbSession(DbTestCase):
+class TestFunctional(DbTestCase):
     def test_commit_with_insert_with_cascading(self):
         reference_map = self.__inject_data_with_cascading()
 
-        collection = self.session.collection(TestNode)
+        collection = self.session.repository(TestNode)
         doc        = collection.filter_one({'name': 'a'})
 
         self.assertEqual(len(reference_map), len(collection.filter()))
@@ -43,8 +43,8 @@ class TestDbSession(DbTestCase):
     def test_commit_with_insert_without_cascading(self):
         reference_map = self.__mock_data_without_cascading()
 
-        developer_collection = self.session.collection(Developer)
-        computer_collection = self.session.collection(Computer)
+        developer_collection = self.session.repository(Developer)
+        computer_collection = self.session.repository(Computer)
 
         self.session.persist(reference_map['d1'])
         self.session.flush()
@@ -56,53 +56,56 @@ class TestDbSession(DbTestCase):
 
         self.assertIsNone(developer.computer.id)
 
-        raw_data = developer_collection._api.find_one({'_id': developer.id})
+        raw_data = developer_collection.driver.find_one(
+            developer_collection.name,
+            {'_id': developer.id}
+        )
 
         self.assertIsNone(raw_data['computer'])
 
     def test_commit_with_update(self):
         reference_map = self.__inject_data_with_cascading()
 
-        doc = self.session.collection(TestNode).filter_one({'name': 'a'})
+        doc = self.session.repository(TestNode).filter_one({'name': 'a'})
         doc.name = 'root'
 
         self.session.persist(doc)
         self.session.flush()
 
-        docs = self.session.collection(TestNode).filter()
+        docs = self.session.repository(TestNode).filter()
 
         self.assertEqual(len(reference_map), len(docs))
         self.assertEqual(reference_map['a'].id, doc.id)
         self.assertEqual(reference_map['a'].name, doc.name)
 
-        doc = self.session.collection(TestNode).filter_one({'name': 'root'})
+        doc = self.session.repository(TestNode).filter_one({'name': 'root'})
 
         self.assertEqual(reference_map['a'].id, doc.id)
 
     def test_commit_with_update_with_cascading(self):
         reference_map = self.__inject_data_with_cascading()
 
-        doc = self.session.collection(TestNode).filter_one({'name': 'a'})
+        doc = self.session.repository(TestNode).filter_one({'name': 'a'})
         doc.left.name = 'left'
 
         self.session.persist(doc)
         self.session.flush()
 
-        docs = self.session.collection(TestNode).filter()
+        docs = self.session.repository(TestNode).filter()
 
         self.assertEqual(len(reference_map), len(docs))
         self.assertEqual(reference_map['b'].id, doc.left.id)
         self.assertEqual(reference_map['b'].name, doc.left.name)
 
-        doc = self.session.collection(TestNode).filter_one({'name': 'a'})
+        doc = self.session.repository(TestNode).filter_one({'name': 'a'})
 
         self.assertEqual(reference_map['b'].id, doc.left.id)
 
     def test_commit_with_update_without_cascading(self):
         reference_map = self.__mock_data_without_cascading()
 
-        developer_collection = self.session.collection(Developer)
-        computer_collection = self.session.collection(Computer)
+        developer_collection = self.session.repository(Developer)
+        computer_collection = self.session.repository(Computer)
 
         self.session.persist(reference_map['d1'], reference_map['c1'])
         self.session.flush()
@@ -120,14 +123,17 @@ class TestDbSession(DbTestCase):
 
         self.assertEqual(Record.STATUS_CLEAN, record.status)
 
-        raw_data = computer_collection._api.find_one({'_id': reference_map['c1'].id})
+        raw_data = computer_collection.driver.find_one(
+            computer_collection.name,
+            {'_id': reference_map['c1'].id}
+        )
 
         self.assertNotEqual(raw_data['name'], developer.computer.name)
 
     def test_commit_with_delete(self):
         reference_map = self.__inject_data_with_cascading()
 
-        collection = self.session.collection(TestNode)
+        collection = self.session.repository(TestNode)
         doc_g      = collection.filter_one({'name': 'g'})
 
         self.session.delete(doc_g)
@@ -138,7 +144,7 @@ class TestDbSession(DbTestCase):
     def test_commit_with_delete_with_cascading(self):
         reference_map = self.__inject_data_with_cascading()
 
-        collection = self.session.collection(TestNode)
+        collection = self.session.repository(TestNode)
         doc_a      = collection.filter_one({'name': 'a'})
 
         self.session.delete(doc_a)
@@ -150,10 +156,13 @@ class TestDbSession(DbTestCase):
         reference_map     = self.__inject_data_with_cascading()
         expected_max_size = len(reference_map) + 1
 
-        collection = self.session.collection(TestNode)
+        collection = self.session.repository(TestNode)
 
         # Added an extra node that relies on node "f" without using the collection.
-        collection._api.insert({'left': None, 'right': reference_map['f'].id, 'name': 'extra'})
+        collection.driver.insert(
+            collection.name,
+            {'left': None, 'right': reference_map['f'].id, 'name': 'extra'}
+        )
 
         doc_h = collection.filter_one({'name': 'h'})
 
@@ -170,11 +179,11 @@ class TestDbSession(DbTestCase):
         reference_map     = self.__inject_data_with_cascading()
         expected_max_size = len(reference_map) + 1
 
-        collection = self.session.collection(TestNode)
+        collection = self.session.repository(TestNode)
 
-        # Added an extra node that relies on node "f" without using the
-        # repository.
-        collection._api.insert(
+        # Added an extra node that relies on node "f" without using the repository.
+        collection.driver.insert(
+            collection.name,
             {'left': None, 'right': reference_map['f'].id, 'name': 'extra'}
         )
 
@@ -192,7 +201,7 @@ class TestDbSession(DbTestCase):
     def test_commit_with_delete_with_cascading_with_no_dependency_left(self):
         reference_map = self.__inject_data_with_cascading()
 
-        collection = self.session.collection(TestNode)
+        collection = self.session.repository(TestNode)
 
         self.session.delete(reference_map['e'], reference_map['h'])
         self.session.flush()

@@ -22,12 +22,23 @@ class Driver(DriverInterface):
     def db(self, name=None):
         return self.client[name or self.database_name]
 
+    def collections(self):
+        return self.db().collections
+
     def collection(self, name):
         return self.db()[name]
 
     def insert(self, collection_name, data):
         api = self.collection(collection_name)
         return api.insert(data)
+
+    def update(self, collection_name, criteria, new):
+        api = self.collection(collection_name)
+        return api.update(criteria, new)
+
+    def remove(self, collection_name, criteria):
+        api = self.collection(collection_name)
+        return api.remove(criteria)
 
     def find_one(self, collection_name, criteria, fields=None):
         api = self.collection(collection_name)

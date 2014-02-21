@@ -44,6 +44,10 @@ class Repository(object):
         return self._session
 
     @property
+    def driver(self):
+        return self._session.driver
+
+    @property
     def name(self):
         """ Collection name
 

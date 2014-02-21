@@ -15,7 +15,7 @@ from tori.db.session import Session
 @entity('test_tori_db_repository_data')
 class Data(object): pass
 
-class TestDbRepository(TestCase):
+class TestUnit(TestCase):
     def setUp(self):
         pass
 

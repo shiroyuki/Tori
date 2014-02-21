@@ -28,6 +28,13 @@ class Session(object):
         """
         return self.repository(entity_class)
 
+    def repositories(self):
+        """ Retrieve the list of collections
+
+            :rtype: list
+        """
+        return [self._repository_map[key] for key in self._repository_map]
+
     def repository(self, entity_class):
         """ Retrieve the collection
 

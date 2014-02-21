@@ -391,7 +391,7 @@ class UnitOfWork(object):
 
     def _commit_changes(self, expected_class=None):
         # Load the sub graph of supervised collections.
-        for c in self._em.collections:
+        for c in self._em.repositories():
             if not c.has_cascading():
                 continue
 
@@ -430,31 +430,42 @@ class UnitOfWork(object):
             elif record.status == Record.STATUS_DELETED and commit_node.score > 0:
                 record.mark_as(Record.STATUS_CLEAN)
 
-    def _synchronize_new(self, collection, entity, change_set):
+    def _synchronize_new(self, repository, entity, change_set):
+        """ Synchronize the new / unsupervised data
+
+            :param repository: the target repository
+            :param entity: the entity
+            :param change_set: the change_set representing the entity
+        """
         pseudo_key = self._convert_object_id_to_str(entity.id, entity)
-        object_id  = collection._api.insert(change_set)
+        object_id  = repository.driver.insert(repository.name, change_set)
         entity.id  = object_id # update the entity ID
         actual_key = self._convert_object_id_to_str(object_id, entity)
 
         self._object_id_map[actual_key] = self._object_id_map[pseudo_key]
 
-    def _synchronize_update(self, collection, object_id, old_data_set, new_data_set):
-        """Synchronize the updated data
+    def _synchronize_update(self, repository, object_id, old_data_set, new_data_set):
+        """ Synchronize the updated data
 
-        :param collection: the target collection
-        :param object_id: the object ID
-        :param old_data_set: the original data (for event interception)
-        :param new_data_set: the updated data
+            :param repository: the target repository
+            :param object_id: the object ID
+            :param old_data_set: the original data (for event interception)
+            :param new_data_set: the updated data
         """
 
-        collection._api.update(
+        repository.driver.update(
+            repository.name,
             {'_id': object_id},
-            new_data_set,
-            upsert=False
+            new_data_set
         )
 
-    def _synchronize_delete(self, collection, object_id):
-        collection._api.remove({'_id': object_id})
+    def _synchronize_delete(self, repository, object_id):
+        """ Synchronize the deleted data
+
+            :param repository: the target repository
+            :param object_id: the object ID
+        """
+        repository.driver.remove(repository.name, {'_id': object_id})
 
     def _synchronize_records(self):
         writing_statuses = [Record.STATUS_NEW, Record.STATUS_DIRTY]
