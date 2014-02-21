@@ -127,16 +127,18 @@ class Session(object):
             # In the reverse mapping, the lazy loading is not possible but so
             # the proxy object is still used.
             if guide.inverted_by:
-                api = self._driver.collection(guide.target_class)
+                api = self._driver.collection(guide.target_class.__collection_name__)
 
                 if guide.association in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
+                    # Replace with Criteria
                     target = api.find_one({guide.inverted_by: entity.id})
 
                     entity.__setattr__(property_name, ProxyFactory.make(self, target['_id'], guide))
                 elif guide.association == AssociationType.ONE_TO_MANY:
+                    # Replace with Criteria
                     proxy_list = [
                         ProxyFactory.make(self, target['_id'], guide)
-                        for target in collection._api.find({guide.inverted_by: entity.id})
+                        for target in api.find({guide.inverted_by: entity.id})
                     ]
 
                     entity.__setattr__(property_name, proxy_list)

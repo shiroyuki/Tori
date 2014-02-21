@@ -214,6 +214,8 @@ class ProxyCollection(list):
         :type  origin: object
         :param guide: the relational guide
         :type  guide: tori.db.mapper.RelatingGuide
+
+        .. note:: To replace with criteria and driver
     """
     def __init__(self, session, origin, guide):
         self._session = session
@@ -262,6 +264,8 @@ class ProxyCollection(list):
 
         criteria     = {'origin': self._origin.id}
         mapping_list = collection.filter(criteria)
+
+        raise RuntimeError('Panda')
 
         self.extend([
             ProxyFactory.make(self._session, association.destination, self._guide)
