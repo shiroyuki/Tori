@@ -17,6 +17,9 @@ test_py2: cache_clean reset_mongodb
 test_py3: cache_clean reset_mongodb
 	nosetests-3.3 -c nose.cfg $(TEST_FLAGS)
 
+test_travis: cache_clean reset_mongodb
+	nosetests -c nose.cfg $(TEST_FLAGS)
+
 reset_mongodb:
 	# New
 	mongo t3test --eval 'db.dropDatabase()' > /dev/null
