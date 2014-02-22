@@ -12,6 +12,7 @@ setup(
         'tori.cli',
         'tori.data',
         'tori.db',
+        'tori.db.driver',
         'tori.decorator',
         'tori.session',
         'tori.session.entity',
