@@ -17,4 +17,4 @@ install:
   #- "git clone https://github.com/shiroyuki/Imagination.git && cd Imagination && make install && cd ../"
   # Install the dev version of Tori
   #- "git clone https://github.com/shiroyuki/Tori.git ToriTesting && cd ToriTesting && make install && cd ../"
-script: "make TEST_FLAGS='ut ut/db ft/ ft/db' test_travis"
+script: "make test_ci"
