@@ -49,12 +49,54 @@ class Driver(DriverInterface):
         return api.find_one(criteria)
 
     def find(self, collection_name, criteria, fields=None):
+        """ Find the data sets with the native API.
+
+            :param collection_name: the name of the collection
+            :param criteria: the criteria compatible with the native API.
+            :param fields: the list of required fields.
+        """
         api = self.collection(collection_name)
 
         if fields:
             return api.find(criteria, fields)
 
         return api.find(criteria)
+
+    def query(self, criteria):
+        """ Find the data sets with :class:`tori.db.criteria.Criteria`.
+
+            :param criteria: the criteria
+            :type  criteria: tori.db.criteria.Criteria
+        """
+        collection_name = criteria.origin
+        force_loading   = criteria._force_loading
+        auto_index      = criteria._auto_index
+
+        cursor = self.find(collection_name, criteria._condition)
+
+        if not force_loading and criteria._limit != 1:
+            cursor = self.find(collection_name, criteria._condition, fields=[])
+
+        if auto_index and not criteria._indexed:
+            if criteria._indexed_target_list:
+                for field in criteria._indexed_target_list:
+                    repository.index(field)
+
+            if auto_index and not criteria._indexed:
+                repository.index(criteria._order_by)
+
+            criteria._indexed = True
+
+        if criteria._order_by:
+            cursor.sort(criteria._order_by)
+
+        if criteria._offset and criteria._offset > 0:
+            cursor.skip(self._offset)
+
+        if criteria._limit and criteria._limit > 0:
+            cursor.limit(criteria._limit)
+
+        return cursor
 
     def indice(self):
         return [index for index in self.collection('system.indexes').find()]

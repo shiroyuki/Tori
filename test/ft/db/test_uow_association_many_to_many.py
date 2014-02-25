@@ -1,5 +1,4 @@
-from unittest import TestCase
-from pymongo import Connection
+from ft.db.dbtestcase import DbTestCase
 from tori.db.session import Session
 from tori.db.common import ProxyObject
 from tori.db.uow import Record
@@ -30,23 +29,7 @@ class Group(object):
         self.name    = name
         self.members = members
 
-class TestDbUowAssociationManyToMany(TestCase):
-    connection       = Connection()
-    registered_types = {
-        'groups':  Group,
-        'members': Member
-    }
-
-    def setUp(self):
-        self.session = Session(0, self.connection['test_tori_db_session_assoc_m2m'], self.registered_types)
-
-        for collection in self.session.collections:
-            collection._api.remove() # Reset the database
-
-        self.session.db['groups_members'].remove({}) # Reset the associations
-
-        self.__set_fixtures()
-
+class TestFunctional(DbTestCase):
     def test_load(self):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
@@ -60,7 +43,7 @@ class TestDbUowAssociationManyToMany(TestCase):
         self.assertEqual('member a', group_a.members[0].name)
         self.assertEqual('member b', group_a.members[1].name)
 
-    def test_with_new_entites(self):
+    def _test_with_new_entites(self):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 
@@ -76,19 +59,22 @@ class TestDbUowAssociationManyToMany(TestCase):
 
         groups.post(group)
 
-        self.assertEqual(4, groups._api.count())
-        self.assertEqual(7, members._api.count())
-        self.assertEqual(9, associations._api.count())
+        self.assertEqual(4, len(groups))
+        self.assertEqual(7, len(members))
+        self.assertEqual(9, len(associations))
 
-    def test_commit(self):
+    def _test_commit(self):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 
         associations = self.session.collection(Group.__relational_map__['members'].association_class.cls)
 
-        group_a  = groups.filter_one({'name': 'group a'})
-        group_b  = groups.filter_one({'name': 'group b'})
-        group_c  = groups.filter_one({'name': 'group c'})
+        group_a = groups.filter_one({'name': 'group a'})
+        group_b = groups.filter_one({'name': 'group b'})
+        group_c = groups.filter_one({'name': 'group c'})
+
+        assert group_c, 'Group C should not be null.'
+
         member_d = members.filter_one({'name': 'member d'})
 
         groups.delete(group_c)
@@ -104,7 +90,7 @@ class TestDbUowAssociationManyToMany(TestCase):
         self.assertEqual(2, groups._api.count())
         self.assertEqual(5, associations._api.count())
 
-    def test_commit_with_new_element_on_explicit_persistence_and_repository(self):
+    def _test_commit_with_new_element_on_explicit_persistence_and_repository(self):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 
@@ -131,7 +117,7 @@ class TestDbUowAssociationManyToMany(TestCase):
         self.assertEqual(2, groups._api.count())
         self.assertEqual(5, associations._api.count())
 
-    def test_commit_with_new_element_on_explicit_persistence_and_session(self):
+    def _test_commit_with_new_element_on_explicit_persistence_and_session(self):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 

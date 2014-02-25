@@ -19,11 +19,22 @@ class Criteria(object):
     """
     def __init__(self):
         self._condition = {}
+        self._origin    = None # str - the name of the collection / repository
         self._order_by  = []
         self._offset    = 0
         self._limit     = 0
         self._indexed   = False
+        self._force_loading = False
+        self._auto_index    = False
         self._indexed_target_list = []
+
+    @property
+    def origin(self):
+        return self._origin
+
+    @origin.setter
+    def origin(self, value):
+        self._origin = value
 
     def where(self, key_or_full_condition, filter_data=None):
         """ Define the condition
