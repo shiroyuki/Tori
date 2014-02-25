@@ -6,7 +6,7 @@
 This package is used for rendering.
 """
 
-from os import path
+from os import path, getcwd
 import re
 
 from jinja2         import Environment, FileSystemLoader, PackageLoader
@@ -92,8 +92,16 @@ class DefaultRenderer(Renderer):
         :rtype: FileSystemLoader
         """
         for location in self.referers:
-            if not path.exists(location):
-                raise RendererSetupError('%s is not found on this system.' % location)
+            if path.exists(location):
+                continue
+
+            backup_location = path.join(getcwd(), location)
+
+            # unused logic
+            #if backup_location:
+            #    continue
+
+            raise RendererSetupError('{} or {} is not found on this system.'.format(location, backup_location))
 
         return FileSystemLoader(self.referers)
 
