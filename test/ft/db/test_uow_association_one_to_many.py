@@ -1,5 +1,4 @@
-from unittest import TestCase
-from pymongo import Connection
+from ft.db.dbtestcase import DbTestCase
 from tori.db.session import Session
 from tori.db.common import ProxyObject
 from tori.db.uow import Record
@@ -20,16 +19,11 @@ class Developer(object):
         self.computer  = computer
         self.delegates = delegates
 
-class TestDbUowAssociationOneToMany(TestCase):
-    connection = Connection()
-
+class TestDbUowAssociationOneToMany(DbTestCase):
     def setUp(self):
-        self.session = Session(0, self.connection['test_tori_db_session'])
+        self._setUp()
 
-        for collection in self.session.collections:
-            collection._api.remove() # Reset the database
-
-        self.__inject_data_with_one_to_many_association()
+        self._reset_db(self.__data_provider())
 
     def test_fetching(self):
         c = self.session.collection(Developer)
@@ -52,7 +46,7 @@ class TestDbUowAssociationOneToMany(TestCase):
         self.session.persist(boss)
         self.session.flush()
 
-        data = c._api.find_one({'_id': boss.delegates[0].id})
+        data = c.driver.find_one(c.name, {'_id': boss.delegates[0].id})
 
         self.assertEqual(boss.delegates[0].name, data['name'])
 
@@ -67,12 +61,12 @@ class TestDbUowAssociationOneToMany(TestCase):
         self.session.persist(boss)
         self.session.flush()
 
-        data = c._api.find_one({'name': 'c'})
+        data = c.driver.find_one(c.name, {'name': 'c'})
 
         self.assertIsNotNone(data)
         self.assertEqual(boss.delegates[2].id, data['_id'])
 
-        data = c._api.find_one({'name': 'boss'})
+        data = c.driver.find_one(c.name, {'name': 'boss'})
 
         self.assertEqual(3, len(data['delegates']))
 
@@ -108,7 +102,7 @@ class TestDbUowAssociationOneToMany(TestCase):
 
         print('point a')
 
-        for d in c._api.find():
+        for d in c.driver.find(c.name, {}):
             print(d)
 
         boss.delegates[0].name = 'assistant'
@@ -119,7 +113,7 @@ class TestDbUowAssociationOneToMany(TestCase):
 
         print('point b')
 
-        for d in c._api.find():
+        for d in c.driver.find(c.name, {}):
             print(d)
 
         architect = Developer('architect', delegates=[boss.delegates[0]])
@@ -129,7 +123,7 @@ class TestDbUowAssociationOneToMany(TestCase):
 
         print('point c')
 
-        for d in c._api.find():
+        for d in c.driver.find(c.name, {}):
             print(d)
 
         self.session.delete(architect)
@@ -140,17 +134,19 @@ class TestDbUowAssociationOneToMany(TestCase):
 
         print('point d')
 
-        for d in c._api.find():
+        for d in c.driver.find(c.name, {}):
             print(d)
 
         self.assertEqual(0, count, 'There should not exist dependencies left (orphan removal). (remaining: {})'.format(count))
 
-    def __inject_data_with_one_to_many_association(self):
-        api = self.session.collection(Developer)._api
-
-        api.remove()
-
-        a_id = api.insert({'name': 'a'})
-        b_id = api.insert({'name': 'b'})
-
-        api.insert({'name': 'boss', 'delegates': [a_id, b_id]})
+    def __data_provider(self):
+        return [
+            {
+                'class': Developer,
+                'fixtures': [
+                    {'_id': 1, 'name': 'a'},
+                    {'_id': 2, 'name': 'b'},
+                    {'_id': 3, 'name': 'boss', 'delegates': [1, 2]}
+                ]
+            }
+        ]
