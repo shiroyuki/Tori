@@ -160,7 +160,7 @@ class UnitOfWork(object):
             raise NonRefreshableEntity('The current record is not refreshable.')
 
         collection       = self._em.collection(entity.__class__)
-        updated_data_set = collection._api.find_one({'_id': entity.id})
+        updated_data_set = collection.driver.find_one(collection.name, {'_id': entity.id})
 
         # Reset the attributes.
         for attribute_name in updated_data_set:
