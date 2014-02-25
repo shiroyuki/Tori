@@ -121,15 +121,11 @@ class Repository(object):
             :returns: the result based on the given criteria
             :rtype: object or list of objects
         """
-        cursor = criteria.build_cursor(
-            self,
-            force_loading=force_loading,
-            auto_index=self._auto_index
-        )
+        data_set = self.driver.query(criteria)
 
         entity_list = []
 
-        for data in cursor:
+        for data in data_set:
             entity = self._dehydrate_object(data) \
                 if len(data.keys()) > 1 \
                 else ProxyObject(
@@ -147,8 +143,8 @@ class Repository(object):
 
             entity_list.append(entity)
 
-        if criteria._limit == 1 and entity_list:
-            return entity_list[0]
+        if criteria._limit == 1:
+            return entity_list[0] if entity_list else None
 
         return entity_list
 
@@ -163,19 +159,23 @@ class Repository(object):
         return criteria.build_cursor(self).count()
 
     def filter(self, condition={}, force_loading=False):
-        criteria = Criteria()
+        criteria = self.new_criteria()
+
+        criteria._force_loading = force_loading
 
         criteria.where(condition)
 
-        return self.find(criteria, force_loading)
+        return self.find(criteria)
 
     def filter_one(self, condition={}, force_loading=False):
-        criteria = Criteria()
+        criteria = self.new_criteria()
+
+        criteria._force_loading = force_loading
 
         criteria.where(condition)
         criteria.limit(1)
 
-        return self.find(criteria, force_loading)
+        return self.find(criteria)
 
     def post(self, entity):
         if entity.__session__:
@@ -206,7 +206,7 @@ class Repository(object):
         self._session.flush()
 
     def _recognize_entity(self, entity):
-        if not entity.id or not entity.__session__ or isinstance(entity.id, PseudoObjectId):
+        if not entity or not entity.id or not entity.__session__ or isinstance(entity.id, PseudoObjectId):
             raise EntityNotRecognized('The entity is not recognized by this session.')
 
     def _dehydrate_object(self, raw_data):
@@ -258,7 +258,15 @@ class Repository(object):
 
             :rtype: :class:`tori.db.criteria.Criteria`
         """
-        return Criteria()
+
+        c = Criteria()
+
+        c.origin = self.name
+
+        if self._auto_index:
+            c.auto_index(self._auto_index)
+
+        return c
 
     def index(self, index, force_index=False):
         """ Index data

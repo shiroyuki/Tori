@@ -19,11 +19,22 @@ class Criteria(object):
     """
     def __init__(self):
         self._condition = {}
+        self._origin    = None # str - the name of the collection / repository
         self._order_by  = []
         self._offset    = 0
         self._limit     = 0
         self._indexed   = False
+        self._force_loading = False
+        self._auto_index    = False
         self._indexed_target_list = []
+
+    @property
+    def origin(self):
+        return self._origin
+
+    @origin.setter
+    def origin(self, value):
+        self._origin = value
 
     def where(self, key_or_full_condition, filter_data=None):
         """ Define the condition
@@ -83,44 +94,15 @@ class Criteria(object):
 
         return self
 
-    def build_cursor(self, repository, force_loading=False, auto_index=False):
-        """ Build the cursor
+    def force_loading(self, flag):
+        self._force_loading = flag
 
-            :param repository: the repository
-            :type  repository: tori.db.repository.Repository
-            :param force_loading: force loading on any returned entities
-            :type  force_loading: bool
-            :param auto_index: the flag to automatically index sorting fields
-            :type  auto_index: bool
+        return self
 
-            .. note:: This is mainly used by a repository internally.
-        """
-        api    = repository.session.driver
-        cursor = api.find(repository.name, self._condition)
+    def auto_index(self, flag):
+        self._auto_index = flag
 
-        if not force_loading and self._limit != 1:
-            cursor = api.find(repository.name, self._condition, fields=[])
-
-        if auto_index and not self._indexed:
-            if self._indexed_target_list:
-                for field in self._indexed_target_list:
-                    repository.index(field)
-
-            if auto_index and not self._indexed:
-                repository.index(self._order_by)
-
-            self._indexed = True
-
-        if self._order_by:
-            cursor.sort(self._order_by)
-
-        if self._offset and self._offset > 0:
-            cursor.skip(self._offset)
-
-        if self._limit and self._limit > 0:
-            cursor.limit(self._limit)
-
-        return cursor
+        return self
 
     def __str__(self):
         statements = []
