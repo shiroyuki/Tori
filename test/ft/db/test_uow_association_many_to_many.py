@@ -2,12 +2,6 @@ from ft.db.dbtestcase import DbTestCase
 from tori.db.session import Session
 from tori.db.common import ProxyObject
 from tori.db.uow import Record
-
-try:
-    from unittest.mock import Mock, MagicMock # Python 3.3
-except ImportError as exception:
-    from mock import Mock, MagicMock # Python 2.7
-
 from tori.db.entity import entity
 from tori.db.manager import Manager
 from tori.db.mapper import link, CascadingType, AssociationType
