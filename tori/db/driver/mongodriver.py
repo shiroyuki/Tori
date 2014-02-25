@@ -80,10 +80,10 @@ class Driver(DriverInterface):
         if auto_index and not criteria._indexed:
             if criteria._indexed_target_list:
                 for field in criteria._indexed_target_list:
-                    repository.index(field)
+                    self.ensure_index(collection_name, field, False)
 
             if auto_index and not criteria._indexed:
-                repository.index(criteria._order_by)
+                self.ensure_index(collection_name, criteria._order_by, False)
 
             criteria._indexed = True
 
@@ -96,7 +96,7 @@ class Driver(DriverInterface):
         if criteria._limit and criteria._limit > 0:
             cursor.limit(criteria._limit)
 
-        return cursor
+        return [data for data in cursor]
 
     def indice(self):
         return [index for index in self.collection('system.indexes').find()]

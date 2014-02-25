@@ -7,6 +7,8 @@ class DbTestCase(TestCase):
     verify_data = False
     connection = Connection() # used for setup-cleanup operation
     default_collection_name = 't3test'
+    session = None
+    driver = None
 
     def open_driver(self):
         self.driver = Driver()
@@ -16,6 +18,9 @@ class DbTestCase(TestCase):
         del self.driver
 
     def setUp(self):
+        self._setUp()
+
+    def _setUp(self):
         self.connection.drop_database(self.default_collection_name)
         self.open_driver()
         self.session = Session(self.driver)

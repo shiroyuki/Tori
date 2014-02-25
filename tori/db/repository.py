@@ -121,15 +121,11 @@ class Repository(object):
             :returns: the result based on the given criteria
             :rtype: object or list of objects
         """
-        cursor = criteria.build_cursor(
-            self,
-            force_loading=force_loading,
-            auto_index=self._auto_index
-        )
+        data_set = self.driver.query(criteria)
 
         entity_list = []
 
-        for data in cursor:
+        for data in data_set:
             entity = self._dehydrate_object(data) \
                 if len(data.keys()) > 1 \
                 else ProxyObject(
@@ -169,7 +165,7 @@ class Repository(object):
 
         criteria.where(condition)
 
-        return self.driver.query(criteria)
+        return self.find(criteria)
 
     def filter_one(self, condition={}, force_loading=False):
         criteria = self.new_criteria()
@@ -179,7 +175,7 @@ class Repository(object):
         criteria.where(condition)
         criteria.limit(1)
 
-        return self.driver.query(criteria)
+        return self.find(criteria)
 
     def post(self, entity):
         if entity.__session__:
@@ -264,7 +260,11 @@ class Repository(object):
         """
 
         c = Criteria()
+
         c.origin = self.name
+
+        if self._auto_index:
+            c.auto_index(self._auto_index)
 
         return c
 

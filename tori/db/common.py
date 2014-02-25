@@ -265,8 +265,6 @@ class ProxyCollection(list):
         criteria     = {'origin': self._origin.id}
         mapping_list = collection.filter(criteria)
 
-        raise RuntimeError('Panda')
-
         self.extend([
             ProxyFactory.make(self._session, association.destination, self._guide)
             for association in mapping_list
