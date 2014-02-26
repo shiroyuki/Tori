@@ -17,12 +17,15 @@ test_py2: cache_clean reset_mongodb
 test_py3: cache_clean reset_mongodb
 	nosetests-3.3 -c nose.cfg $(TEST_FLAGS)
 
-test_ci: cache_clean install reset_mongodb
+test_ci: cache_clean install_test_package reset_mongodb
 	#nosetests -c nose.cfg ut
 	#nosetests -c nose.cfg ut/db
 	#nosetests -c nose.cfg ft
 	#nosetests -c nose.cfg ft/db
 	nosetests -c nose.cfg
+
+install_test_package:
+	python setup_for_test_only.py install --optimize 2 --compile
 
 reset_mongodb:
 	# New
