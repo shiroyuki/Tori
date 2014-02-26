@@ -1,3 +1,9 @@
+class UnknownDriverError(Exception):
+    """ Unknown Driver Error """
+
+class InvalidUrlError(Exception):
+    """ Invalid DB URL Error"""
+
 class DuplicatedRelationalMapping(Exception):
     """ Exception thrown when the property is already mapped. """
 

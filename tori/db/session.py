@@ -8,55 +8,32 @@ from tori.db.uow import UnitOfWork
 class Session(object):
     """ Database Session
 
-        :param id: the unique identifier of the session
-        :type  id: int or bson.objectid.ObjectId
-        :param database: the database connection
-        :type  database:
+        :param database_name: the database name
+        :param driver: the driver API
     """
-    def __init__(self, id, database, registered_types={}):
-        self._id  = id
+    def __init__(self, driver):
+        self._driver = driver
         self._uow = UnitOfWork(self)
-        self._database = database
         self._repository_map   = {}
-        self._registered_types = registered_types
+        self._registered_types = {}
 
     @property
-    def id(self):
-        return self._id
-
-    @property
-    def db(self):
-        """ Database-level API
-
-        :rtype: pymongo.database.Database
-
-        .. warning::
-
-            Please use this property with caution. The unit of work cannot track any changes done by direct calls via
-            this property and may mess up with the change-set calculation.
-
-        """
-        return self._database
-
-    @property
-    def collections(self):
-        """ Alias to ``repositories`` """
-        return self.repositories
+    def driver(self):
+        return self._driver
 
     def collection(self, entity_class):
-        """ Alias to ``repository()`` """
+        """ Alias to ``repository()``
+
+            .. deprecatedVersion:: 2.2
+        """
         return self.repository(entity_class)
 
-    @property
     def repositories(self):
-        """ Retrieve the list of used repositories.
+        """ Retrieve the list of collections
 
             :rtype: list
         """
-        return [
-            self.collection(self._registered_types[key])
-            for key in self._registered_types
-        ]
+        return [self._repository_map[key] for key in self._repository_map]
 
     def repository(self, entity_class):
         """ Retrieve the collection
@@ -83,14 +60,16 @@ class Session(object):
         return self._repository_map[key]
 
     def register_class(self, entity_class):
-        """Register the entity class
+        """ Register the entity class
 
-        :param entity_class: the class of document/entity
-        :type  entity_class: type
+            :param entity_class: the class of document/entity
+            :type  entity_class: type
 
-        :rtype: tori.db.repository.Repository
+            :rtype: tori.db.repository.Repository
         """
-        key = entity_class.__collection_name__
+        key = entity_class.__collection_name__ \
+            if isinstance(entity_class, type) \
+            else entity_class
 
         if key not in self._registered_types:
             self._registered_types[key] = entity_class
@@ -152,18 +131,21 @@ class Session(object):
             guide = entity.__relational_map__[property_name]
             """ :type: tori.db.mapper.RelatingGuide """
 
-            # In the reverse mapping, the lazy loading is not possible but so the proxy object is still used.
+            # In the reverse mapping, the lazy loading is not possible but so
+            # the proxy object is still used.
             if guide.inverted_by:
-                collection = self.collection(guide.target_class)
+                api = self._driver.collection(guide.target_class.__collection_name__)
 
                 if guide.association in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
-                    target = collection._api.find_one({guide.inverted_by: entity.id})
+                    # Replace with Criteria
+                    target = api.find_one({guide.inverted_by: entity.id})
 
                     entity.__setattr__(property_name, ProxyFactory.make(self, target['_id'], guide))
                 elif guide.association == AssociationType.ONE_TO_MANY:
+                    # Replace with Criteria
                     proxy_list = [
                         ProxyFactory.make(self, target['_id'], guide)
-                        for target in collection._api.find({guide.inverted_by: entity.id})
+                        for target in api.find({guide.inverted_by: entity.id})
                     ]
 
                     entity.__setattr__(property_name, proxy_list)

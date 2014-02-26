@@ -1,5 +1,4 @@
-from unittest import TestCase
-from pymongo import Connection
+from ft.db.dbtestcase import DbTestCase
 from tori.db.session import Session
 from tori.db.entity import entity
 from tori.db.manager import Manager
@@ -12,15 +11,11 @@ class TestClass(object):
         self.a = 1
         self.b = 2
 
-class TestDbUnitOfWork(TestCase):
-    connection       = Connection()
-    registered_types = {
-        'testclass': TestClass
-    }
-
+class TestFunctional(DbTestCase):
     def setUp(self):
-        self.em  = Session(0, self.connection['test_tori_db_uow'], self.registered_types)
-        self.uow = self.em._uow
+        super(TestFunctional, self).setUp()
+
+        self.uow = self.session._uow
 
     def test_new(self):
         test_object = TestClass()

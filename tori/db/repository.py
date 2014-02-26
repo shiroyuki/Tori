@@ -5,7 +5,6 @@
 """
 import inspect
 from tori.db.common    import PseudoObjectId, ProxyObject
-from tori.db.entity    import Index
 from tori.db.criteria  import Criteria, Order
 from tori.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
 from tori.db.mapper    import AssociationType, CascadingType
@@ -34,16 +33,19 @@ class Repository(object):
         self._auto_index    = False
 
         # Retrieve the collection
-        self._api = session.db[representing_class.__collection_name__]
         self._session.register_class(representing_class)
 
     @property
-    def api(self):
-        """ Database API
+    def session(self):
+        """ Session
 
-            :rtype: pymongo.collection.Collection
+            :rtype: tori.db.session.Session
         """
-        return self._api
+        return self._session
+
+    @property
+    def driver(self):
+        return self._session.driver
 
     @property
     def name(self):
@@ -101,7 +103,7 @@ class Repository(object):
         return self._class(**attributes)
 
     def get(self, id):
-        data = self._api.find_one({'_id': id})
+        data = self._session.driver.find_one(self.name, {'_id': id})
 
         if not data:
             return None
@@ -119,15 +121,11 @@ class Repository(object):
             :returns: the result based on the given criteria
             :rtype: object or list of objects
         """
-        cursor = criteria.build_cursor(
-            self,
-            force_loading=force_loading,
-            auto_index=self._auto_index
-        )
+        data_set = self.driver.query(criteria)
 
         entity_list = []
 
-        for data in cursor:
+        for data in data_set:
             entity = self._dehydrate_object(data) \
                 if len(data.keys()) > 1 \
                 else ProxyObject(
@@ -145,8 +143,8 @@ class Repository(object):
 
             entity_list.append(entity)
 
-        if criteria._limit == 1 and entity_list:
-            return entity_list[0]
+        if criteria._limit == 1:
+            return entity_list[0] if entity_list else None
 
         return entity_list
 
@@ -161,19 +159,23 @@ class Repository(object):
         return criteria.build_cursor(self).count()
 
     def filter(self, condition={}, force_loading=False):
-        criteria = Criteria()
+        criteria = self.new_criteria()
+
+        criteria._force_loading = force_loading
 
         criteria.where(condition)
 
-        return self.find(criteria, force_loading)
+        return self.find(criteria)
 
     def filter_one(self, condition={}, force_loading=False):
-        criteria = Criteria()
+        criteria = self.new_criteria()
+
+        criteria._force_loading = force_loading
 
         criteria.where(condition)
         criteria.limit(1)
 
-        return self.find(criteria, force_loading)
+        return self.find(criteria)
 
     def post(self, entity):
         if entity.__session__:
@@ -204,7 +206,7 @@ class Repository(object):
         self._session.flush()
 
     def _recognize_entity(self, entity):
-        if not entity.id or not entity.__session__ or isinstance(entity.id, PseudoObjectId):
+        if not entity or not entity.id or not entity.__session__ or isinstance(entity.id, PseudoObjectId):
             raise EntityNotRecognized('The entity is not recognized by this session.')
 
     def _dehydrate_object(self, raw_data):
@@ -256,7 +258,15 @@ class Repository(object):
 
             :rtype: :class:`tori.db.criteria.Criteria`
         """
-        return Criteria()
+
+        c = Criteria()
+
+        c.origin = self.name
+
+        if self._auto_index:
+            c.auto_index(self._auto_index)
+
+        return c
 
     def index(self, index, force_index=False):
         """ Index data
@@ -266,17 +276,7 @@ class Repository(object):
             :param force_index: force indexing if necessary
             :type  force_index: bool
         """
-        options = {
-            'background': (not force_index)
-        }
-        order_list = index.to_list() if isinstance(index, Index) else index
-        
-        if isinstance(order_list, list):
-            indexed_field_list = ['{}_{}'.format(field, order) for field, order in order_list]
-            indexed_field_list.sort()
-            options['index_identifier'] = '-'.join(indexed_field_list)
-
-        self.api.ensure_index(order_list, **options)
+        self._session.driver.ensure_index(self.name, index, force_index)
 
     def setup_index(self):
         """ Set up index for the entity based on the ``entity`` and ``link`` decorators
@@ -284,15 +284,15 @@ class Repository(object):
         # Apply the relational indexes.
         for field in self._class.__relational_map__:
             guide = self._class.__relational_map__[field]
-            
+
             if guide.inverted_by or guide.association != AssociationType.ONE_TO_ONE:
                 continue
-            
+
             self.index(field)
-        
+
         # Apply the manual indexes.
         for index in self._class.__indexes__:
             self.index(index)
 
     def __len__(self):
-        return self._api.count()
+        return self._session.driver.total_row_count(self.name)

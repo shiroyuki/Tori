@@ -214,6 +214,8 @@ class ProxyCollection(list):
         :type  origin: object
         :param guide: the relational guide
         :type  guide: tori.db.mapper.RelatingGuide
+
+        .. note:: To replace with criteria and driver
     """
     def __init__(self, session, origin, guide):
         self._session = session

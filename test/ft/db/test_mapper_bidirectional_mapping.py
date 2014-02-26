@@ -1,18 +1,17 @@
-from unittest import TestCase
+from ft.db.dbtestcase import DbTestCase
 from tori.db.common import ProxyObject
 from tori.db.entity import entity
 from tori.db.exception import ReadOnlyProxyException
-from tori.db.manager import Manager
 from tori.db.mapper import link, CascadingType, AssociationType
 
 @link(
     mapped_by='destinations',
     inverted_by='origin',
-    target='testcase.test_db_mapper_bidirectional_mapping.Destination',
+    target='ft.db.test_mapper_bidirectional_mapping.Destination',
     association=AssociationType.ONE_TO_MANY,
     cascading=[CascadingType.PERSIST, CascadingType.DELETE]
 )
-@entity('test_tori_db_mapper_bidirectional_mapping_origin')
+@entity('o')
 class Origin(object):
     def __init__(self, name, destinations):
         self.name         = name
@@ -24,26 +23,15 @@ class Origin(object):
     association=AssociationType.MANY_TO_ONE,
     cascading=[CascadingType.PERSIST, CascadingType.DELETE]
 )
-@entity('test_tori_db_mapper_bidirectional_mapping_destination')
+@entity('d')
 class Destination(object):
     def __init__(self, name, origin):
         self.name   = name
         self.origin = origin
 
-class TestDbManager(TestCase):
-    em = Manager('test_tori_db_manager')
-
-    def setUp(self):
-        self.session = self.em.open_session()
-
-        for collection in self.session.collections:
-            collection._api.remove() # Reset the database
-
-    def tearDown(self):
-        self.em.close_session(self.session)
-
+class TestFunctional(DbTestCase):
     def test_reverse_mapping_normal_path_call_get(self):
-        self.__inject_data()
+        self._reset_db(self.__data_provider())
 
         origin = self.session.collection(Origin).filter_one({'name': 'origin'})
 
@@ -53,7 +41,7 @@ class TestDbManager(TestCase):
         self.assertEquals('a', origin.destinations[0].name)
 
     def test_reverse_mapping_normal_path_call_put(self):
-        self.__inject_data()
+        self._reset_db(self.__data_provider())
 
         collection = self.session.collection(Origin)
 
@@ -65,12 +53,19 @@ class TestDbManager(TestCase):
         except ReadOnlyProxyException as exception:
             pass
 
-    def __inject_data(self):
-        api = self.session.collection(Origin)._api
-
-        origin_id = api.insert({'name': 'origin'})
-
-        api = self.session.collection(Destination)._api
-
-        a_id = api.insert({'origin': origin_id, 'name': 'a'})
-        b_id = api.insert({'origin': origin_id, 'name': 'b'})
+    def __data_provider(self):
+        return [
+            {
+                'class': Origin,
+                'fixtures': [
+                    {'_id': 1, 'name': 'origin'}
+                ]
+            },
+            {
+                'class': Destination,
+                'fixtures': [
+                    {'_id': 1, 'origin': 1, 'name': 'a'},
+                    {'_id': 2, 'origin': 1, 'name': 'b'}
+                ]
+            }
+        ]

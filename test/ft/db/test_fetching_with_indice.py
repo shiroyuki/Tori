@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from unittest import TestCase
-from pymongo import Connection
+from ft.db.dbtestcase import DbTestCase
+from tori.db.driver.mongodriver import Driver
 from tori.db.session import Session
 from tori.db.common import ProxyObject
 from tori.db.criteria import Criteria, Order
@@ -26,18 +26,10 @@ class Series(object):
         self.author   = author
         self.published_in = published_in
 
-class TestDbFetchingWithIndice(TestCase):
-    connection         = Connection()
+class TestFunctional(DbTestCase):
     base_index_count   = 2
     manual_index_count = 4
     auto_index_count   = 5
-
-    def setUp(self):
-        self.session = Session('test', self.connection['db_fetching_with_indice'])
-        self.indexes = self.session.db['system.indexes']
-    
-    def tearDown(self):
-        self.connection.drop_database('db_fetching_with_indice')
 
     def test_auto_index(self):
         repository = self.session.repository(Series)
@@ -68,38 +60,18 @@ class TestDbFetchingWithIndice(TestCase):
         sample_count = 0
 
         for sample in samples:
-            self.__reset_db()
+            self._reset_db(self.__data_provider())
 
             sample_count += 1
             series_list = repository.find(sample['criteria'])
 
-            self.__list_indexes()
-
             self.assertEqual(sample['expected_name'], series_list[sample['expected_list_index']].name, 'Sample #{}'.format(sample_count))
-            self.assertEqual(sample['expected_db_index_count'], self.indexes.count(), 'Sample #{}'.format(sample_count))
-
-    def __list_indexes(self):
-        for index in self.indexes.find():
-            print(index)
-
-    def __reset_db(self):
-        for data in self.__data_provider():
-            repository = data['repository']
-
-            repository._api.drop_indexes()
-            repository._api.drop()
-            repository.setup_index()
-
-            for fixture in data['fixtures']:
-                repository._api.insert(fixture)
+            self.assertEqual(sample['expected_db_index_count'], self.driver.index_count(), 'Sample #{}'.format(sample_count))
 
     def __data_provider(self):
-        authors = self.session.repository(Author)
-        series  = self.session.repository(Series)
-
         return [
             {
-                'repository': authors,
+                'class': Author,
                 'fixtures':   [
                     {'_id': 1, 'name': 'Noriko Ogiwara'},
                     {'_id': 2, 'name': 'Honobu Yonezawa'},
@@ -109,7 +81,7 @@ class TestDbFetchingWithIndice(TestCase):
                 ]
             },
             {
-                'repository': series,
+                'class': Series,
                 'fixtures':   [
                     {
                         '_id': 1,

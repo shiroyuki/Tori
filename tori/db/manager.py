@@ -1,45 +1,74 @@
+import re
 from bson.objectid import ObjectId
-
-try:
-    from pymongo import MongoClient
-except:
-    from pymongo import Connection
-
+from tori.db.driver.interface import DriverInterface
 from tori.db.session import Session
+from tori.db.exception import InvalidUrlError, UnknownDriverError
+
+def register_driver(protocol):
+    print(protocol)
+    def inner_decorator(ctype):
+        print(ctype)
+        ManagerFactory.protocol_to_driver_map[protocol] = ctype
+
+        return ctype
+
+    return inner_decorator
+
+class ManagerFactory(object):
+    protocol_to_driver_map = {}
+
+    def __init__(self):
+        self._re_url = re.compile('(?P<protocol>[a-zA-Z]+)://(?P<address>.+)')
+
+    def analyze_url(self, url):
+        index = 0
+        connection_info = {}
+
+        matches = self._re_url.match(url)
+
+        if matches:
+            return matches.groupdict()
+
+        raise InvalidUrlError('Invalid URL to {}'.format(url))
+
+    def driver(self, url):
+        config = self.analyze_url(url)
+
+        if not config:
+            raise UnknownDriverError('Unable to connect to {} due to invalid configuration'.format())
+
+        if config['protocol'] in ManagerFactory.protocol_to_driver_map:
+            return ManagerFactory.protocol_to_driver_map[protocol]
+
+        raise UnknownDriverError('Unable to connect to {}'.format(url))
+
+    def connect(self, url):
+        pass
 
 class Manager(object):
     """ Entity Manager
 
         :param name: the name of the database
         :type  name: str
-        :param connection: the connection object
-        :type  connection: pymongo.MongoClient
-        :param document_types: the list of document classes/types
-        :type  document_types: list
+        :param driver: the driver interface
+        :type  driver: tori.db.driver.interface.DriverInterface
     """
-    def __init__(self, name, connection=None, document_types=[]):
-        self._name             = name
-        self._connection       = connection or MongoClient()
-        self._database         = self._connection[self._name]
-        self._session_map      = {}
-        self._registered_types = {}
+    def __init__(self, name, driver):
+        assert isinstance(driver, DriverInterface), 'The given driver must implement DriverInterface.'
+        self._name        = name
+        self._driver      = driver
+        self._session_map = {}
+        self._driver      = driver
 
-        for document_type in document_types:
-            self._registered_types[document_type.__collection_name__] = document_type
+        self._driver.database_name = name
 
     @property
-    def db(self):
-        """ Database-level API
+    def driver(self):
+        """ Driver API
 
-        :rtype: pymongo.database.Database
-
-        .. warning::
-
-            Please use this property with caution. The unit of work cannot track any changes done by direct calls via
-            this property and may mess up with the change-set calculation.
-
+        :rtype: tori.db.driver.interface.DriverInterface
         """
-        return self._database
+        return self._driver
 
     def open_session(self, id=None, supervised=False):
         """ Open a session
@@ -53,7 +82,7 @@ class Manager(object):
             :type  supervised: bool
         """
         if not supervised:
-            return Session(0, self.db, self._registered_types)
+            return Session(self.driver)
 
         if not id:
             id = ObjectId()
@@ -61,7 +90,7 @@ class Manager(object):
         if id in self._session_map:
             return self._session_map[id]
 
-        session = Session(id, self.db, self._registered_types)
+        session = Session(self.driver)
 
         if supervised:
             self._session_map[id] = session

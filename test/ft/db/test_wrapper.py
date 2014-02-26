@@ -1,7 +1,5 @@
 import unittest
-
 from sqlalchemy import Column, Integer, String
-
 from tori.db.wrapper import Entity, Repository
 
 class Dummy(Entity):

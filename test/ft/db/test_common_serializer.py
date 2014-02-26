@@ -8,7 +8,7 @@ class Document(object):
     def __init__(self, name):
         self.name = name
 
-class TestDbCommonSerializer(unittest.TestCase):
+class TestFunctional(unittest.TestCase):
     def setUp(self):
         self.s = Serializer()
 
