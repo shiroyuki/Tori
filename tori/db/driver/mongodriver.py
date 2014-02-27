@@ -1,23 +1,45 @@
+import re
 from pymongo import MongoClient
-from tori.db.entity  import Index
-from tori.db.manager import register_driver as driver
+from tori.db.entity import Index
 from tori.db.driver.interface import DriverInterface
 
-@driver('mongodb')
 class Driver(DriverInterface):
-    def __init__(self):
-        super(Driver, self).__init__()
+    def __init__(self, config):
+        super(Driver, self).__init__(config)
 
-    def connect(self, config):
-        if isinstance(config, dict):
-            self.database_name = config['name']
+        if isinstance(self.config, dict):
+            if 'name' not in self.config:
+                raise ValueError('Please specify the name of the database.')
 
-            del config['name']
+            self.database_name = self.config['name']
 
-            self.client = MongoClient(**config)
+            del self.config['name']
+
+            return
+
+        # "config" is an URL.
+        matches = re.search('^mongodb://[^/]+/(?P<database_name>[^\?]+)', config)
+
+        if not matches:
+            raise ValueError('Please specify the name of the database.')
+
+        self.database_name = matches.groupdict()['database_name']
+
+    def connect(self):
+        if self.client:
+            return
+
+        if isinstance(self.config, dict):
+            self.client = MongoClient(**self.config) # as a config map
+
+            return
+
+        self.client = MongoClient(config) # as an URL
 
     def disconnect(self):
-        pass
+        self.client.disconnect()
+
+        self.client = None
 
     def db(self, name=None):
         return self.client[name or self.database_name]

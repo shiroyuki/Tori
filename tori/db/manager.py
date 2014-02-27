@@ -1,24 +1,31 @@
 import re
 from bson.objectid import ObjectId
+from imagination.loader import Loader
+from imagination.decorator.validator import restrict_type
 from tori.db.driver.interface import DriverInterface
 from tori.db.session import Session
 from tori.db.exception import InvalidUrlError, UnknownDriverError
 
-def register_driver(protocol):
-    print(protocol)
-    def inner_decorator(ctype):
-        print(ctype)
-        ManagerFactory.protocol_to_driver_map[protocol] = ctype
-
-        return ctype
-
-    return inner_decorator
-
 class ManagerFactory(object):
-    protocol_to_driver_map = {}
-
-    def __init__(self):
+    def __init__(self, protocol_to_driver_map = None):
+        self._protocol_to_driver_map = {}
         self._re_url = re.compile('(?P<protocol>[a-zA-Z]+)://(?P<address>.+)')
+
+        p2d_map = (protocol_to_driver_map or self._default_protocol_to_driver_map)
+
+        for protocol in p2d_map:
+            self.register(protocol, p2d_map[protocol])
+
+    @property
+    def _default_protocol_to_driver_map(self):
+        return {
+            'mongodb': 'tori.db.driver.mongodriver.Driver'
+        }
+
+    def register(self, protocol, driver_class):
+        self._protocol_to_driver_map[protocol] = driver_class \
+            if isinstance(driver_class, type) \
+            else Loader(driver_class).package
 
     def analyze_url(self, url):
         index = 0
@@ -37,30 +44,29 @@ class ManagerFactory(object):
         if not config:
             raise UnknownDriverError('Unable to connect to {} due to invalid configuration'.format())
 
-        if config['protocol'] in ManagerFactory.protocol_to_driver_map:
-            return ManagerFactory.protocol_to_driver_map[protocol]
+        if config['protocol'] in self._protocol_to_driver_map:
+            return self._protocol_to_driver_map[config['protocol']](url)
 
         raise UnknownDriverError('Unable to connect to {}'.format(url))
 
     def connect(self, url):
-        pass
+        driver  = self.driver(url)
+        manager = Manager(driver)
+
+        return manager
 
 class Manager(object):
     """ Entity Manager
 
-        :param name: the name of the database
-        :type  name: str
         :param driver: the driver interface
         :type  driver: tori.db.driver.interface.DriverInterface
     """
-    def __init__(self, name, driver):
-        assert isinstance(driver, DriverInterface), 'The given driver must implement DriverInterface.'
-        self._name        = name
+    def __init__(self, driver):
+        assert isinstance(driver, DriverInterface) or issubclass(driver, DriverInterface), \
+            'The given driver must implement DriverInterface, {} given.'.format(driver)
         self._driver      = driver
         self._session_map = {}
         self._driver      = driver
-
-        self._driver.database_name = name
 
     @property
     def driver(self):

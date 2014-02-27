@@ -11,8 +11,8 @@ class DbTestCase(TestCase):
     driver = None
 
     def open_driver(self):
-        self.driver = Driver()
-        self.driver.connect(({'name': self.default_collection_name}))
+        self.driver = Driver({'name': self.default_collection_name})
+        self.driver.connect()
 
     def close_driver(self):
         del self.driver

@@ -1,7 +1,17 @@
 class DriverInterface(object):
-    def __init__(self):
+    def __init__(self, config):
+        self._config = config
         self._client = None
         self._database_name = None
+
+    @property
+    def config(self):
+        return self._config
+
+    @config.setter
+    def config(self, value):
+        self._config = value
+
 
     @property
     def client(self):
