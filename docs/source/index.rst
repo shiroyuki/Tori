@@ -12,12 +12,14 @@ Tori is a collection of libraries, micro web framework based on Facebook's
 Tornado framework 2.x and the ORM for MongoDB and supports Python 2.7+ and
 Python 3.3+. (Read more from the :doc:`manual/introduction`.)
 
-What next?
-----------
+What's next?
+------------
 
-Read :doc:`manual/index` if you want to get started and learn how to use it.
+Read:
 
-Read :doc:`api/index` if you want to get the documentation of APIs and methods.
+- Read :doc:`manual/index` to get started and learn how to use it.
+- Read :doc:`api/index` to get the reference on APIs and methods.
+- Read :doc:`changes` to see what have been changed.
 
 .. toctree::
    :maxdepth: 1
@@ -26,6 +28,7 @@ Read :doc:`api/index` if you want to get the documentation of APIs and methods.
 
    manual/index
    api/index
+   changes
 
 Not working after upgrade?
 --------------------------

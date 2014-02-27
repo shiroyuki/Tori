@@ -24,7 +24,7 @@ class Session(object):
     def collection(self, entity_class):
         """ Alias to ``repository()``
 
-            .. deprecatedVersion:: 2.2
+            .. deprecated:: 2.2
         """
         return self.repository(entity_class)
 
