@@ -56,4 +56,32 @@ Limitation
 * **Cascading operations on refreshing** force the ORM to reset the data and
   status of all entities, including proxy objects. However, the status of any
   entities marked for deletion will not be reset.
-  
+* Some database operations are not supported or optimized due to the non-generalized
+  interfaces as shown on the table in the next section. (Introduced in Tori 3.0)
+* **LevelDB** will only be supported for **Python 2.7** as the underlying library
+  `leveldb <https://code.google.com/p/py-leveldb/>`_ only supports Python 2.7 due
+  to its dependency.
+
+Supported SQL-equivalent Querying Operations
+============================================
+
+.. versionadded:: 3.0
+
+=============================== ============ ========= ========= ======= =====
+SQL-equivalent Operation        MongoDB 2.4+ Riak 1.4+ Riak 2.0+ LevelDB Redis
+=============================== ============ ========= ========= ======= =====
+CRUD operations                 Yes          Yes       Yes       Yes     Yes
+Simple query                    Yes          No        Unknown   No      No
+AND compound statement          Yes          No        Unknown   No      No
+OR compound statement           Unknown      No        Unknown   No      No
+Filter with regular expression  Yes          No        Unknown   No      No
+Range filter                    Yes          No        Unknown   No      No
+Query optimization with index   Yes          Yes       Yes       No      No
+Directly use indice for query   No           Yes       Yes       No      No
+Store the data as they are\*    Yes          Yes       Yes       No      No
+=============================== ============ ========= ========= ======= =====
+
+.. note::
+
+    Some databases may store a complex-structured data, which is always the case
+    when the ORM stores the structured data of the entity.
