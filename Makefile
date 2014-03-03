@@ -11,10 +11,10 @@ doc_update:
 
 test: test_py3
 
-test_py2: cache_clean reset_mongodb
+test_py2: cache_clean# reset_mongodb
 	nosetests -c nose.cfg $(TEST_FLAGS)
 
-test_py3: cache_clean reset_mongodb
+test_py3: cache_clean# reset_mongodb
 	nosetests-3.3 -c nose.cfg $(TEST_FLAGS)
 
 test_ci: cache_clean install_test_package reset_mongodb

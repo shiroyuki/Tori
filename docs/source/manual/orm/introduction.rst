@@ -73,7 +73,7 @@ SQL-equivalent Operation        MongoDB 2.4+ Riak 1.4+ Riak 2.0+ LevelDB Redis
 CRUD operations                 Yes          Yes       Yes       Yes     Yes
 Simple query                    Yes          No        Unknown   No      No
 AND compound statement          Yes          No        Unknown   No      No
-OR compound statement           Unknown      No        Unknown   No      No
+OR compound statement           Yes/SW       Yes/SW    Yes/SW    No      No
 Filter with regular expression  Yes          No        Unknown   No      No
 Range filter                    Yes          No        Unknown   No      No
 Query optimization with index   Yes          Yes       Yes       No      No
@@ -85,3 +85,10 @@ Store the data as they are\*    Yes          Yes       Yes       No      No
 
     Some databases may store a complex-structured data, which is always the case
     when the ORM stores the structured data of the entity.
+
+.. note::
+
+    .. versionadded:: 3.1
+
+    The OR statements are not available by any of supported NoSQL databases.
+    This is planned for Tori 3.1 to support by the ORM, similar to **session**.
