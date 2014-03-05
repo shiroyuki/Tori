@@ -1,5 +1,16 @@
+"""
+:mod:`tori.db.criteria` -- Query Criteria
+=========================================
+
+.. module:: tori.db.criteria
+   :platform: All
+   :synopsis: The metadata for querying data from the backend data storage
+.. moduleauthor:: Juti Noppornpitak <jnopporn@shiroyuki.com>
+"""
+
 import pymongo
 from imagination.decorator.validator import restrict_type
+from tori.db.expression import Expression
 
 class Order(object):
     """ Sorting Order Definition """
@@ -27,6 +38,7 @@ class Criteria(object):
         self._force_loading = False
         self._auto_index    = False
         self._indexed_target_list = []
+        self._expression = None
 
     @property
     def origin(self):
@@ -36,8 +48,21 @@ class Criteria(object):
     def origin(self, value):
         self._origin = value
 
+    @property
+    def expression(self):
+        return self._expression
+
+    @expression.setter
+    def expression(self, value):
+        assert isinstance(value, Expression), 'The Expression object should be given, not {}.'.format(type(value))
+        self._expression = value
+
     def where(self, key_or_full_condition, filter_data=None):
         """ Define the condition
+
+            .. deprecated:: 3.1
+
+                Starting in Tori 3.0, the new way to query will be.
 
             :type  key_or_full_condition: str or dict
             :param key_or_full_condition: either the key of the condition
@@ -103,6 +128,9 @@ class Criteria(object):
         self._auto_index = flag
 
         return self
+
+    def new_expression(self, alias):
+        return Expression(alias)
 
     def __str__(self):
         statements = []

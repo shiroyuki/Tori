@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import re
 
@@ -10,23 +12,47 @@ class Expression(object):
         Support operands: =, <=, <, >, >=, in, like (SQL-like string pattern), rlike (Regular-expression pattern), indexed with (only for Riak)
     """
 
+    OP_EQ = '='
+    OP_GE = '>='
+    OP_GT = '>'
+    OP_LE = '<='
+    OP_LT = '<'
+    OP_IN = 'in'
+    OP_SQL_LIKE     = 'like'
+    OP_REGEXP_LIKE  = 'rlike'
+    OP_INDEX_SEARCH = 'indexed_with'
+
     IS_PARAMETER     = 'param'
     IS_PROPERTY_PATH = 'path'
     IS_DATA          = 'data'
 
-    def __init__(self):
+    def __init__(self, alias):
         self._sub_expressions  = []
-        self._re_statement     = re.compile('^\s*(?P<left>.+)\s+(?P<operand>=|<=|<|>=|>|in|like|rlike|indexed with)\s+(?P<right>.+)\s*$')
         self._re_parameter     = re.compile('^:[a-zA-Z0-9_]+$')
         self._re_property_path = re.compile('^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$')
+        self._re_statement     = re.compile(
+            '^\s*(?P<left>.+)\s+(?P<operand>{eq}|{ge}|{gt}|{le}|{lt}|{xin}|{like}|{rlike}|{indexed})\s+(?P<right>.+)\s*$'.format(
+                eq = Expression.OP_EQ,
+                ge = Expression.OP_GE,
+                gt = Expression.OP_GT,
+                le = Expression.OP_LE,
+                lt = Expression.OP_LT,
+                xin  = Expression.OP_IN,
+                like = Expression.OP_SQL_LIKE,
+                rlike   = Expression.OP_REGEXP_LIKE,
+                indexed = Expression.OP_INDEX_SEARCH
+            )
+        )
+
 
     @property
     def sub_expressions(self):
         return self._sub_expressions
 
     def expect(self, statement):
-        # parse the statement
-        pass
+        expr = self._compile(statement);
+
+        self._sub_expressions.append(expr)
 
     def _compile(self, statement):
         fixed_syntax_operands = ('in', 'like', 'rlike', 'indexed with')

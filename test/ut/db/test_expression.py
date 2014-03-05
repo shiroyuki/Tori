@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from unittest import TestCase
 
 try:
@@ -9,7 +11,7 @@ from tori.db.expression import Expression, InvalidExpressionError
 
 class TestUnit(TestCase):
     def setUp(self):
-        self.expr = Expression()
+        self.expr = Expression('u')
 
     def test_statement_parser_compile_ok(self):
         index     = 0
@@ -20,14 +22,14 @@ class TestUnit(TestCase):
             ),
             (
                 'book.title in ["Le Monde", "氷菓"]',
-                {'right': {'value': ['Le Monde', '氷菓'], 'type': 'data', 'original': '["Le Monde", "氷菓"]'}, 'left': {'value': None, 'type': 'path', 'original': 'book.title'}, 'operand': 'in'}
+                {'right': {'value': [u'Le Monde', u'氷菓'], 'type': 'data', 'original': '["Le Monde", "氷菓"]'}, 'left': {'value': None, 'type': 'path', 'original': 'book.title'}, 'operand': 'in'}
             )
         ]
 
         for raw, processed in data_sets:
             compiled = self.expr._compile(raw)
 
-            print('{}:\n  -> {}\n  <- {}'.format(index, raw, compiled))
+            print('{}:\n  RAW -> {}\n  CPE <- {}\n  EXE <- {}'.format(index, raw, compiled, processed))
 
             self.assertEqual(processed, compiled, 'Data set #{} failed the test.'.format(index))
 
