@@ -1,7 +1,7 @@
 import json
 import re
 
-class SyntaxError(Exception):
+class InvalidExpressionError(Exception):
     """ Expression Syntax Error """
 
 class Expression(object):
@@ -15,16 +15,10 @@ class Expression(object):
     IS_DATA          = 'data'
 
     def __init__(self):
-        self._sub_expressions = []
-        self._re_statement = re.compile('^\s*(?P<left>.+)\s+(?P<operand>=|<=|<|>=|>|in|like|rlike|indexed with)\s+(?P<right>.+)\s*$')
-        self._re_parameter = re.compile('^:[a-zA-Z0-9_]+$')
-        self._re_property_path = re.compile('^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)+$')
-        self._re_list = re.compile('^\[.+\]$')
-        self._re_dict = re.compile('^\{.+\}$')
-        self._re_integer = re.compile('^\d+$')
-        self._re_float = re.compile('^\d*\.\d+$')
-        self._re_boolean_true = re.compile('^(T|t)rue$')
-        self._re_boolean_false = re.compile('^(F|f)alse$')
+        self._sub_expressions  = []
+        self._re_statement     = re.compile('^\s*(?P<left>.+)\s+(?P<operand>=|<=|<|>=|>|in|like|rlike|indexed with)\s+(?P<right>.+)\s*$')
+        self._re_parameter     = re.compile('^:[a-zA-Z0-9_]+$')
+        self._re_property_path = re.compile('^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$')
 
     @property
     def sub_expressions(self):
@@ -39,17 +33,22 @@ class Expression(object):
 
         expr = self._parse(statement)
 
-        expr['left']  = self._parse_side(expr['left'])
-        expr['right'] = self._parse_side(expr['right'])
+        try:
+            expr['left']  = self._parse_side(expr['left'])
+        except InvalidExpressionError as exception:
+            raise InvalidExpressionError('The left side of the expression cannot be parsed.')
+
+        try:
+            expr['right']  = self._parse_side(expr['right'])
+        except InvalidExpressionError as exception:
+            raise InvalidExpressionError('The left side of the expression cannot be parsed.')
 
         # Validate the syntax
         if expr['left']['type'] != Expression.IS_PROPERTY_PATH and expr['operand'] in fixed_syntax_operands:
-            raise SyntaxError('The property path must be on the left of the operand.')
-        
+            raise InvalidExpressionError('The property path must be on the left of the operand.')
+
         if expr['right']['type'] == Expression.IS_PROPERTY_PATH and expr['operand'] in fixed_syntax_operands:
-            raise SyntaxError('The property path cannot be on the right of the operand.')
-        
-        # to be continued
+            raise InvalidExpressionError('The property path cannot be on the right of the operand.')
 
         return expr
 
@@ -69,17 +68,24 @@ class Expression(object):
                 'value':    None
             }
 
+        decoded_data = None
+
+        try:
+            decoded_data = json.loads(sub_statement)
+        except ValueError as exception:
+            raise InvalidExpressionError('Unable to decode the data.')
+
         return {
             'original': sub_statement,
             'type':     kind,
-            'value':    json.loads(sub_statement)
+            'value':    decoded_data
         }
 
     def _parse(self, statement):
         matches = self._re_statement.match(statement)
 
         if not matches:
-            raise SyntaxError('Incomplete statement: {}'.format(statement))
+            raise InvalidExpressionError('Incomplete statement: {}'.format(statement))
 
         expr = matches.groupdict()
 
