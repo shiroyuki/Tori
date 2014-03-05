@@ -94,6 +94,12 @@ class Driver(DriverInterface):
         force_loading   = criteria._force_loading
         auto_index      = criteria._auto_index
 
+        condition = self._convert_expression_to_condition(
+                collection_name, criteria.expression
+            ) \
+            if criteria.expression \
+            else criteria._condition # To be removed in Tori 3.1+
+
         cursor = self.find(collection_name, criteria._condition)
 
         if not force_loading and criteria._limit != 1:
@@ -119,6 +125,9 @@ class Driver(DriverInterface):
             cursor.limit(criteria._limit)
 
         return [data for data in cursor]
+
+    def _convert_expression_to_condition(self, collection_name, expression):
+        api = self.collection(collection_name)
 
     def indice(self):
         return [index for index in self.collection('system.indexes').find()]
