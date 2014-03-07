@@ -1,7 +1,11 @@
 import re
 from pymongo import MongoClient
 from tori.db.entity import Index
+from tori.db.expression import Expression, InvalidExpressionError as InvalidExpressionErrorBase
 from tori.db.driver.interface import DriverInterface
+
+class InvalidExpressionError(InvalidExpressionErrorBase):
+    """ MongoDB-specific Invalid Expression Error """
 
 class Driver(DriverInterface):
     def __init__(self, config):
@@ -127,7 +131,9 @@ class Driver(DriverInterface):
         return [data for data in cursor]
 
     def _convert_expression_to_condition(self, collection_name, expression):
-        api = self.collection(collection_name)
+        api   = self.collection(collection_name)
+
+        pass
 
     def indice(self):
         return [index for index in self.collection('system.indexes').find()]
@@ -137,6 +143,7 @@ class Driver(DriverInterface):
         options = {
             'background': (not force_index)
         }
+
         order_list = index.to_list() if isinstance(index, Index) else index
 
         if isinstance(order_list, list):

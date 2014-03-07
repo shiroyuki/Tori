@@ -55,6 +55,10 @@ class Repository(object):
         """
         return self._class.__collection_name__
 
+    @property
+    def kind(self):
+        return self._class
+
     def auto_index(self, auto_index):
         """ Enable the auto-index feature
 
@@ -121,7 +125,7 @@ class Repository(object):
             :returns: the result based on the given criteria
             :rtype: object or list of objects
         """
-        data_set = self.driver.query(criteria)
+        data_set = self.session.query(criteria)
 
         entity_list = []
 
@@ -253,13 +257,13 @@ class Repository(object):
 
         return self._has_cascading
 
-    def new_criteria(self):
+    def new_criteria(self, alias='e'):
         """ Create a criteria
 
             :rtype: :class:`tori.db.criteria.Criteria`
         """
 
-        c = Criteria()
+        c = Criteria(alias)
 
         c.origin = self.name
 

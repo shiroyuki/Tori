@@ -1,5 +1,7 @@
-from pymongo import Connection
+
+import re
 from tori.db.common import ProxyObject, ProxyFactory, ProxyCollection
+from tori.db.criteria import Criteria
 from tori.db.repository import Repository
 from tori.db.exception import IntegrityConstraintError
 from tori.db.mapper import AssociationType
@@ -13,9 +15,10 @@ class Session(object):
     """
     def __init__(self, driver):
         self._driver = driver
-        self._uow = UnitOfWork(self)
+        self._uow    = UnitOfWork(self)
         self._repository_map   = {}
         self._registered_types = {}
+        self._re_property_path_delimiter = re.compile('\.')
 
     @property
     def driver(self):
@@ -73,6 +76,33 @@ class Session(object):
 
         if key not in self._registered_types:
             self._registered_types[key] = entity_class
+
+    def query(self, criteria):
+        if not isinstance(criteria, Criteria):
+            return self.driver.query(criteria)
+
+        collection_name = criteria.origin
+        root_repo  = self.repository(collection_name)
+        root_class = root_repo.kind
+        query = criteria.expression.get_analyzed_version()
+
+        # Fulfil the property-path-to-type map
+        pp2t_map = query['properties'] # The property-path-to-type map
+
+        # Register the root entity if not defined.
+        if criteria.alias not in pp2t_map:
+            pp2t_map[criteria.alias] = root_class
+
+        for property_path in pp2t_map:
+            iterating_path = self._re_property_path_delimiter.split(property_path)
+            print('Property Path: {}'.format('->'.join(iterating_path)))
+            print('Iterating: {} -> {}'.format(property_path, pp2t_map[property_path]))
+
+        print('\n')
+        print('Analyzed Query:')
+        print(query)
+
+        return self.driver.query(criteria)
 
     def delete(self, *entities):
         """ Delete entities

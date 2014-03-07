@@ -11,7 +11,7 @@ from tori.db.expression import Expression, InvalidExpressionError
 
 class TestUnit(TestCase):
     def setUp(self):
-        self.expr = Expression('u')
+        self.expr = Expression()
 
     def test_statement_parser_compile_ok(self):
         index     = 0
@@ -23,6 +23,10 @@ class TestUnit(TestCase):
             (
                 'book.title in ["Le Monde", "氷菓"]',
                 {'right': {'value': [u'Le Monde', u'氷菓'], 'type': 'data', 'original': '["Le Monde", "氷菓"]'}, 'left': {'value': None, 'type': 'path', 'original': 'book.title'}, 'operand': 'in'}
+            ),
+            (
+                'book indexed with ["light-novel", "japanese", "mystery"]',
+                {'operand': 'indexed with', 'right': {'type': 'data', 'original': '["light-novel", "japanese", "mystery"]', 'value': [u'light-novel', u'japanese', u'mystery']}, 'left': {'type': 'path', 'original': 'book', 'value': None}}
             )
         ]
 
@@ -47,4 +51,8 @@ class TestUnit(TestCase):
 
         for raw in data_sets:
             with self.assertRaises(InvalidExpressionError):
+                print('{}: {}'.format(index, raw))
+
+                index += 1
+
                 compiled = self.expr._compile(raw)

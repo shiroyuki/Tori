@@ -28,7 +28,8 @@ class Criteria(object):
             associated entities.
 
     """
-    def __init__(self):
+    def __init__(self, alias):
+        self._alias     = alias
         self._condition = {}
         self._origin    = None # str - the name of the collection / repository
         self._order_by  = []
@@ -39,6 +40,14 @@ class Criteria(object):
         self._auto_index    = False
         self._indexed_target_list = []
         self._expression = None
+
+    @property
+    def alias(self):
+        return self._alias
+
+    @alias.setter
+    def alias(self, value):
+        self._alias = value
 
     @property
     def origin(self):
@@ -129,8 +138,8 @@ class Criteria(object):
 
         return self
 
-    def new_expression(self, alias):
-        return Expression(alias)
+    def new_expression(self):
+        return Expression()
 
     def __str__(self):
         statements = []
