@@ -3,6 +3,7 @@ import re
 from tori.db.common import ProxyObject, ProxyFactory, ProxyCollection
 from tori.db.criteria import Criteria
 from tori.db.repository import Repository
+from tori.db.entity import get_relational_map
 from tori.db.exception import IntegrityConstraintError
 from tori.db.mapper import AssociationType
 from tori.db.uow import UnitOfWork
@@ -78,7 +79,7 @@ class Session(object):
             self._registered_types[key] = entity_class
 
     def query(self, criteria):
-        if not isinstance(criteria, Criteria):
+        if not criteria.expression:
             return self.driver.query(criteria)
 
         collection_name = criteria.origin
@@ -87,22 +88,74 @@ class Session(object):
         query = criteria.expression.get_analyzed_version()
 
         # Fulfil the property-path-to-type map
-        pp2t_map = query['properties'] # The property-path-to-type map
+        property_map = query['properties'] # The property-path-to-type map
 
-        # Register the root entity if not defined.
-        if criteria.alias not in pp2t_map:
-            pp2t_map[criteria.alias] = root_class
+        # Register the root entity
+        criteria.join_map[criteria.alias] = {
+            'path': None,
+            'class': root_class
+        }
 
-        for property_path in pp2t_map:
-            iterating_path = self._re_property_path_delimiter.split(property_path)
-            print('Property Path: {}'.format('->'.join(iterating_path)))
-            print('Iterating: {} -> {}'.format(property_path, pp2t_map[property_path]))
+        self._update_join_map(criteria.join_map, criteria.alias, criteria.origin)
 
         print('\n')
         print('Analyzed Query:')
         print(query)
+        print('Joined Map:')
+        print(criteria.join_map)
 
         return self.driver.query(criteria)
+
+    def _update_join_map(self, join_map, origin_alias, origin_class):
+        link_map = get_relational_map(origin_class)
+        iterating_sequence = []
+
+        print('Updating {} ({})'.format(origin_alias, origin_class))
+
+        for alias in join_map:
+            join_config = join_map[alias]
+
+            if join_config['class']:
+                continue
+
+            parent_alias, property_path = join_config['path'].split('.', 2)
+
+            iterating_sequence.append((join_config, alias, parent_alias, property_path))
+
+        # Update the immediate properties.
+        for join_config, current_alias, parent_alias, property_path in iterating_sequence:
+            print('Immediate iterating: {} -> {}.{}'.format(current_alias, parent_alias, property_path))
+
+            if parent_alias != origin_alias:
+                print('  - Skipped due to parent_alias')
+                continue
+
+            if property_path not in link_map:
+                print('  - Skipped as it is not mapped.')
+                continue
+
+            mapper = link_map[property_path]
+
+            join_config['class']  = mapper.target_class
+            join_config['mapper'] = mapper
+
+            print('  - Updated')
+
+        # Update the joined properties.
+        for join_config, current_alias, parent_alias, property_path in iterating_sequence:
+            print('Joined iterating: {} -> {}.{}'.format(current_alias, parent_alias, property_path))
+
+            if current_alias not in join_map:
+                print('  - Skipped as {} not joined.'.format(current_alias))
+                continue
+
+            if not join_map[current_alias]['class']:
+                print('  - Skipped as class not defined')
+                continue
+
+            self._update_join_map(join_map, current_alias, join_map[current_alias]['class'])
+
+            print('  - Updated {}'.format(current_alias))
 
     def delete(self, *entities):
         """ Delete entities

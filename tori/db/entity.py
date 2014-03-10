@@ -6,6 +6,12 @@ from imagination.decorator.validator import restrict_type
 from tori.db.common    import PseudoObjectId
 from tori.db.exception import LockedIdException
 
+def get_collection_name(cls):
+    return cls.__collection_name__
+
+def get_relational_map(cls):
+    return cls.__relational_map__
+
 def entity(*args, **kwargs):
     """ Entity decorator
 

@@ -40,6 +40,16 @@ class Criteria(object):
         self._auto_index    = False
         self._indexed_target_list = []
         self._expression = None
+        self._join_map   = {}
+        self._definition_map  = {}
+
+    @property
+    def definition_map(self):
+        return self._definition_map
+
+    @definition_map.setter
+    def definition_map(self, value):
+        self._definition_map = value
 
     @property
     def alias(self):
@@ -65,6 +75,22 @@ class Criteria(object):
     def expression(self, value):
         assert isinstance(value, Expression), 'The Expression object should be given, not {}.'.format(type(value))
         self._expression = value
+
+    @property
+    def join_map(self):
+        return self._join_map
+
+    @join_map.setter
+    def join_map(self, value):
+        self._join_map = value
+
+    def join(self, property_path, alias):
+        assert alias != self.alias and alias not in self._join_map, 'The alias of the joined entity must be unique.'
+        self._join_map[alias] = {
+            'path': property_path,
+            'class': None,
+            'mapper': None
+        }
 
     def where(self, key_or_full_condition, filter_data=None):
         """ Define the condition
@@ -140,6 +166,24 @@ class Criteria(object):
 
     def new_expression(self):
         return Expression()
+
+    def define(self, variable_name=None, value=None, **definition_map):
+        is_single_definition = bool(variable_name and value)
+        is_batch_definition  = bool(definition_map)
+
+        if is_single_definition and not is_batch_definition:
+            self.definition_map[variable_name] = value
+
+            return
+        elif not is_single_definition and is_batch_definition:
+            self.definition_map.update(definition_map)
+
+            return
+
+        raise ValueError('Cannot define one variable or multiple variables at the same time.')
+
+    def reset_definitions(self):
+        self.definition_map = {}
 
     def __str__(self):
         statements = []

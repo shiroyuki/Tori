@@ -265,7 +265,7 @@ class Repository(object):
 
         c = Criteria(alias)
 
-        c.origin = self.name
+        c.origin = self._class
 
         if self._auto_index:
             c.auto_index(self._auto_index)

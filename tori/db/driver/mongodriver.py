@@ -94,7 +94,7 @@ class Driver(DriverInterface):
             :param criteria: the criteria
             :type  criteria: tori.db.criteria.Criteria
         """
-        collection_name = criteria.origin
+        collection_name = criteria.origin.__collection_name__
         force_loading   = criteria._force_loading
         auto_index      = criteria._auto_index
 
@@ -104,7 +104,7 @@ class Driver(DriverInterface):
             if criteria.expression \
             else criteria._condition # To be removed in Tori 3.1+
 
-        cursor = self.find(collection_name, criteria._condition)
+        cursor = self.find(collection_name, condition)
 
         if not force_loading and criteria._limit != 1:
             cursor = self.find(collection_name, criteria._condition, fields=[])

@@ -1,4 +1,4 @@
-from unittest import TestCase
+from unittest import TestCase, skip
 from pymongo import Connection
 from tori.db.driver.mongodriver import Driver
 from tori.db.session import Session
