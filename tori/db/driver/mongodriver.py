@@ -98,9 +98,7 @@ class Driver(DriverInterface):
         force_loading   = criteria._force_loading
         auto_index      = criteria._auto_index
 
-        condition = self._convert_expression_to_condition(
-                collection_name, criteria.expression
-            ) \
+        condition = self._convert_criteria_to_query(criteria) \
             if criteria.expression \
             else criteria._condition # To be removed in Tori 3.1+
 
@@ -130,8 +128,12 @@ class Driver(DriverInterface):
 
         return [data for data in cursor]
 
-    def _convert_expression_to_condition(self, collection_name, expression):
-        api   = self.collection(collection_name)
+    def _convert_criteria_to_query(self, criteria):
+        expression = criteria.expression.get_analyzed_version()
+
+        print(criteria.join_map)
+        print(criteria.definition_map)
+        print(expression)
 
         pass
 

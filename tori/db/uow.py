@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from time      import time
 from threading import Lock as ThreadLock
+from tori.graph import DependencyNode as BaseDependencyNode, DependencyManager
 from tori.db.common    import Serializer, PseudoObjectId, ProxyObject
 from tori.db.entity    import BasicAssociation
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUpdateError, UOWUnknownRecordError, IntegrityConstraintError
@@ -41,22 +42,16 @@ class Record(object):
 
         self.mark_as(Record.STATUS_CLEAN)
 
-class DependencyNode(object):
+class DependencyNode(BaseDependencyNode):
     """ Dependency Node
 
         This is designed to be bi-directional to maximize flexibility on
         traversing the graph.
     """
     def __init__(self, record):
-        self.created_at     = int(time() * 1000000)
-        self.record         = record
-        self.adjacent_nodes = set()
-        self.reverse_edges  = set()
-        self.walked         = False
+        super(DependencyNode, self).__init__()
 
-    def connect(self, other):
-        self.adjacent_nodes.add(other)
-        other.reverse_edges.add(self)
+        self.record = record
 
     @property
     def object_id(self):
@@ -66,17 +61,8 @@ class DependencyNode(object):
     def status(self):
         return self.record.status
 
-    @property
-    def score(self):
-        score = 0
-
-        for node in self.reverse_edges:
-            if node.status == Record.STATUS_DELETED:
-                continue
-
-            score += 1
-
-        return score
+    def _disavow_connection(self, node):
+        return node.status == Record.STATUS_DELETED
 
     def __eq__(self, other):
         return self.record.entity.__class__ == other.record.entity.__class__ and self.object_id == other.object_id
@@ -84,23 +70,8 @@ class DependencyNode(object):
     def __ne__(self, other):
         return self.record.entity.__class__ != other.record.entity.__class__ or self.object_id != other.object_id
 
-    def __lt__(self, other):
-        return self.score < other.score
-
-    def __le__(self, other):
-        return self.score <= other.score
-
-    def __gt__(self, other):
-        return self.score > other.score
-
-    def __ge__(self, other):
-        return self.score >= other.score
-
     def __hash__(self):
         return self.created_at
-
-    def __repr__(self):
-        return '<DependencyNode for {}, {}>'.format(self.object_id, self.score)
 
 class UnitOfWork(object):
     """ Unit of Work
@@ -516,14 +487,7 @@ class UnitOfWork(object):
 
         # After constructing the dependency graph (as a supposedly directed acyclic
         # graph), do the topological sorting from the dependency graph.
-        final_order = []
-
-        for id in self._dependency_map:
-            node = self._dependency_map[id]
-
-            self._retrieve_dependency_order(node, final_order)
-
-        return final_order
+        return DependencyManager.get_order(self._dependency_map)
 
     def _compute_change_set(self, record):
         current_set = Record.serializer.encode(record.entity)
@@ -712,10 +676,7 @@ class UnitOfWork(object):
             if object_id not in self._dependency_map:
                 self._dependency_map[object_id] = DependencyNode(record)
 
-
-
             if not record.entity.__relational_map__:
-
                 continue
 
             # Go through the relational map to establish relationship between dependency nodes.

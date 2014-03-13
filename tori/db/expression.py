@@ -6,12 +6,26 @@ import re
 class InvalidExpressionError(Exception):
     """ Generic Invalid Expression Error """
 
+class ExpressionPart(object):
+    def __init__(self, original, kind, value):
+        self.original = original
+        self.kind     = kind
+        self.value    = value
+
+class AnalyzedExpression(object):
+    """ Representation of Analyzed Expression """
+    def __init__(self, expressions):
+        self.properties = {}
+        self.parameters = []
+        self.expressions = expressions
+
 class Expression(object):
     """ Query Expression
 
         Support operands: =, <=, <, >, >=, in, like (SQL-like string pattern), rlike (Regular-expression pattern), indexed with (only for Riak)
     """
 
+    # Should regroup these definitions into a constant class
     OP_EQ = '='
     OP_GE = '>='
     OP_GT = '>'
@@ -22,6 +36,7 @@ class Expression(object):
     OP_REGEXP_LIKE  = 'rlike'
     OP_INDEX_SEARCH = 'indexed with'
 
+    # Should regroup these definitions into a constant class
     IS_PARAMETER     = 'param'
     IS_PROPERTY_PATH = 'path'
     IS_DATA          = 'data'
@@ -51,40 +66,34 @@ class Expression(object):
         if self._is_updated:
             return self._analyzed_map
 
-        reference_map = {
-            # Property-path-to-class map
-            'properties': {},
-            # Parameter-to-value map
-            'parameters': {},
-            'expressions': self._sub_expressions
-        }
+        analyzed_expression = AnalyzedExpression(self._sub_expressions)
 
         # Scan for all property paths and parameters.
         for se in self._sub_expressions:
-            self._scan_for_property_paths_and_parameters(reference_map, se['left'])
-            self._scan_for_property_paths_and_parameters(reference_map, se['right'])
+            self._scan_for_property_paths_and_parameters(analyzed_expression, se['left'])
+            self._scan_for_property_paths_and_parameters(analyzed_expression, se['right'])
 
-        if not reference_map['properties']:
+        if not analyzed_expression.properties:
             raise InvalidExpressionError('There must be at least one property path. It is prone to query injection.')
 
-        self._analyzed_map = reference_map
+        self._analyzed_map = analyzed_expression
 
         return self._analyzed_map
 
-    def _scan_for_property_paths_and_parameters(self, reference_map, sub_expression_part):
+    def _scan_for_property_paths_and_parameters(self, analyzed_expression, sub_expression_part):
         """ Search for all property paths and parameters.
         """
         # Search for all referred property paths.
-        if sub_expression_part['type'] == Expression.IS_PROPERTY_PATH:
-            property_path = sub_expression_part['original']
+        if sub_expression_part.kind == Expression.IS_PROPERTY_PATH:
+            property_path = sub_expression_part.original
 
-            reference_map['properties'][property_path] = None
+            analyzed_expression.properties[property_path] = None
 
         # Search for all referred property paths.
-        if sub_expression_part['type'] == Expression.IS_PARAMETER:
-            parameter_name = sub_expression_part['original'][1:]
+        if sub_expression_part.kind == Expression.IS_PARAMETER:
+            parameter_name = sub_expression_part.original[1:]
 
-            reference_map['parameters'][parameter_name] = None
+            analyzed_expression.parameters.append(parameter_name)
 
     def expect(self, statement):
         self._is_updated = False
@@ -114,21 +123,21 @@ class Expression(object):
 
         # Validate the syntax on the fixed syntaxes.
         if expr['operand'] in fixed_syntax_operands:
-            if expr['left']['type'] != Expression.IS_PROPERTY_PATH:
+            if expr['left'].kind != Expression.IS_PROPERTY_PATH:
                 raise InvalidExpressionError('The property path must be on the left of the operand.')
 
-            if expr['right']['type'] == Expression.IS_PROPERTY_PATH:
+            if expr['right'].kind == Expression.IS_PROPERTY_PATH:
                 raise InvalidExpressionError('The property path cannot be on the right of the operand.')
 
         # If the left side refers to the root path but not for the index search,
         # the method will raise the invalid expression error.
-        if expr['left']['type'] == Expression.IS_PROPERTY_PATH \
-            and '.' not in expr['left']['original'] \
+        if expr['left'].kind == Expression.IS_PROPERTY_PATH \
+            and '.' not in expr['left'].original \
             and expr['operand'] != Expression.OP_INDEX_SEARCH:
             raise InvalidExpressionError('The property path to the root entity can only be used by index search.')
 
         # The property path must be in the expression.
-        if expr['left']['type'] != Expression.IS_PROPERTY_PATH and expr['right']['type'] != Expression.IS_PROPERTY_PATH:
+        if expr['left'].kind != Expression.IS_PROPERTY_PATH and expr['right'].kind != Expression.IS_PROPERTY_PATH:
             raise InvalidExpressionError('The property path must be in the expression.')
 
         return expr
@@ -143,11 +152,11 @@ class Expression(object):
             kind = Expression.IS_PROPERTY_PATH
 
         if kind != Expression.IS_DATA:
-            return {
+            return ExpressionPart(**{
                 'original': sub_statement,
-                'type':     kind,
+                'kind':     kind,
                 'value':    None
-            }
+            })
 
         decoded_data = None
 
@@ -156,11 +165,11 @@ class Expression(object):
         except ValueError as exception:
             raise InvalidExpressionError('Unable to decode the data.')
 
-        return {
+        return ExpressionPart(**{
             'original': sub_statement,
-            'type':     kind,
+            'kind':     kind,
             'value':    decoded_data
-        }
+        })
 
     def _parse(self, statement):
         matches = self._re_statement.match(statement)

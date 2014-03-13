@@ -88,7 +88,7 @@ class Session(object):
         query = criteria.expression.get_analyzed_version()
 
         # Fulfil the property-path-to-type map
-        property_map = query['properties'] # The property-path-to-type map
+        property_map = query.properties # The property-path-to-type map
 
         # Register the root entity
         criteria.join_map[criteria.alias] = {
@@ -98,11 +98,11 @@ class Session(object):
 
         self._update_join_map(criteria.join_map, criteria.alias, criteria.origin)
 
-        print('\n')
-        print('Analyzed Query:')
-        print(query)
-        print('Joined Map:')
-        print(criteria.join_map)
+        #print('\n')
+        #print('Analyzed Query:')
+        #print(query)
+        #print('Joined Map:')
+        #print(criteria.join_map)
 
         return self.driver.query(criteria)
 
@@ -110,7 +110,7 @@ class Session(object):
         link_map = get_relational_map(origin_class)
         iterating_sequence = []
 
-        print('Updating {} ({})'.format(origin_alias, origin_class))
+        #print('Updating {} ({})'.format(origin_alias, origin_class))
 
         for alias in join_map:
             join_config = join_map[alias]
@@ -124,14 +124,14 @@ class Session(object):
 
         # Update the immediate properties.
         for join_config, current_alias, parent_alias, property_path in iterating_sequence:
-            print('Immediate iterating: {} -> {}.{}'.format(current_alias, parent_alias, property_path))
+            #print('Immediate iterating: {} -> {}.{}'.format(current_alias, parent_alias, property_path))
 
             if parent_alias != origin_alias:
-                print('  - Skipped due to parent_alias')
+                #print('  - Skipped due to parent_alias')
                 continue
 
             if property_path not in link_map:
-                print('  - Skipped as it is not mapped.')
+                #print('  - Skipped as it is not mapped.')
                 continue
 
             mapper = link_map[property_path]
@@ -139,23 +139,23 @@ class Session(object):
             join_config['class']  = mapper.target_class
             join_config['mapper'] = mapper
 
-            print('  - Updated')
+            #print('  - Updated')
 
         # Update the joined properties.
         for join_config, current_alias, parent_alias, property_path in iterating_sequence:
-            print('Joined iterating: {} -> {}.{}'.format(current_alias, parent_alias, property_path))
+            #print('Joined iterating: {} -> {}.{}'.format(current_alias, parent_alias, property_path))
 
             if current_alias not in join_map:
-                print('  - Skipped as {} not joined.'.format(current_alias))
+                #print('  - Skipped as {} not joined.'.format(current_alias))
                 continue
 
             if not join_map[current_alias]['class']:
-                print('  - Skipped as class not defined')
+                #print('  - Skipped as class not defined')
                 continue
 
             self._update_join_map(join_map, current_alias, join_map[current_alias]['class'])
 
-            print('  - Updated {}'.format(current_alias))
+            #print('  - Updated {}'.format(current_alias))
 
     def delete(self, *entities):
         """ Delete entities
