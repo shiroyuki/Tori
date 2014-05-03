@@ -1,8 +1,9 @@
 import re
 from pymongo import MongoClient
+from tori.db.driver.interface import DriverInterface
 from tori.db.entity import Index
 from tori.db.expression import Expression, InvalidExpressionError as InvalidExpressionErrorBase
-from tori.db.driver.interface import DriverInterface
+from tori.db.metadata.helper import EntityMetadataHelper
 
 class InvalidExpressionError(InvalidExpressionErrorBase):
     """ MongoDB-specific Invalid Expression Error """
@@ -94,7 +95,9 @@ class Driver(DriverInterface):
             :param criteria: the criteria
             :type  criteria: tori.db.criteria.Criteria
         """
-        collection_name = criteria.origin.__collection_name__
+        metadata_origin = EntityMetadataHelper.extract(criteria.origin)
+
+        collection_name = metadata_origin.collection_name
         force_loading   = criteria._force_loading
         auto_index      = criteria._auto_index
 

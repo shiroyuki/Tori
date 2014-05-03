@@ -9,6 +9,7 @@ from tori.db.criteria  import Criteria, Order
 from tori.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
 from tori.db.mapper    import AssociationType, CascadingType
 from tori.db.uow       import Record
+from tori.db.metadata.helper import EntityMetadataHelper
 
 class Repository(object):
     """
@@ -53,7 +54,9 @@ class Repository(object):
 
             :rtype: str
         """
-        return self._class.__collection_name__
+        metadata = EntityMetadataHelper.extract(self._class)
+
+        return metadata.collection_name
 
     @property
     def kind(self):
@@ -79,7 +82,8 @@ class Repository(object):
 
         """
         spec = inspect.getargspec(self._class.__init__) # constructor contract
-        rmap = self._class.__relational_map__ # relational map
+        meta = EntityMetadataHelper.extract(self._class)
+        rmap = meta.relational_map # relational map
 
         # Default missing argument to NULL or LIST
         # todo: respect the default value of the argument
@@ -242,9 +246,10 @@ class Repository(object):
             return self._has_cascading
 
         self._has_cascading = False
+        relational_map      = EntityMetadataHelper.extract(self._class).relational_map
 
-        for property_name in self._class.__relational_map__:
-            cascading_options = self._class.__relational_map__[property_name].cascading_options
+        for property_name in relational_map:
+            cascading_options = relational_map[property_name].cascading_options
 
             if cascading_options \
               and (
@@ -285,9 +290,11 @@ class Repository(object):
     def setup_index(self):
         """ Set up index for the entity based on the ``entity`` and ``link`` decorators
         """
+        metadata = EntityMetadataHelper.extract(self._class)
+
         # Apply the relational indexes.
-        for field in self._class.__relational_map__:
-            guide = self._class.__relational_map__[field]
+        for field in metadata.relational_map:
+            guide = metadata.relational_map[field]
 
             if guide.inverted_by or guide.association != AssociationType.ONE_TO_ONE:
                 continue
@@ -295,7 +302,7 @@ class Repository(object):
             self.index(field)
 
         # Apply the manual indexes.
-        for index in self._class.__indexes__:
+        for index in metadata.index_list:
             self.index(index)
 
     def __len__(self):

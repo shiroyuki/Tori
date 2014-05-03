@@ -9,6 +9,7 @@
 import hashlib
 from imagination.loader import Loader
 from tori.db.exception import DuplicatedRelationalMapping
+from tori.db.metadata.helper import EntityMetadataHelper
 
 class AssociationType(object):
     """ Association Type """
@@ -130,8 +131,8 @@ class AssociationFactory(object):
         """
         if not self.__collection_name:
             self.__collection_name = self.collection_name_tmpl.format(
-                origin      = self.origin.__collection_name__,
-                destination = self.destination.__collection_name__
+                origin      = EntityMetadataHelper.extract(self.origin).collection_name,
+                destination = EntityMetadataHelper.extract(self.destination).collection_name
             )
 
         return self.__collection_name
@@ -232,11 +233,15 @@ def __prevent_duplicated_mapping(cls, property_name):
     if not cls:
         raise ValueError('Expecting a valid type')
 
-    if property_name in cls.__relational_map__:
+    metadata = EntityMetadataHelper.extract(cls)
+
+    if property_name in metadata.relational_map:
         raise DuplicatedRelationalMapping('The property is already mapped.')
 
 def __map_property(cls, property_name, guide):
-    cls.__relational_map__[property_name] = guide
+    metadata = EntityMetadataHelper.extract(cls)
+
+    metadata.relational_map[property_name] = guide
 
 def map(cls, mapped_by=None, target=None, inverted_by=None,
         association=AssociationType.AUTO_DETECT, read_only=False,

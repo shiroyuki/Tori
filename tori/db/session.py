@@ -7,6 +7,7 @@ from tori.db.entity import get_relational_map
 from tori.db.exception import IntegrityConstraintError
 from tori.db.mapper import AssociationType
 from tori.db.uow import UnitOfWork
+from tori.db.metadata.helper import EntityMetadataHelper
 
 class Session(object):
     """ Database Session
@@ -47,7 +48,8 @@ class Session(object):
 
             :rtype: tori.db.repository.Repository
         """
-        key = entity_class.__collection_name__
+        metadata = EntityMetadataHelper.extract(entity_class)
+        key = metadata.collection_name
 
         self.register_class(entity_class)
 
@@ -71,9 +73,11 @@ class Session(object):
 
             :rtype: tori.db.repository.Repository
         """
-        key = entity_class.__collection_name__ \
-            if isinstance(entity_class, type) \
-            else entity_class
+        key = entity_class
+
+        if isinstance(entity_class, type):
+            metadata = EntityMetadataHelper.extract(entity_class)
+            key      = metadata.collection_name
 
         if key not in self._registered_types:
             self._registered_types[key] = entity_class
@@ -210,14 +214,19 @@ class Session(object):
 
     def apply_relational_map(self, entity):
         """ Wire connections according to the relational map """
-        for property_name in entity.__relational_map__:
-            guide = entity.__relational_map__[property_name]
+        meta = EntityMetadataHelper.extract(entity)
+        rmap = meta.relational_map
+
+        for property_name in rmap:
+            guide = rmap[property_name]
             """ :type: tori.db.mapper.RelatingGuide """
 
             # In the reverse mapping, the lazy loading is not possible but so
             # the proxy object is still used.
             if guide.inverted_by:
-                api = self._driver.collection(guide.target_class.__collection_name__)
+                target_meta = EntityMetadataHelper.extract(guide.target_class)
+
+                api = self._driver.collection(target_meta.collection_name)
 
                 if guide.association in [AssociationType.ONE_TO_ONE, AssociationType.MANY_TO_ONE]:
                     # Replace with Criteria

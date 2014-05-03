@@ -6,6 +6,7 @@ from tori.db.common    import Serializer, PseudoObjectId, ProxyObject
 from tori.db.entity    import BasicAssociation
 from tori.db.exception import UOWRepeatedRegistrationError, UOWUpdateError, UOWUnknownRecordError, IntegrityConstraintError
 from tori.db.mapper    import CascadingType
+from tori.db.metadata.helper import EntityMetadataHelper
 
 class Record(object):
     serializer = Serializer(0)
@@ -272,11 +273,14 @@ class UnitOfWork(object):
         if isinstance(reference, ProxyObject):
             entity = reference._actual
 
-        if '__relational_map__' not in dir(entity):
+        if not EntityMetadataHelper.hasMetadata(entity):
             return
 
-        for property_name in entity.__relational_map__:
-            guide = entity.__relational_map__[property_name]
+        entity_meta = EntityMetadataHelper.extract(entity)
+        relational_map = entity_meta.relational_map
+
+        for property_name in relational_map:
+            guide = relational_map[property_name]
 
             if guide.inverted_by:
                 continue
@@ -586,7 +590,7 @@ class UnitOfWork(object):
 
     def _load_extra_associations(self, record, change_set):
         origin_id      = record.entity.id
-        relational_map = record.entity.__relational_map__
+        relational_map = EntityMetadataHelper.extract(record.entity).relational_map
 
         for property_name in relational_map:
             if property_name not in change_set:
@@ -654,7 +658,8 @@ class UnitOfWork(object):
             cls = entity.__class__
 
         if cls:
-            class_hash = cls.__collection_name__
+            metadata   = EntityMetadataHelper.extract(cls)
+            class_hash = metadata.collection_name
 
         object_key = '{}/{}'.format(class_hash, str(object_id))
 
@@ -676,12 +681,14 @@ class UnitOfWork(object):
             if object_id not in self._dependency_map:
                 self._dependency_map[object_id] = DependencyNode(record)
 
-            if not record.entity.__relational_map__:
+            relational_map = EntityMetadataHelper.extract(record.entity).relational_map
+
+            if not relational_map:
                 continue
 
             # Go through the relational map to establish relationship between dependency nodes.
-            for property_name in record.entity.__relational_map__:
-                guide = record.entity.__relational_map__[property_name]
+            for property_name in relational_map:
+                guide = relational_map[property_name]
 
                 # Ignore a property from reverse mapping.
                 if guide.inverted_by:

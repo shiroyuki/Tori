@@ -5,6 +5,7 @@ from tori.db.uow import Record
 from tori.db.entity import entity
 from tori.db.manager import Manager
 from tori.db.mapper import link, CascadingType, AssociationType
+from tori.db.metadata.helper import EntityMetadataHelper
 
 @link(
     mapped_by='groups',
@@ -55,7 +56,7 @@ class TestFunctional(DbTestCase):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 
-        associations = self.session.collection(Group.__relational_map__['members'].association_class.cls)
+        associations = self.__association_to_members()
 
         group = groups.new(name='From Up On Poppy Hill')
 
@@ -75,7 +76,7 @@ class TestFunctional(DbTestCase):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 
-        associations = self.session.collection(Group.__relational_map__['members'].association_class.cls)
+        associations = self.__association_to_members()
 
         group_a  = groups.filter_one({'name': 'group a'})
         group_b  = groups.filter_one({'name': 'group b'})
@@ -99,7 +100,7 @@ class TestFunctional(DbTestCase):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 
-        associations = self.session.collection(Group.__relational_map__['members'].association_class.cls)
+        associations = self.__association_to_members()
 
         group_a  = groups.filter_one({'name': 'group a'})
         group_b  = groups.filter_one({'name': 'group b'})
@@ -126,7 +127,7 @@ class TestFunctional(DbTestCase):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 
-        associations = self.session.collection(Group.__relational_map__['members'].association_class.cls)
+        associations = self.__association_to_members()
 
         group_a  = groups.filter_one({'name': 'group a'})
         group_b  = groups.filter_one({'name': 'group b'})
@@ -150,6 +151,9 @@ class TestFunctional(DbTestCase):
 
         self.assertEqual(2, len(groups))
         self.assertEqual(5, len(associations))
+
+    def __association_to_members(self):
+        return self.session.collection(EntityMetadataHelper.extract(Group).relational_map['members'].association_class.cls)
 
     def __data_provider(self):
         return [

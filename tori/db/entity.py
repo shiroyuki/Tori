@@ -5,11 +5,14 @@ import inspect
 from imagination.decorator.validator import restrict_type
 from tori.db.common    import PseudoObjectId
 from tori.db.exception import LockedIdException
+from tori.db.metadata.helper import EntityMetadataHelper
 
 def get_collection_name(cls):
+    raise RuntimeError('obsolete')
     return cls.__collection_name__
 
 def get_relational_map(cls):
+    raise RuntimeError('obsolete')
     return cls.__relational_map__
 
 def entity(*args, **kwargs):
@@ -47,17 +50,29 @@ def prepare_entity_class(cls, collection_name=None, indexes=[]):
     :type  collection_name: str
 
     The object decorated with this decorator will be automatically provided with
-    one additional attribute.
+    a few additional attributes.
 
-    =================== ======== =================== ==== ==============================
+    =================== ======== =================== ==== =================================
     Attribute           Access   Description         Read Write
-    =================== ======== =================== ==== ==============================
+    =================== ======== =================== ==== =================================
     id                  Instance Document Identifier Yes  Yes, ONLY ``id`` is undefined.
+    __t3_orm_meta__     Static   Tori 3's Metadata   Yes  ONLY the property of the metadata
+    __session__         Instance DB Session          Yes  Yes, but NOT recommended.
+    =================== ======== =================== ==== =================================
+
+    The following attributes might stay around but are deprecated as soon as
+    the stable Tori 3.0 is released.
+
+    =================== ======== =================== ==== =================================
+    Attribute           Access   Description         Read Write
+    =================== ======== =================== ==== =================================
     __collection_name__ Static   Collection Name     Yes  Yes, but NOT recommended.
     __relational_map__  Static   Relational Map      Yes  Yes, but NOT recommended.
-    __session__         Instance DB Session          Yes  Yes, but NOT recommended.
     __indexes__         Static   Indexing List       Yes  Yes, but NOT recommended.
-    =================== ======== =================== ==== ==============================
+    =================== ======== =================== ==== =================================
+
+    ``__session__`` is used to resolve the managing rights in case of using
+    multiple sessions simutaneously.
 
     For example,
 
@@ -70,6 +85,14 @@ def prepare_entity_class(cls, collection_name=None, indexes=[]):
                 self.title   = title
 
     where the collection name is automatically defined as "note".
+
+    .. versionchanged:: 3.0
+
+        The way Tori stores metadata objects in ``__collection_name__``,
+        ``__relational_map__`` and ``__indexes__`` are now ignored by the ORM
+        in favour of ``__t3_orm_meta__`` which is an entity metadata object.
+
+        This change is made to allow easier future development.
 
     .. tip::
 
@@ -93,10 +116,13 @@ def prepare_entity_class(cls, collection_name=None, indexes=[]):
 
         self._id = id
 
-    cls.__collection_name__ = collection_name or cls.__name__.lower()
-    cls.__relational_map__  = {}
-    cls.__session__         = None
-    cls.__indexes__         = indexes
+    cls.__session__ = None
+
+    EntityMetadataHelper.imprint(
+        cls,
+        collection_name or cls.__name__.lower(),
+        indexes
+    )
 
     cls.id = property(get_id, set_id)
 
