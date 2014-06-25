@@ -165,9 +165,62 @@ class Criteria(object):
         return self
 
     def new_expression(self):
+        """ Get a new expression for this criteria
+
+            :rtype: tori.db.expression.Expression
+        """
         return Expression()
 
+    def expect(self, statement):
+        """ Define the condition / expectation of the main expression.
+
+            :param statement: the conditional statement
+            :type  statement: str
+
+            This is a shortcut expression to define expectation of the main
+            expression. The main expression will be defined automatically
+            if it is undefined. For example,
+
+            .. code-block:: python
+
+                c = Criteria()
+                c.expect('foo = 123')
+
+            is the same thing as
+
+            .. code-block:: python
+
+                c = Criteria()
+                c.expression = c.new_expression()
+                c.expression.expect('foo = 123')
+        """
+        if not self.expression:
+            self.expression = self.new_expression()
+
+        self.expression.expect(statement)
+
     def define(self, variable_name=None, value=None, **definition_map):
+        """ Define the value of one or more variables (known as parameters).
+
+            :param variable_name: the name of the variable (for single assignment)
+            :type  variable_name: str
+            :param value: the value of the variable (for single assignment)
+            :param definition_map: the variable-to-value dictionary
+
+            This method is usually recommended be used to define multiple variables
+            like the following example.
+
+            .. code-block:: python
+
+                criteria.define(foo = 'foo', bar = 2)
+
+            However, it is designed to support the assign of a single user. For
+            instance,
+
+            .. code-block:: python
+
+
+        """
         is_single_definition = bool(variable_name and value)
         is_batch_definition  = bool(definition_map)
 
