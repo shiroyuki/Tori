@@ -2,7 +2,7 @@ import re
 from pymongo import MongoClient
 from tori.db.driver.interface import DriverInterface
 from tori.db.entity import Index
-from tori.db.expression import Expression, InvalidExpressionError as InvalidExpressionErrorBase
+from tori.db.expression import Criteria, InvalidExpressionError as InvalidExpressionErrorBase
 from tori.db.metadata.helper import EntityMetadataHelper
 
 class InvalidExpressionError(InvalidExpressionErrorBase):
@@ -89,54 +89,63 @@ class Driver(DriverInterface):
 
         return api.find(criteria)
 
-    def query(self, criteria):
-        """ Find the data sets with :class:`tori.db.criteria.Criteria`.
+    def query(self, query):
+        """ Find the data sets with :class:`tori.db.query.Criteria`.
 
-            :param criteria: the criteria
-            :type  criteria: tori.db.criteria.Criteria
+            :param query: the query
+            :type  query: tori.db.query.Criteria
         """
-        metadata_origin = EntityMetadataHelper.extract(criteria.origin)
+        # 2014.06.30:
+        # This method is subject to rewrite as the driver should be straight
+        # forward and contain no complicate logic.
+        metadata_origin = EntityMetadataHelper.extract(query.origin)
 
         collection_name = metadata_origin.collection_name
-        force_loading   = criteria._force_loading
-        auto_index      = criteria._auto_index
+        force_loading   = query._force_loading
+        auto_index      = query._auto_index
 
-        condition = self._convert_criteria_to_query(criteria) \
-            if criteria.expression \
-            else criteria._condition # To be removed in Tori 3.1+
+        condition = self._convert_native_query(query) \
+            if query.is_new_style \
+            else query._condition # To be removed in Tori 3.1+
 
         cursor = self.find(collection_name, condition)
 
-        if not force_loading and criteria._limit != 1:
-            cursor = self.find(collection_name, criteria._condition, fields=[])
+        if not force_loading and query._limit != 1:
+            cursor = self.find(collection_name, query._condition, fields=[])
 
-        if auto_index and not criteria._indexed:
-            if criteria._indexed_target_list:
-                for field in criteria._indexed_target_list:
+        if auto_index and not query._indexed:
+            if query._indexed_target_list:
+                for field in query._indexed_target_list:
                     self.ensure_index(collection_name, field, False)
 
-            if auto_index and not criteria._indexed:
-                self.ensure_index(collection_name, criteria._order_by, False)
+            if auto_index and not query._indexed:
+                self.ensure_index(collection_name, query._order_by, False)
 
-            criteria._indexed = True
+            query._indexed = True
 
-        if criteria._order_by:
-            cursor.sort(criteria._order_by)
+        if query._order_by:
+            cursor.sort(query._order_by)
 
-        if criteria._offset and criteria._offset > 0:
+        if query._offset and query._offset > 0:
             cursor.skip(self._offset)
 
-        if criteria._limit and criteria._limit > 0:
-            cursor.limit(criteria._limit)
+        if query._limit and query._limit > 0:
+            cursor.limit(query._limit)
 
         return [data for data in cursor]
 
-    def _convert_criteria_to_query(self, criteria):
-        expression = criteria.expression.get_analyzed_version()
+    def _convert_native_query(self, query):
+        expression_set = query.criteria.get_analyzed_version()
 
-        print(criteria.join_map)
-        print(criteria.definition_map)
-        print(expression)
+        import pprint
+        pp = pprint.PrettyPrinter(indent=2)
+
+        pp.pprint(query.join_map)
+        pp.pprint(query.definition_map)
+        pp.pprint(expression_set.in_json)
+
+        for expression in expression_set.expressions:
+            pass
 
         pass
 

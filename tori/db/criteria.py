@@ -10,7 +10,7 @@
 
 import pymongo
 from imagination.decorator.validator import restrict_type
-from tori.db.expression import Expression
+from tori.db.expression import Criteria
 
 class Order(object):
     """ Sorting Order Definition """
@@ -19,7 +19,7 @@ class Order(object):
     DESC = pymongo.DESCENDING
     """ Descending Order """
 
-class Criteria(object):
+class Query(object):
     """ Criteria
 
         .. note::
@@ -39,9 +39,13 @@ class Criteria(object):
         self._force_loading = False
         self._auto_index    = False
         self._indexed_target_list = []
-        self._expression = None
+        self._criteria = None
         self._join_map   = {}
         self._definition_map  = {}
+
+    @property
+    def is_new_style(self):
+        return bool(self.criteria)
 
     @property
     def definition_map(self):
@@ -68,13 +72,17 @@ class Criteria(object):
         self._origin = value
 
     @property
-    def expression(self):
-        return self._expression
+    def criteria(self):
+        return self._criteria
 
-    @expression.setter
-    def expression(self, value):
-        assert isinstance(value, Expression), 'The Expression object should be given, not {}.'.format(type(value))
-        self._expression = value
+    @criteria.setter
+    def criteria(self, value):
+        expected_type = Criteria
+
+        if not isinstance(value, expected_type):
+            raise ValueError('The {} object should be given, not {}.'.format(expected_type.__name__, type(value).__name__))
+
+        self._criteria = value
 
     @property
     def join_map(self):
@@ -164,12 +172,12 @@ class Criteria(object):
 
         return self
 
-    def new_expression(self):
+    def new_criteria(self):
         """ Get a new expression for this criteria
 
-            :rtype: tori.db.expression.Expression
+            :rtype: tori.db.expression.Criteria
         """
-        return Expression()
+        return Criteria()
 
     def expect(self, statement):
         """ Define the condition / expectation of the main expression.
@@ -183,21 +191,21 @@ class Criteria(object):
 
             .. code-block:: python
 
-                c = Criteria()
+                c = Query()
                 c.expect('foo = 123')
 
             is the same thing as
 
             .. code-block:: python
 
-                c = Criteria()
-                c.expression = c.new_expression()
-                c.expression.expect('foo = 123')
+                c = Query()
+                c.criteria = c.new_criteria()
+                c.criteria.expect('foo = 123')
         """
-        if not self.expression:
-            self.expression = self.new_expression()
+        if not self.criteria:
+            self.criteria = self.new_criteria()
 
-        self.expression.expect(statement)
+        self.criteria.expect(statement)
 
     def define(self, variable_name=None, value=None, **definition_map):
         """ Define the value of one or more variables (known as parameters).

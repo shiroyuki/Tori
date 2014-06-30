@@ -42,35 +42,30 @@ class Character(object):
         self.skills = skills
 
 class TestFunctional(DbTestCase):
-    @skip('Under development')
+    #@skip('Under development')
     def test_simple_query_ok(self):
         self._reset_db(self.__data_provider())
 
         repo = self.session.repository(Character)
 
-        criteria = repo.new_criteria('c')
-        criteria.join('c.skills', 's')
-        criteria.join('c.job', 'j')
-        criteria.join('j.skills', 'j_k')
-        criteria.join('c.left_hand', 'l')
+        query = repo.new_criteria('c')
+        query.join('c.skills', 's')
+        query.join('c.job', 'j')
+        query.join('j.skills', 'j_k')
+        query.join('c.left_hand', 'l')
 
-        expression = criteria.new_expression()
+        query.expect('c.job < :job')
+        query.expect('c.level < 50')
+        query.expect('s.name = "Attack"')
+        query.expect('j_k.name = "Charge"')
+        query.expect('l.attack > :min_attack')
 
-        expression.expect('c.job < :job')
-        expression.expect('c.level < 50')
-        expression.expect('s.name = "Attack"')
-        expression.expect('j_k.name = "Charge"')
-        expression.expect('l.attack > :min_attack')
+        query.define('job', 'Knight')
+        query.define('min_attack', 400)
 
-        criteria.define('job', 'Knight')
-        criteria.define('min_attack', 400)
+        query.limit(1)
 
-        criteria.expression = expression
-        criteria.limit(1)
-
-        character = repo.find(criteria)
-
-        raise RuntimeError('Panda!')
+        character = repo.find(query)
 
         # todo: should use the same criteria as test_mapper_link
 

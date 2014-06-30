@@ -5,7 +5,7 @@
 """
 import inspect
 from tori.db.common    import PseudoObjectId, ProxyObject
-from tori.db.criteria  import Criteria, Order
+from tori.db.criteria  import Query, Order
 from tori.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
 from tori.db.mapper    import AssociationType, CascadingType
 from tori.db.uow       import Record
@@ -122,7 +122,7 @@ class Repository(object):
         """ Find entity with criteria
 
             :param criteria: the search criteria
-            :type  criteria: tori.db.criteria.Criteria
+            :type  criteria: tori.db.criteria.Query
             :param force_loading: the flag to force loading all references behind the proxy
             :type  force_loading: bool
 
@@ -160,7 +160,7 @@ class Repository(object):
         """ Count the number of entities satisfied the given criteria
 
             :param criteria: the search criteria
-            :type  criteria: tori.db.criteria.Criteria
+            :type  criteria: tori.db.criteria.Query
 
             :rtype: int
         """
@@ -265,10 +265,10 @@ class Repository(object):
     def new_criteria(self, alias='e'):
         """ Create a criteria
 
-            :rtype: :class:`tori.db.criteria.Criteria`
+            :rtype: :class:`tori.db.criteria.Query`
         """
 
-        c = Criteria(alias)
+        c = Query(alias)
 
         c.origin = self._class
 

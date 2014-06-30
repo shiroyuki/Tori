@@ -82,36 +82,37 @@ class Session(object):
         if key not in self._registered_types:
             self._registered_types[key] = entity_class
 
-    def query(self, criteria):
-        if not criteria.expression:
-            return self.driver.query(criteria)
+    def query(self, query):
+        if not query.is_new_style:
+            return self.driver.query(query)
 
-        collection_name = criteria.origin
+        collection_name = query.origin
         root_repo  = self.repository(collection_name)
         root_class = root_repo.kind
-        query = criteria.expression.get_analyzed_version()
+        expression_set = query.criteria.get_analyzed_version()
 
         # Fulfil the property-path-to-type map
-        property_map = query.properties # The property-path-to-type map
+        property_map = expression_set.properties # The property-path-to-type map
 
         # Register the root entity
-        criteria.join_map[criteria.alias] = {
+        query.join_map[query.alias] = {
             'path': None,
             'class': root_class
         }
 
-        self._update_join_map(criteria.join_map, criteria.alias, criteria.origin)
+        self._update_join_map(query.join_map, query.alias, query.origin)
 
-        #print('\n')
-        #print('Analyzed Query:')
-        #print(query)
-        #print('Joined Map:')
-        #print(criteria.join_map)
+        metadata_origin = EntityMetadataHelper.extract(query.origin)
 
-        return self.driver.query(criteria)
+        result_list = self.driver.query(query)
+
+        raise RuntimeError('Panda!')
+
+        return result_list
 
     def _update_join_map(self, join_map, origin_alias, origin_class):
-        link_map = get_relational_map(origin_class)
+        origin_metadata = EntityMetadataHelper.extract(origin_class)
+        link_map = origin_metadata.relational_map
         iterating_sequence = []
 
         #print('Updating {} ({})'.format(origin_alias, origin_class))
