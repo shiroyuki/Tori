@@ -1,3 +1,6 @@
+class UnsupportedRepositoryReferenceError(Exception):
+    """ Unsupported Repository Reference Error """
+
 class UnknownDriverError(Exception):
     """ Unknown Driver Error """
 

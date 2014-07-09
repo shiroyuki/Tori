@@ -4,10 +4,48 @@ from tori.db.common import ProxyObject, ProxyFactory, ProxyCollection
 from tori.db.criteria import Criteria
 from tori.db.repository import Repository
 from tori.db.entity import get_relational_map
-from tori.db.exception import IntegrityConstraintError
+from tori.db.exception import IntegrityConstraintError, UnsupportedRepositoryReferenceError
 from tori.db.mapper import AssociationType
-from tori.db.uow import UnitOfWork
+from tori.db.metadata.entity import EntityMetadata
 from tori.db.metadata.helper import EntityMetadataHelper
+from tori.db.uow import UnitOfWork
+from tori.graph import DependencyNode, DependencyManager
+
+class QueryIteration(DependencyNode):
+    def __init__(self, join_config, alias, parent_alias, property_path):
+        super(QueryIteration, self).__init__()
+        self._join_config   = join_config
+        self._alias         = alias
+        self._parent_alias  = parent_alias
+        self._property_path = property_path
+
+    @property
+    def join_config(self):
+        return self._join_config
+
+    @property
+    def alias(self):
+        return self._alias
+
+    @property
+    def parent_alias(self):
+        return self._parent_alias
+
+    @property
+    def property_path(self):
+        return self._property_path
+
+    def to_dict(self):
+        return {
+            'property_path': self.property_path,
+            'parent_alias':  self.parent_alias,
+            'alias':         self.alias,
+            'join_config':   self.join_config,
+            'adjacent_nodes':self.adjacent_nodes
+        }
+
+    def __repr__(self):
+        return str('{}({})'.format(self.__class__.__name__, self.to_dict()))
 
 class Session(object):
     """ Database Session
@@ -40,23 +78,31 @@ class Session(object):
         """
         return [self._repository_map[key] for key in self._repository_map]
 
-    def repository(self, entity_class):
+    def repository(self, reference):
         """ Retrieve the collection
 
-            :param entity_class: an entity class
-            :type  entity_class: type
-
+            :param reference: the entity class or entity metadata of the target repository / collection
             :rtype: tori.db.repository.Repository
         """
-        metadata = EntityMetadataHelper.extract(entity_class)
-        key = metadata.collection_name
+        key = None
 
-        self.register_class(entity_class)
+        if isinstance(reference, EntityMetadata):
+            key = reference.collection_name
+        elif EntityMetadataHelper.hasMetadata(reference):
+            is_registerable_reference = True
+
+            metadata = EntityMetadataHelper.extract(reference)
+            key      = metadata.collection_name
+
+            self.register_class(reference)
+
+        if not key:
+            raise UnsupportedRepositoryReferenceError('Either a class with metadata or an entity metadata is supported.')
 
         if key not in self._repository_map:
             repository = Repository(
-                session=self,
-                representing_class=entity_class
+                session            = self,
+                representing_class = reference
             )
 
             repository.setup_index()
@@ -72,6 +118,13 @@ class Session(object):
             :type  entity_class: type
 
             :rtype: tori.db.repository.Repository
+
+            .. note::
+
+                This is for internal operation only. As it seems to be just a
+                residual from the prototype stage, the follow-up investigation
+                in order to remove the method will be for Tori 3.1.
+
         """
         key = entity_class
 
@@ -83,40 +136,106 @@ class Session(object):
             self._registered_types[key] = entity_class
 
     def query(self, query):
+        metadata = EntityMetadataHelper.extract(query.origin)
+        iterating_constrains = self.driver.dialect.get_iterating_constrains(query)
+
+        # Deprecated in Tori 3.1; Only for backward compatibility
         if not query.is_new_style:
-            return self.driver.query(query)
+            return self.driver.query(metadata, query._condition, iterating_constrains)
 
-        collection_name = query.origin
-        root_repo  = self.repository(collection_name)
-        root_class = root_repo.kind
+        root_class     = query.origin
         expression_set = query.criteria.get_analyzed_version()
-
-        # Fulfil the property-path-to-type map
-        property_map = expression_set.properties # The property-path-to-type map
 
         # Register the root entity
         query.join_map[query.alias] = {
-            'path': None,
+            'path':  None,
             'class': root_class
         }
 
-        self._update_join_map(query.join_map, query.alias, query.origin)
+        self._update_join_map(metadata, query.join_map, query.alias)
 
-        metadata_origin = EntityMetadataHelper.extract(query.origin)
+        iterating_sequence = self._compute_iterating_sequence(query.join_map)
+        alias_to_query_map = self.driver.dialect.get_alias_to_native_query_map(query)
 
-        result_list = self.driver.query(query)
+        for iteration in iterating_sequence:
+            alias = iteration.alias
+
+            if alias not in alias_to_query_map:
+                continue
+
+            joined_type  = query.join_map[alias]['class']
+            joined_meta  = EntityMetadataHelper.extract(joined_type)
+            native_query = alias_to_query_map[alias]
+            local_constrains = {}
+
+            if not iteration.parent_alias:
+                constrains = iterating_constrains
+
+            result_list = self.driver.query(joined_meta, native_query, local_constrains)
+
+            # No result in a sub-query means no result in the main query.
+            if not result_list:
+                return []
+
+            # ----- NEXT STEP -----
+            # 1. store the result somewhere
+            # 2. re-use the result if necessary in the next iteration.
+
+            import pprint
+            pp = pprint.PrettyPrinter(indent=2)
+
+            print('{}.query'.format(self.__class__.__name__))
+            print('result_list for "{}":'.format(alias))
+            pp.pprint(result_list)
 
         raise RuntimeError('Panda!')
 
         return result_list
 
-    def _update_join_map(self, join_map, origin_alias, origin_class):
-        origin_metadata = EntityMetadataHelper.extract(origin_class)
-        link_map = origin_metadata.relational_map
+    def _compute_iterating_sequence(self, join_map):
+        iterating_sequence = []
+        joining_sequence   = []
+        reference_map      = {}
+
+        # reference_map is used locally for fast reverse lookup
+        # iterating_seq is a final sequence
+
+        # Calculate the iterating sequence
+        for alias in join_map:
+            join_config = join_map[alias]
+
+            parent_alias  = None
+            property_path = None
+
+            if join_config['path']:
+                parent_alias, property_path = join_config['path'].split('.', 2)
+
+            qi = QueryIteration(join_config, alias, parent_alias, property_path)
+
+            joining_sequence.append(qi)
+
+            reference_map[alias] = qi
+
+        # Update the dependency map
+        for key in reference_map:
+            reference_a = reference_map[key]
+
+            if reference_a.parent_alias not in reference_map:
+                continue
+
+            reference_a.connect(reference_map[reference_a.parent_alias])
+
+        iterating_sequence = DependencyManager.get_order(reference_map)
+        iterating_sequence.reverse()
+
+        return iterating_sequence
+
+    def _update_join_map(self, origin_metadata, join_map, origin_alias):
+        link_map           = origin_metadata.relational_map
         iterating_sequence = []
 
-        #print('Updating {} ({})'.format(origin_alias, origin_class))
-
+        # Compute the (local) iterating sequence for updating the join map.
+        # Note: this is not the query iterating sequence.
         for alias in join_map:
             join_config = join_map[alias]
 
@@ -129,14 +248,10 @@ class Session(object):
 
         # Update the immediate properties.
         for join_config, current_alias, parent_alias, property_path in iterating_sequence:
-            #print('Immediate iterating: {} -> {}.{}'.format(current_alias, parent_alias, property_path))
-
             if parent_alias != origin_alias:
-                #print('  - Skipped due to parent_alias')
                 continue
 
             if property_path not in link_map:
-                #print('  - Skipped as it is not mapped.')
                 continue
 
             mapper = link_map[property_path]
@@ -144,23 +259,18 @@ class Session(object):
             join_config['class']  = mapper.target_class
             join_config['mapper'] = mapper
 
-            #print('  - Updated')
-
         # Update the joined properties.
         for join_config, current_alias, parent_alias, property_path in iterating_sequence:
-            #print('Joined iterating: {} -> {}.{}'.format(current_alias, parent_alias, property_path))
 
             if current_alias not in join_map:
-                #print('  - Skipped as {} not joined.'.format(current_alias))
                 continue
 
             if not join_map[current_alias]['class']:
-                #print('  - Skipped as class not defined')
                 continue
 
-            self._update_join_map(join_map, current_alias, join_map[current_alias]['class'])
-
-            #print('  - Updated {}'.format(current_alias))
+            next_origin_class = join_map[current_alias]['class']
+            next_metadata     = EntityMetadataHelper.extract(next_origin_class)
+            self._update_join_map(next_metadata, join_map, current_alias)
 
     def delete(self, *entities):
         """ Delete entities

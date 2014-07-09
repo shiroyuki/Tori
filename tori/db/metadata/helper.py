@@ -14,6 +14,7 @@ class EntityMetadataHelper(object):
         """
         metadata = EntityMetadata()
 
+        metadata.cls             = cls
         metadata.collection_name = collection_name
         metadata.index_list      = indexes
 

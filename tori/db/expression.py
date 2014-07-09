@@ -15,15 +15,17 @@ class DataObject(object):
         return str(self.in_json)
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.in_json)
+        return '{}({})'.format(self.__class__.__name__, self.__str__())
 
 class ExpressionOperand(object):
     OP_EQ = '='
+    OP_NE = '!='
     OP_GE = '>='
     OP_GT = '>'
     OP_LE = '<='
     OP_LT = '<'
     OP_IN = 'in'
+    OP_NOT_IN = 'not in'
     OP_SQL_LIKE     = 'like'
     OP_REGEXP_LIKE  = 'rlike'
     OP_INDEX_SEARCH = 'indexed with'
@@ -33,18 +35,41 @@ class ExpressionType(object):
     IS_PROPERTY_PATH = 'path'
     IS_DATA          = 'data'
 
+class Expression(DataObject):
+    def __init__(self, left, operand, right):
+        self.left = left
+        self.operand = operand
+        self.right = right
+
+    @property
+    def in_json(self):
+        return {
+            'left': self.left,
+            'right': self.right,
+            'operand': self.operand
+        }
+
+    def __str__(self):
+        return '{left} {operand} {right}'.format(
+            left    = self.left.original,
+            right   = self.right.original,
+            operand = self.operand
+        )
+
 class ExpressionPart(DataObject):
-    def __init__(self, original, kind, value):
+    def __init__(self, original, kind, value, alias):
         self.original = original
         self.kind     = kind
         self.value    = value
+        self.alias    = alias
 
     @property
     def in_json(self):
         return {
             'original': self.original,
             'kind':     self.kind,
-            'value':    self.value
+            'value':    self.value,
+            'alias':    self.alias
         }
 
 class ExpressionSet(DataObject):
@@ -76,18 +101,21 @@ class Criteria(object):
         self._re_root_path     = re.compile('^[a-zA-Z][a-zA-Z0-9_]*$')
         self._re_property_path = re.compile('^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$')
         self._re_statement     = re.compile(
-            '^\s*(?P<left>.+)\s+(?P<operand>{eq}|{ge}|{gt}|{le}|{lt}|{xin}|{like}|{rlike}|{indexed})\s+(?P<right>.+)\s*$'.format(
+            '^\s*(?P<left>.+)\s+(?P<operand>{eq}|{ne}|{ge}|{gt}|{le}|{lt}|{xin}|{xnin}|{like}|{rlike}|{indexed})\s+(?P<right>.+)\s*$'.format(
                 eq = ExpressionOperand.OP_EQ,
+                ne = ExpressionOperand.OP_NE,
                 ge = ExpressionOperand.OP_GE,
                 gt = ExpressionOperand.OP_GT,
                 le = ExpressionOperand.OP_LE,
                 lt = ExpressionOperand.OP_LT,
                 xin  = ExpressionOperand.OP_IN,
+                xnin = ExpressionOperand.OP_NOT_IN,
                 like = ExpressionOperand.OP_SQL_LIKE,
                 rlike   = ExpressionOperand.OP_REGEXP_LIKE,
                 indexed = ExpressionOperand.OP_INDEX_SEARCH
             )
         )
+        self._re_property_path_delimiter = re.compile('\.')
 
     def get_analyzed_version(self):
         if self._is_updated:
@@ -97,8 +125,8 @@ class Criteria(object):
 
         # Scan for all property paths and parameters.
         for se in self._sub_expressions:
-            self._scan_for_property_paths_and_parameters(analyzed_expression, se['left'])
-            self._scan_for_property_paths_and_parameters(analyzed_expression, se['right'])
+            self._scan_for_property_paths_and_parameters(analyzed_expression, se.left)
+            self._scan_for_property_paths_and_parameters(analyzed_expression, se.right)
 
         if not analyzed_expression.properties:
             raise InvalidExpressionError('There must be at least one property path. It is prone to query injection.')
@@ -139,32 +167,32 @@ class Criteria(object):
         expr = self._parse(statement)
 
         try:
-            expr['left']  = self._parse_side(expr['left'])
+            expr.left = self._parse_side(expr.left)
         except InvalidExpressionError as exception:
             raise InvalidExpressionError('The left side of the expression cannot be parsed.')
 
         try:
-            expr['right']  = self._parse_side(expr['right'])
+            expr.right  = self._parse_side(expr.right)
         except InvalidExpressionError as exception:
             raise InvalidExpressionError('The left side of the expression cannot be parsed.')
 
         # Validate the syntax on the fixed syntaxes.
-        if expr['operand'] in fixed_syntax_operands:
-            if expr['left'].kind != ExpressionType.IS_PROPERTY_PATH:
+        if expr.operand in fixed_syntax_operands:
+            if expr.left.kind != ExpressionType.IS_PROPERTY_PATH:
                 raise InvalidExpressionError('The property path must be on the left of the operand.')
 
-            if expr['right'].kind == ExpressionType.IS_PROPERTY_PATH:
+            if expr.right.kind == ExpressionType.IS_PROPERTY_PATH:
                 raise InvalidExpressionError('The property path cannot be on the right of the operand.')
 
         # If the left side refers to the root path but not for the index search,
         # the method will raise the invalid expression error.
-        if expr['left'].kind == ExpressionType.IS_PROPERTY_PATH \
-            and '.' not in expr['left'].original \
-            and expr['operand'] != ExpressionOperand.OP_INDEX_SEARCH:
+        if expr.left.kind == ExpressionType.IS_PROPERTY_PATH \
+            and '.' not in expr.left.original \
+            and expr.operand != ExpressionOperand.OP_INDEX_SEARCH:
             raise InvalidExpressionError('The property path to the root entity can only be used by index search.')
 
         # The property path must be in the expression.
-        if expr['left'].kind != ExpressionType.IS_PROPERTY_PATH and expr['right'].kind != ExpressionType.IS_PROPERTY_PATH:
+        if expr.left.kind != ExpressionType.IS_PROPERTY_PATH and expr.right.kind != ExpressionType.IS_PROPERTY_PATH:
             raise InvalidExpressionError('The property path must be in the expression.')
 
         return expr
@@ -179,10 +207,15 @@ class Criteria(object):
             kind = ExpressionType.IS_PROPERTY_PATH
 
         if kind != ExpressionType.IS_DATA:
-            return ExpressionPart(**{
+            alias = self._re_property_path_delimiter.split(sub_statement)[0]\
+                if self._re_property_path_delimiter.search(sub_statement) \
+                else sub_statement[1:]
+
+            return self._create_expression_part({
                 'original': sub_statement,
                 'kind':     kind,
-                'value':    None
+                'value':    None,
+                'alias':    alias
             })
 
         decoded_data = None
@@ -192,11 +225,15 @@ class Criteria(object):
         except ValueError as exception:
             raise InvalidExpressionError('Unable to decode the data.')
 
-        return ExpressionPart(**{
+        return self._create_expression_part({
             'original': sub_statement,
             'kind':     kind,
-            'value':    decoded_data
+            'value':    decoded_data,
+            'alias':    None
         })
+
+    def _create_expression_part(self, parameters):
+        return ExpressionPart(**parameters)
 
     def _parse(self, statement):
         matches = self._re_statement.match(statement)
@@ -204,6 +241,7 @@ class Criteria(object):
         if not matches:
             raise InvalidExpressionError('Incomplete statement: {}'.format(statement))
 
-        expr = matches.groupdict()
+        raw_expr   = matches.groupdict()
+        expression = Expression(**raw_expr)
 
-        return expr
+        return expression

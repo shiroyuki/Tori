@@ -1,8 +1,32 @@
+class QueryIteration(object):
+    """ Driver Query Iteration
+
+        :param alias: the alias of the rewritten target
+        :type  alias: str
+        :param native_query: the native query for a specific engine
+    """
+    def __init__(self, alias, native_query):
+        self.alias = alias
+        self.native_query = native_query
+
+class QuerySequence(object):
+    """ Driver Query Sequence """
+    def __init__(self):
+        self._iterations = []
+
+    def add(self, iteration):
+        self._iterations.append(iteration)
+
+    def each(self):
+        for iteration in self._iterations:
+            yield iteration
+
 class DriverInterface(object):
-    def __init__(self, config):
+    def __init__(self, config, dialect):
         self._config = config
         self._client = None
         self._database_name = None
+        self._dialect = dialect
 
     @property
     def config(self):
@@ -12,6 +36,13 @@ class DriverInterface(object):
     def config(self, value):
         self._config = value
 
+    @property
+    def dialect(self):
+        return self._dialect
+
+    @dialect.setter
+    def dialect(self, value):
+        self._dialect = value
 
     @property
     def client(self):

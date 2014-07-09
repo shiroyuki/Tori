@@ -4,9 +4,18 @@ class EntityMetadata(object):
     def __init__(self):
         self._locked = True # the metadata is read-only.
 
+        self._cls             = None
         self._collection_name = None
         self._index_list      = []
         self._relational_map  = {}
+
+    @property
+    def cls(self):
+        return self._cls
+
+    @cls.setter
+    def cls(self, value):
+        self._cls = value
 
     @property
     def collection_name(self):
@@ -33,11 +42,10 @@ class EntityMetadata(object):
     @property
     def index_list(self):
         return self._index_list
+
     @index_list.setter
     def index_list(self, value):
         if self._index_list and self._locked:
             raise ReadOnlyEntityMetadataException('The class metadata is read-only.')
 
         self._index_list = value
-
-

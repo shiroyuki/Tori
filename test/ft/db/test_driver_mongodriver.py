@@ -6,20 +6,20 @@ from tori.db.entity     import entity
 from tori.db.manager    import Manager
 from tori.db.mapper     import AssociationType, link
 
-@entity('s')
+@entity('skills')
 class Skill(object):
     def __init__(self, name):
         self.name = name
 
 @link('skills', Skill, None, AssociationType.ONE_TO_MANY)
-@entity('j')
+@entity('jobs')
 class Job(object):
     def __init__(self, name, level, skills=[]):
         self.name   = name
         self.level  = level
         self.skills = skills
 
-@entity('w')
+@entity('tools')
 class Weapon(object):
     def __init__(self, name, attack, defend):
         self.name   = name
@@ -30,7 +30,7 @@ class Weapon(object):
 @link('job', Job, association=AssociationType.ONE_TO_ONE)
 @link('left_hand', Weapon, association=AssociationType.ONE_TO_ONE)
 @link('right_hand', Weapon, association=AssociationType.ONE_TO_ONE)
-@entity('c')
+@entity('characters')
 class Character(object):
     def __init__(self, name, level, job, left_hand, right_hand, skills, _id=None):
         self._id   = _id
@@ -42,6 +42,8 @@ class Character(object):
         self.skills = skills
 
 class TestFunctional(DbTestCase):
+    verify_data = True
+
     #@skip('Under development')
     def test_simple_query_ok(self):
         self._reset_db(self.__data_provider())
@@ -54,7 +56,7 @@ class TestFunctional(DbTestCase):
         query.join('j.skills', 'j_k')
         query.join('c.left_hand', 'l')
 
-        query.expect('c.job < :job')
+        query.expect('j.name = :job')
         query.expect('c.level < 50')
         query.expect('s.name = "Attack"')
         query.expect('j_k.name = "Charge"')
