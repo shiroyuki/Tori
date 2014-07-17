@@ -149,7 +149,8 @@ class Session(object):
         # Register the root entity
         query.join_map[query.alias] = {
             'path':  None,
-            'class': root_class
+            'class': root_class,
+            'property_path': None
         }
 
         self._update_join_map(metadata, query.join_map, query.alias)
@@ -157,40 +158,53 @@ class Session(object):
         iterating_sequence = self._compute_iterating_sequence(query.join_map)
         alias_to_query_map = self.driver.dialect.get_alias_to_native_query_map(query)
 
-        for iteration in iterating_sequence:
-            alias = iteration.alias
-
-            if alias not in alias_to_query_map:
-                continue
-
-            joined_type  = query.join_map[alias]['class']
-            joined_meta  = EntityMetadataHelper.extract(joined_type)
-            native_query = alias_to_query_map[alias]
-            local_constrains = {}
-
-            if not iteration.parent_alias:
-                constrains = iterating_constrains
-
-            result_list = self.driver.query(joined_meta, native_query, local_constrains)
-
-            # No result in a sub-query means no result in the main query.
-            if not result_list:
-                return []
-
-            # ----- NEXT STEP -----
-            # 1. store the result somewhere
-            # 2. re-use the result if necessary in the next iteration.
+        for alias in query.join_map:
+            mapping = query.join_map[alias]
 
             import pprint
             pp = pprint.PrettyPrinter(indent=2)
 
             print('{}.query'.format(self.__class__.__name__))
-            print('result_list for "{}":'.format(alias))
-            pp.pprint(result_list)
+            print('join_map for "{}":'.format(alias))
+            pp.pprint(mapping)
+
+        for iteration in iterating_sequence:
+            self._sub_query(query, alias_to_query_map, iteration)
 
         raise RuntimeError('Panda!')
 
-        return result_list
+        return #something
+
+    def _sub_query(self, query, alias_to_query_map, iteration):
+        alias = iteration.alias
+
+        if alias not in alias_to_query_map:
+            return []
+
+        joined_type  = query.join_map[alias]['class']
+        joined_meta  = EntityMetadataHelper.extract(joined_type)
+        native_query = alias_to_query_map[alias]
+        local_constrains = {}
+
+        if not iteration.parent_alias:
+            constrains = iterating_constrains
+
+        result_list = self.driver.query(joined_meta, native_query, local_constrains)
+
+        # No result in a sub-query means no result in the main query.
+        if not result_list:
+            return []
+
+        # ----- NEXT STEP -----
+        # 1. store the result somewhere
+        # 2. re-use the result if necessary in the next iteration.
+
+        import pprint
+        pp = pprint.PrettyPrinter(indent=2)
+
+        print('{}._sub_query'.format(self.__class__.__name__))
+        print('result_list for "{}":'.format(alias))
+        pp.pprint(result_list)
 
     def _compute_iterating_sequence(self, join_map):
         iterating_sequence = []
@@ -243,6 +257,8 @@ class Session(object):
                 continue
 
             parent_alias, property_path = join_config['path'].split('.', 2)
+
+            join_config['property_path'] = property_path
 
             iterating_sequence.append((join_config, alias, parent_alias, property_path))
 
