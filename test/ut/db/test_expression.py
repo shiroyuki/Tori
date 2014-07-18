@@ -33,7 +33,7 @@ class TestUnit(TestCase):
         for raw, expected_operand in data_sets:
             compiled = self.expr._compile(raw)
 
-            self.assertEqual(expected_operand, compiled['operand'], 'Data set #{} failed the test.'.format(index))
+            self.assertEqual(expected_operand, compiled.operand, 'Data set #{} failed the test.'.format(index))
 
             index += 1
 
