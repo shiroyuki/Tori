@@ -16,6 +16,7 @@ class UnsupportedExpressionError(InvalidExpressionErrorBase):
     """
 
 class Dialect(object):
+    _OP_IN = '$in'
     _operand_map = {}
 
     def __init__(self):
@@ -30,7 +31,7 @@ class Dialect(object):
                 ExpressionOperand.OP_GT: '$gt',
                 ExpressionOperand.OP_LE: '$lte',
                 ExpressionOperand.OP_LT: '$lt',
-                ExpressionOperand.OP_IN: '$in',
+                ExpressionOperand.OP_IN: self._OP_IN,
                 ExpressionOperand.OP_NOT_IN: '$nin',
                 ExpressionOperand.OP_SQL_LIKE: '$regex'
             })
@@ -44,6 +45,7 @@ class Dialect(object):
         expression_set = query.criteria.get_analyzed_version()
         alias_to_conditions_map = {}
 
+        # Process the non-join conditions
         for expression in expression_set.expressions:
             operand = self.get_native_operand(expression.operand)
             left    = expression.left
@@ -52,6 +54,7 @@ class Dialect(object):
             if expression.left.kind == expression.right.kind:
                 raise UnsupportedExpressionError('The given criteria contains an expression whose both sides of expression are of the same type (e.g., property path, primitive value and parameter). Unfortunately, the expression is not supported by the backend datastore.')
 
+            # Re-reference the pointers (to improve the readability).
             property_side  = None
             constrain_side = None
 
@@ -63,6 +66,7 @@ class Dialect(object):
                 constrain_side = expression.left
 
             alias = property_side.alias
+
             property_path   = ''.join(self._regex_ppath_delimiter.split(property_side.original)[1:])
             constrain_value = constrain_side.value
 
@@ -73,15 +77,56 @@ class Dialect(object):
             if alias not in alias_to_conditions_map:
                 alias_to_conditions_map[alias] = {}
 
+            native_query = {
+                property_path: constrain_value
+            }
+
             if operand:
-                print('PPATH     --> ({}) {}'.format(type(property_path), property_path))
-                print('OPERAND   --> ({}) {}'.format(type(operand), operand))
-                print('CONSTRAIN --> ({}) {}'.format(type(constrain_value), constrain_value))
-                alias_to_conditions_map[alias][property_path] = {
-                    operand: constrain_value
+                native_query = {
+                    property_path: {
+                        operand: constrain_value
+                    }
                 }
-            else:
-                alias_to_conditions_map[alias][property_path] = constrain_value
+
+            ##### DEBUGGING #####
+            import pprint
+            pp = pprint.PrettyPrinter(indent=2)
+
+            print('{}.get_alias_to_native_query_map'.format(self.__class__.__name__))
+            print('PPATH     --> ({}) {}'.format(type(property_path), property_path))
+            print('OPERAND   --> ({}) {}'.format(type(operand), operand))
+            print('CONSTRAIN --> ({}) {}'.format(type(constrain_value), constrain_value))
+            pp.pprint(native_query)
+            ##### DEBUGGING #####
+
+            alias_to_conditions_map[alias].update(native_query)
+
+        # Handling the join conditions
+        for alias in alias_to_conditions_map:
+            join_config = query.join_map[alias]
+
+            if not join_config['result_list']:
+                continue
+
+            parent_alias = join_config['parent_alias']
+
+            # "No parent alias" indicates that this is not a join query. Ignore the rest.
+            if not parent_alias:
+                continue
+
+            joined_keys = [document['_id'] for document in join_config['result_list']]
+
+            current_native_query = alias_to_conditions_map[alias]
+            parent_native_query  = alias_to_conditions_map[join_config['parent_alias']]
+
+            #print('_____ {current_alias} -> {parent_alias}'.format(
+            #    current_alias = join_config['alias'],
+            #    parent_alias = join_config['parent_alias']
+            #))
+
+            parent_native_query[join_config['property_path']] = {
+                self._OP_IN: joined_keys
+            }
 
         ##### DEBUGGING #####
         import pprint

@@ -137,20 +137,26 @@ class Session(object):
 
     def query(self, query):
         metadata = EntityMetadataHelper.extract(query.origin)
-        iterating_constrains = self.driver.dialect.get_iterating_constrains(query)
 
         # Deprecated in Tori 3.1; Only for backward compatibility
         if not query.is_new_style:
-            return self.driver.query(metadata, query._condition, iterating_constrains)
+            return self.driver.query(
+                metadata,
+                query._condition,
+                self.driver.dialect.get_iterating_constrains(query)
+            )
 
         root_class     = query.origin
         expression_set = query.criteria.get_analyzed_version()
 
         # Register the root entity
         query.join_map[query.alias] = {
+            'alias': query.alias,
             'path':  None,
             'class': root_class,
-            'property_path': None
+            'parent_alias': None,
+            'property_path': None,
+            'result_list': []
         }
 
         self._update_join_map(metadata, query.join_map, query.alias)
@@ -169,35 +175,43 @@ class Session(object):
             pp.pprint(mapping)
 
         for iteration in iterating_sequence:
-            self._sub_query(query, alias_to_query_map, iteration)
+            if not self._sub_query(query, alias_to_query_map, iteration):
+                break
 
-        raise RuntimeError('Panda!')
+        #raise RuntimeError('Panda!')
 
-        return #something
+        return query.join_map[query.alias]['result_list']
 
     def _sub_query(self, query, alias_to_query_map, iteration):
-        alias = iteration.alias
+        is_join_query = True
+        alias         = iteration.alias
 
         if alias not in alias_to_query_map:
-            return []
+            return False
 
-        joined_type  = query.join_map[alias]['class']
+        join_config  = query.join_map[alias]
+        joined_type  = join_config['class']
         joined_meta  = EntityMetadataHelper.extract(joined_type)
         native_query = alias_to_query_map[alias]
         local_constrains = {}
 
         if not iteration.parent_alias:
-            constrains = iterating_constrains
+            is_root    = False
+            constrains = self.driver.dialect.get_iterating_constrains(query)
 
         result_list = self.driver.query(joined_meta, native_query, local_constrains)
 
         # No result in a sub-query means no result in the main query.
         if not result_list:
-            return []
+            return False
 
         # ----- NEXT STEP -----
-        # 1. store the result somewhere
+        # 1. store the result somewhere [DONE]
         # 2. re-use the result if necessary in the next iteration.
+
+        join_config['result_list'] = result_list
+        
+        alias_to_query_map.update(self.driver.dialect.get_alias_to_native_query_map(query))
 
         import pprint
         pp = pprint.PrettyPrinter(indent=2)
@@ -205,6 +219,8 @@ class Session(object):
         print('{}._sub_query'.format(self.__class__.__name__))
         print('result_list for "{}":'.format(alias))
         pp.pprint(result_list)
+
+        return True
 
     def _compute_iterating_sequence(self, join_map):
         iterating_sequence = []
@@ -258,7 +274,10 @@ class Session(object):
 
             parent_alias, property_path = join_config['path'].split('.', 2)
 
+            join_config['alias']         = alias
             join_config['property_path'] = property_path
+            join_config['parent_alias']  = parent_alias
+            join_config['result_list']   = []
 
             iterating_sequence.append((join_config, alias, parent_alias, property_path))
 

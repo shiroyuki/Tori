@@ -69,7 +69,7 @@ class TestFunctional(DbTestCase):
 
         character = repo.find(query)
 
-        # todo: should use the same criteria as test_mapper_link
+        self.assertIsInstance(character, Character, 'This is a single query.')
 
     def __data_provider(self):
         return [
