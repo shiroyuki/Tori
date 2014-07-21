@@ -8,6 +8,7 @@ from bson import ObjectId
 
 from tori.data.serializer import ArraySerializer
 from tori.db.exception import ReadOnlyProxyException
+from tori.db.metadata.helper import EntityMetadataHelper
 
 class Serializer(ArraySerializer):
     """ Object Serializer for Entity
@@ -17,7 +18,7 @@ class Serializer(ArraySerializer):
             raise TypeError('The provided data must be an object')
 
         returnee           = {}
-        relational_map     = data.__relational_map__ if self._is_entity(data) else {}
+        relational_map     = EntityMetadataHelper.extract(data).relational_map if self._is_entity(data) else {}
         extra_associations = {}
 
         for name in dir(data):
@@ -56,7 +57,7 @@ class Serializer(ArraySerializer):
             raise TypeError('The provided data must be an object')
 
         returnee       = {}
-        relational_map = data.__relational_map__ if self._is_entity(data) else {}
+        relational_map = EntityMetadataHelper.extract(data).relational_map if self._is_entity(data) else {}
 
         for name in dir(data):
             # Skip all protected/private/reserved properties.
@@ -102,7 +103,7 @@ class Serializer(ArraySerializer):
         return name[0] == '_' or name == 'id'
 
     def _is_entity(self, data):
-        return '__relational_map__' in dir(data)
+        return EntityMetadataHelper.hasMetadata(data)
 
     def _process_value(self, data, value, stack_depth, convert_object_id_to_str):
         is_proxy    = isinstance(value, ProxyObject)

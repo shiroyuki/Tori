@@ -29,18 +29,38 @@ class ResourceEntity(object):
     .. note::
         This is for internal use only.
     """
+
+    DEFAULT_INDEX_FILE = 'index.html'
+
     def __init__(self, path, cacheable=False):
-        path = resolve_file_path(path)
+        accessible_path = resolve_file_path(path)
 
-        if p.isdir(path):
-            path = p.join(path, 'index.html')
+        self._is_originally_dir = p.isdir(accessible_path)
 
-        self._path      = path
+        if self._is_originally_dir:
+            accessible_path = p.join(accessible_path, ResourceEntity.DEFAULT_INDEX_FILE)
+
+        self._path      = accessible_path
         self._content   = None
         self._cacheable = cacheable
 
-        self._type = get_type(path)
+        self._type = get_type(accessible_path)
         self._type = self.kind[0]
+
+    @property
+    def original_request_path(self):
+        return self._original_request_path
+    @original_request_path.setter
+    def original_request_path(self, value):
+        self._original_request_path = value
+
+    @property
+    def is_originally_dir(self):
+        return self._is_originally_dir
+
+    @is_originally_dir.setter
+    def is_originally_dir(self, value):
+        self._is_originally_dir = value
 
     @property
     def kind(self):

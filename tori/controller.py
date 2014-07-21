@@ -329,6 +329,9 @@ class ResourceService(Controller):
                 resource = plugin.execute(resource)
             # End the iteration
 
+        if resource.is_originally_dir:
+            return self.redirect('{}/{}'.format(path, ResourceEntity.DEFAULT_INDEX_FILE))
+
         # Return the content.
         try:
             self.finish(resource.content)

@@ -41,19 +41,19 @@ class TestFunctional(DbTestCase):
                 'criteria': repository.new_criteria().order('name', Order.DESC),
                 'expected_name': 'RDG Red Data Girl',
                 'expected_list_index': 0,
-                'expected_db_index_count': self.auto_index_count
+                'expected_db_index_count': self.auto_index_count - 1
             },
             {
                 'criteria': repository.new_criteria().order('published_in').order('name', Order.DESC),
                 'expected_name': 'Library War',
                 'expected_list_index': 2,
-                'expected_db_index_count': self.auto_index_count
+                'expected_db_index_count': self.auto_index_count - 1
             },
             {
                 'criteria': repository.new_criteria().where('published_in', 2006).order('name', Order.DESC).order('published_in'),
                 'expected_name': 'Library War',
                 'expected_list_index': 0,
-                'expected_db_index_count': self.auto_index_count + 1 # with condition
+                'expected_db_index_count': self.auto_index_count - 1
             }
         ]
 
@@ -65,8 +65,17 @@ class TestFunctional(DbTestCase):
             sample_count += 1
             series_list = repository.find(sample['criteria'])
 
-            self.assertEqual(sample['expected_name'], series_list[sample['expected_list_index']].name, 'Sample #{}'.format(sample_count))
-            self.assertEqual(sample['expected_db_index_count'], self.driver.index_count(), 'Sample #{}'.format(sample_count))
+            self.assertEqual(
+                sample['expected_name'],
+                series_list[sample['expected_list_index']].name,
+                'Sample #{} > Assertion #1'.format(sample_count)
+            )
+
+            self.assertEqual(
+                sample['expected_db_index_count'],
+                self.driver.index_count(),
+                'Sample #{} > Assertion #2'.format(sample_count)
+            )
 
     def __data_provider(self):
         return [

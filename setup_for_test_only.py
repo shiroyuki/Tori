@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name         = 'tori',
-    version      = '2.2.0d',
+    version      = '3.0.0',
     description  = 'Micro Web Framework and ORM for MongoDB',
     author       = 'Juti Noppornpitak',
     author_email = 'juti_n@yahoo.co.jp',
@@ -18,6 +18,7 @@ setup(
         'tori.data',
         'tori.db',
         'tori.db.driver',
+        'tori.db.metadata',
         'tori.decorator',
         'tori.session',
         'tori.session.entity',

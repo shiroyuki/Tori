@@ -7,31 +7,33 @@ try:
 except ImportError as exception:
     from mock import Mock, MagicMock, patch # Python 2.7
 
-from tori.db.expression import Expression, InvalidExpressionError
+from tori.db.expression import Criteria, ExpressionPart, InvalidExpressionError
 
 class TestUnit(TestCase):
     def setUp(self):
-        self.expr = Expression('u')
+        self.expr = Criteria()
 
     def test_statement_parser_compile_ok(self):
         index     = 0
         data_sets = [
             (
                 'book.author = :name',
-                {'right': {'value': None, 'type': 'param', 'original': ':name'}, 'left': {'value': None, 'type': 'path', 'original': 'book.author'}, 'operand': '='}
+                '='
             ),
             (
                 'book.title in ["Le Monde", "氷菓"]',
-                {'right': {'value': [u'Le Monde', u'氷菓'], 'type': 'data', 'original': '["Le Monde", "氷菓"]'}, 'left': {'value': None, 'type': 'path', 'original': 'book.title'}, 'operand': 'in'}
+                'in'
+            ),
+            (
+                'book indexed with ["light-novel", "japanese", "mystery"]',
+                'indexed with'
             )
         ]
 
-        for raw, processed in data_sets:
+        for raw, expected_operand in data_sets:
             compiled = self.expr._compile(raw)
 
-            print('{}:\n  RAW -> {}\n  CPE <- {}\n  EXE <- {}'.format(index, raw, compiled, processed))
-
-            self.assertEqual(processed, compiled, 'Data set #{} failed the test.'.format(index))
+            self.assertEqual(expected_operand, compiled.operand, 'Data set #{} failed the test.'.format(index))
 
             index += 1
 
@@ -47,4 +49,8 @@ class TestUnit(TestCase):
 
         for raw in data_sets:
             with self.assertRaises(InvalidExpressionError):
+                print('{}: {}'.format(index, raw))
+
+                index += 1
+
                 compiled = self.expr._compile(raw)
