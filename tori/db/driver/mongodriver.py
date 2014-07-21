@@ -88,17 +88,6 @@ class Dialect(object):
                     }
                 }
 
-            ##### DEBUGGING #####
-            import pprint
-            pp = pprint.PrettyPrinter(indent=2)
-
-            print('{}.get_alias_to_native_query_map'.format(self.__class__.__name__))
-            print('PPATH     --> ({}) {}'.format(type(property_path), property_path))
-            print('OPERAND   --> ({}) {}'.format(type(operand), operand))
-            print('CONSTRAIN --> ({}) {}'.format(type(constrain_value), constrain_value))
-            pp.pprint(native_query)
-            ##### DEBUGGING #####
-
             alias_to_conditions_map[alias].update(native_query)
 
         # Handling the join conditions
@@ -119,23 +108,9 @@ class Dialect(object):
             current_native_query = alias_to_conditions_map[alias]
             parent_native_query  = alias_to_conditions_map[join_config['parent_alias']]
 
-            #print('_____ {current_alias} -> {parent_alias}'.format(
-            #    current_alias = join_config['alias'],
-            #    parent_alias = join_config['parent_alias']
-            #))
-
             parent_native_query[join_config['property_path']] = {
                 self._OP_IN: joined_keys
             }
-
-        ##### DEBUGGING #####
-        import pprint
-        pp = pprint.PrettyPrinter(indent=2)
-
-        print('{}.get_alias_to_native_query_map'.format(self.__class__.__name__))
-        print('Native Queries:')
-        pp.pprint(alias_to_conditions_map)
-        ##### DEBUGGING #####
 
         return alias_to_conditions_map
 
@@ -246,14 +221,8 @@ class Driver(DriverInterface):
             :param iterating_constrains: the iterating constrains
         """
 
-        # TODO 2014.06.30:
-        # This method is subject to rewrite as the driver should be straight
-        # forward and contain no complicate logic.
-
         collection_name = metadata.collection_name
         force_loading   = iterating_constrains['_force_loading'] if '_force_loading' in iterating_constrains else False
-
-        print('query', query)
 
         cursor = self.find(collection_name, query)
 

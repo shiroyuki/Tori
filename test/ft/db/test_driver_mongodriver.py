@@ -42,7 +42,7 @@ class Character(object):
         self.skills = skills
 
 class TestFunctional(DbTestCase):
-    verify_data = True
+    #verify_data = True
 
     #@skip('Under development')
     def test_simple_query_ok(self):

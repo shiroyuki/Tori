@@ -167,18 +167,9 @@ class Session(object):
         for alias in query.join_map:
             mapping = query.join_map[alias]
 
-            import pprint
-            pp = pprint.PrettyPrinter(indent=2)
-
-            print('{}.query'.format(self.__class__.__name__))
-            print('join_map for "{}":'.format(alias))
-            pp.pprint(mapping)
-
         for iteration in iterating_sequence:
             if not self._sub_query(query, alias_to_query_map, iteration):
                 break
-
-        #raise RuntimeError('Panda!')
 
         return query.join_map[query.alias]['result_list']
 
@@ -205,20 +196,9 @@ class Session(object):
         if not result_list:
             return False
 
-        # ----- NEXT STEP -----
-        # 1. store the result somewhere [DONE]
-        # 2. re-use the result if necessary in the next iteration.
-
         join_config['result_list'] = result_list
-        
+
         alias_to_query_map.update(self.driver.dialect.get_alias_to_native_query_map(query))
-
-        import pprint
-        pp = pprint.PrettyPrinter(indent=2)
-
-        print('{}._sub_query'.format(self.__class__.__name__))
-        print('result_list for "{}":'.format(alias))
-        pp.pprint(result_list)
 
         return True
 
