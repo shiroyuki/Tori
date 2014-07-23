@@ -28,6 +28,7 @@ from tornado.wsgi       import WSGIApplication as TornadoWSGIApplication
 from wsgiref            import handlers
 
 # Internal libraries
+from tori            import centre
 from tori.centre     import settings as AppSettings
 from tori.centre     import services as AppServices
 from tori.common     import get_logger
@@ -75,6 +76,16 @@ class BaseApplication(object):
 
         self._static_routing_setting = dict(path=self._base_path)
         self._routes = []
+
+        # Enable the reverse reference
+        disabled_core_reference = 'disabled_core_reference' in settings and settings['disabled_core_reference']
+
+        if not disabled_core_reference and not centre.core:
+            centre.core = self
+
+    @property
+    def base_path(self):
+        return self._base_path
 
     def _update_routes(self, routes):
         """
