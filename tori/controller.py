@@ -30,8 +30,9 @@ class Controller(RequestHandler):
     engine instead of the default one that comes with Tornado.
     """
 
-    _guid_generator  = GuidGenerator()
-    _template_engine = None
+    _guid_generator     = GuidGenerator()
+    _template_base_path = None
+    _template_engine    = None
 
 
     def __init__(self, *args, **kwargs):
@@ -146,11 +147,10 @@ class Controller(RequestHandler):
         """
 
         # If the rendering source isn't set, break the code.
-        if not centre.core and not self._template_base_path:
+        if not core and not self._template_base_path:
             raise RenderingSourceMissingError('The source of template is not identified. This method is disabled.')
-
-        if not self._template_base_path:
-            self._template_base_path = p.join(centre.core.base_path, 'templates')
+        elif not self._template_base_path:
+            self._template_base_path = p.join(core.base_path, 'templates')
 
         # If the rendering engine is not specified, use the default one.
         if not self._template_engine:
@@ -159,11 +159,19 @@ class Controller(RequestHandler):
         try:
             return self.component('renderer').use(self._template_base_path)
         except RendererNotFoundError:
-            # When the renderer is not found. It is possible that the renderer is not yet
-            # instantiated. This block of the code will do the lazy loading.
-            renderer = self._template_engine(self._template_base_path)
+            try:
+                # When the renderer is not found. It is possible that the renderer is not yet
+                # instantiated. This block of the code will do the lazy loading.
+                renderer = self._template_engine(self._template_base_path)
 
-            self.component('renderer').register(renderer)
+                self.component('renderer').register(renderer)
+            except ImportError as exception:
+                raise RuntimeError(
+                    'Unable to register the renderer for {} as {}'.format(
+                        self._template_base_path,
+                        exception.message
+                    )
+                )
 
             return renderer
 
