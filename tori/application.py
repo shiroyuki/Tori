@@ -9,6 +9,7 @@
 """
 
 # Standard libraries
+import json
 import os
 import sys
 
@@ -218,6 +219,19 @@ class Application(BaseApplication):
         self.listen(self._port)
         self._activate()
 
+    def _load_new_style_configuration(self, configuration):
+        # Load the data directly from a JSON file.
+        for inclusion in configuration.children('use'):
+            source_location = inclusion.attribute('src')
+
+            if source_location[0] != '/':
+                source_location = os.path.join(self._config_base_path, source_location)
+
+            with open(source_location) as f:
+                decoded_config = json.load(f)
+
+                self._settings.update(decoded_config)
+
     def _configure(self, configuration, config_path=None):
         if len(configuration.children('server')) > 1:
             raise InvalidConfigurationError('Too many server configuration.')
@@ -228,6 +242,9 @@ class Application(BaseApplication):
         if len(configuration.children('settings')) > 1:
             raise InvalidConfigurationError('Too many setting groups (limited to 1).')
 
+        self._load_new_style_configuration(configuration)
+
+        # Then, load the legacy configuration. (Deprecated in 3.1)
         # Load the general settings
         for config in configuration.find('server config'):
             key  = config.attribute('key')
