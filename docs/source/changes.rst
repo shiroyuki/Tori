@@ -29,7 +29,43 @@ Version 3.0
   as **Criteria**. This change is to address the semantic / readability issue. (Hence, all references to Criteria objects
   are now referred to Query objects.)
 - **ORM/tori.db**: Removed unused / tedious code from the ORM.
-- **Web Framework**: the first instance of :class:`tori.application.Application` is now self-referenced as ``tori.centre.core``.
+- **Web Framework**: The first instance of :class:`tori.application.Application` is now self-referenced as ``tori.centre.core``.
 - **Web Framework**: Without specifying the rendering path for each controller, the controller will be looking for
   templates from :file:`<app_base_path>/templates`.
+- **Web Framework**: Introduce the new-style configuration which is a JSON file. (The old style will be deprecated in 3.2.)
 - **Tests**: Reorganized the tests and refactored the ORM tests.
+
+New Style Configuration
+-----------------------
+
+In 3.0, it is required to specify in the configuration in order to use the new style configuration where the default
+configuration tree is:
+
+.. code-block:: javascript
+
+    {
+        "db": {
+            "managers": {}
+        }
+    }
+
+where ``db.managers`` is mapping a service ID of the manager to a corresponding DB URL.
+
+For example, we have :file:`config.json`.
+
+.. code-block:: javascript
+
+    {
+        "db": {
+            "managers": {
+                "db.directory": "mongodb://localhost/directory"
+            }
+        }
+    }
+
+Add this line to the XML configuration file.
+
+.. code-block:: xml
+
+    <use src="config.json"/>
+

@@ -34,6 +34,7 @@ from tori.centre     import settings as AppSettings
 from tori.centre     import services as AppServices
 from tori.common     import get_logger
 from tori.data.base  import resolve_file_path
+from tori.db.manager import ManagerFactory
 from tori.exception  import *
 from tori.navigation import *
 
@@ -48,12 +49,20 @@ class BaseApplication(object):
     for more details.
     """
 
+    _default_config_tree = {
+        "db": {
+            "managers": {}
+        }
+    }
+
     def __init__(self, **settings):
         self._logger = get_logger('{}.{}'.format(__name__, self.__class__.__name__))
 
         self._hierarchy_level = len(self.__class__.__mro__) - 1
 
         self._ioloop = IOLoop.instance()
+
+        settings.update(self._default_config_tree)
 
         # Setting for the application.
         self._settings          = settings
@@ -159,7 +168,8 @@ class Application(BaseApplication):
         ('finder', 'tori.common.Finder', [], {}),
         ('renderer', 'tori.template.service.RenderingService', [], {}),
         ('session', 'tori.session.repository.memory.Memory', [], {}),
-        ('routing_map', 'tori.navigation.RoutingMap', [], {})
+        ('routing_map', 'tori.navigation.RoutingMap', [], {}),
+        ('dbmgr_factory', 'tori.db.manager.ManagerFactory', [], {})
     ]
     _data_transformer         = ImaginationTransformer(ImaginationLocator())
 
@@ -189,20 +199,11 @@ class Application(BaseApplication):
         self._service_assembler.activate_passive_loading()
 
         for inclusion in self._config.children('include'):
-            source_location = inclusion.attribute('src')
-
-            if source_location[0] != '/':
-                source_location = os.path.join(self._config_base_path, source_location)
-
-            pre_config = load_from_file(source_location)
-
-            self._configure(pre_config, source_location)
-
-            watch(source_location)
-
-            self._logger.info('Included the configuration from %s' % source_location)
+            self._load_inclusion(inclusion)
 
         self._configure(self._config)
+
+        self._prepare_db_connections()
 
         self._service_assembler.deactivate_passive_loading()
 
@@ -219,6 +220,29 @@ class Application(BaseApplication):
         self.listen(self._port)
         self._activate()
 
+    def _prepare_db_connections(self):
+        db_config = self._settings['db']
+        manager_config = db_config['managers']
+
+        for alias in manager_config:
+            url = manager_config[alias]
+
+            AppServices.get('dbmgr_factory').set(alias, url)
+
+    def _load_inclusion(self, inclusion):
+        source_location = inclusion.attribute('src')
+
+        if source_location[0] != '/':
+            source_location = os.path.join(self._config_base_path, source_location)
+
+        pre_config = load_from_file(source_location)
+
+        self._configure(pre_config, source_location)
+
+        watch(source_location)
+
+        self._logger.info('Included the configuration from %s' % source_location)
+
     def _load_new_style_configuration(self, configuration):
         # Load the data directly from a JSON file.
         for inclusion in configuration.children('use'):
@@ -230,7 +254,26 @@ class Application(BaseApplication):
             with open(source_location) as f:
                 decoded_config = json.load(f)
 
-                self._settings.update(decoded_config)
+                self._override_sub_config_tree(self._settings, decoded_config)
+
+                watch(source_location)
+
+    def _override_sub_config_tree(self, original_subtree, modified_subtree):
+        for key in modified_subtree:
+            if key not in original_subtree:
+                original_subtree[key] = modified_subtree[key]
+                continue
+
+            original_node_type = type(original_subtree[key])
+            modified_node_type = type(modified_subtree[key])
+
+            if original_node_type is dict:
+                if not modified_node_type != original_node_type:
+                    raise ValueError('The overriding configuration tree does not align with the predefined one.')
+
+                self._override_sub_config_tree(original_subtree[key], modified_subtree[key])
+
+            original_subtree[key] = modified_subtree[key]
 
     def _configure(self, configuration, config_path=None):
         if len(configuration.children('server')) > 1:
@@ -257,6 +300,7 @@ class Application(BaseApplication):
 
         # Set the cookie secret for secure cookies.
         client_secret = configuration.find('server secret')
+
         if client_secret:
             self._settings['cookie_secret'] = client_secret.data()
 

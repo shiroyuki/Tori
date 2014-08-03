@@ -9,6 +9,8 @@ from tori.db.exception import InvalidUrlError, UnknownDriverError
 class ManagerFactory(object):
     def __init__(self, protocol_to_driver_map = None):
         self._protocol_to_driver_map = {}
+        self._alias_to_url_map       = {}
+        self._alias_to_manager_map   = {}
         self._re_url = re.compile('(?P<protocol>[a-zA-Z]+)://(?P<address>.+)')
 
         p2d_map = (protocol_to_driver_map or self._default_protocol_to_driver_map)
@@ -49,9 +51,24 @@ class ManagerFactory(object):
 
         raise UnknownDriverError('Unable to connect to {}'.format(url))
 
-    def connect(self, url):
+    def set(self, alias, url):
+        self._alias_to_url_map[alias] = url
+
+    def get(self, alias):
+        if alias not in self._alias_to_manager_map:
+            self.connect(self._alias_to_url_map[alias], alias)
+
+        return self._alias_to_manager_map[alias]
+
+    def connect(self, url, alias = None):
+        if alias in self._alias_to_manager_map:
+            return self._alias_to_manager_map[alias]
+
         driver  = self.driver(url)
         manager = Manager(driver)
+
+        if alias:
+            self._alias_to_manager_map[alias] = url
 
         return manager
 
