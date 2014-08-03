@@ -268,7 +268,7 @@ class Application(BaseApplication):
             modified_node_type = type(modified_subtree[key])
 
             if original_node_type is dict:
-                if not modified_node_type != original_node_type:
+                if modified_node_type != original_node_type:
                     raise ValueError('The overriding configuration tree does not align with the predefined one.')
 
                 self._override_sub_config_tree(original_subtree[key], modified_subtree[key])
