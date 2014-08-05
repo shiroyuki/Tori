@@ -50,6 +50,10 @@ class BaseApplication(object):
     """
 
     _default_config_tree = {
+        "session": {
+            "class": "tori.session.repository.memory.Memory",
+            "params": {}
+        },
         "db": {
             "managers": {}
         }
@@ -169,7 +173,7 @@ class Application(BaseApplication):
         ('renderer', 'tori.template.service.RenderingService', [], {}),
         ('session', 'tori.session.repository.memory.Memory', [], {}),
         ('routing_map', 'tori.navigation.RoutingMap', [], {}),
-        ('dbmgr_factory', 'tori.db.manager.ManagerFactory', [], {})
+        ('db', 'tori.db.manager.ManagerFactory', [], {})
     ]
     _data_transformer         = ImaginationTransformer(ImaginationLocator())
 
@@ -204,6 +208,7 @@ class Application(BaseApplication):
         self._configure(self._config)
 
         self._prepare_db_connections()
+        self._prepare_session_manager()
 
         self._service_assembler.deactivate_passive_loading()
 
@@ -220,14 +225,19 @@ class Application(BaseApplication):
         self.listen(self._port)
         self._activate()
 
+    def _prepare_session_manager(self):
+        config = self._settings['session']
+
+        self._set_service_entity('session', config['class'], **config['params'])
+
     def _prepare_db_connections(self):
         db_config = self._settings['db']
         manager_config = db_config['managers']
 
         for alias in manager_config:
-            url = manager_config[alias]
+            url = manager_config[alias]['url']
 
-            AppServices.get('dbmgr_factory').set(alias, url)
+            AppServices.get('db').set(alias, url)
 
     def _load_inclusion(self, inclusion):
         source_location = inclusion.attribute('src')
@@ -272,6 +282,8 @@ class Application(BaseApplication):
                     raise ValueError('The overriding configuration tree does not align with the predefined one.')
 
                 self._override_sub_config_tree(original_subtree[key], modified_subtree[key])
+
+                continue
 
             original_subtree[key] = modified_subtree[key]
 

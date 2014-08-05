@@ -55,10 +55,7 @@ class ManagerFactory(object):
         self._alias_to_url_map[alias] = url
 
     def get(self, alias):
-        if alias not in self._alias_to_manager_map:
-            self.connect(self._alias_to_url_map[alias], alias)
-
-        return self._alias_to_manager_map[alias]
+        return self.connect(self._alias_to_url_map[alias], alias)
 
     def connect(self, url, alias = None):
         if alias in self._alias_to_manager_map:
@@ -68,7 +65,7 @@ class ManagerFactory(object):
         manager = Manager(driver)
 
         if alias:
-            self._alias_to_manager_map[alias] = url
+            self._alias_to_manager_map[alias] = manager
 
         return manager
 

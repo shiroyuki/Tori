@@ -111,8 +111,10 @@ class Controller(RequestHandler):
         """
 
         contexts['app'] = {
+            'settings': self.settings,
             'request': self.request,
-            'session': self.session.get
+            'session': self.session.get,
+            'path':    self.component('routing_map').resolve
         }
 
         output = self.template_engine.render(template_name, **contexts)
@@ -210,31 +212,31 @@ class RestController(Controller):
         """ Retrieve the list of all entities. """
         self.set_status(405)
 
-    def retrieve(self, id):
-        """ Retrieve an entity with `id`. """
+    def retrieve(self, key):
+        """ Retrieve an entity with `key`. """
         self.set_status(405)
 
     def create(self):
         """ Create an entity. """
         self.set_status(405)
 
-    def remove(self, id):
-        """ Remove an entity with `id`. """
+    def remove(self, key):
+        """ Remove an entity with `key`. """
         self.set_status(405)
 
-    def update(self, id):
-        """ Update an entity with `id`. """
+    def update(self, key):
+        """ Update an entity with `key`. """
         self.set_status(405)
 
-    def get(self, id=None):
+    def get(self, key=None):
         """ Handle GET requests. """
-        if not id:
+        if not key:
             self.list()
             return
 
-        self.retrieve(id)
+        self.retrieve(key)
 
-    def post(self, id=None):
+    def post(self, key=None):
         """ Handle POST requests. """
         if id:
             self.set_status(405)
@@ -242,21 +244,21 @@ class RestController(Controller):
 
         self.create()
 
-    def put(self, id=None):
+    def put(self, key=None):
         """ Handle PUT requests. """
-        if not id:
+        if not key:
             self.set_status(400)
             return
 
-        self.update(id)
+        self.update(key)
 
-    def delete(self, id=None):
+    def delete(self, key=None):
         """ Handle DELETE requests. """
-        if not id:
+        if not key:
             self.set_status(400)
             return
 
-        self.remove(id)
+        self.remove(key)
 
 class ErrorController(Controller):
     """Generates an error response with status_code for all requests."""

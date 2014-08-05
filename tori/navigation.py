@@ -43,7 +43,7 @@ class RoutingMap(object):
 
         # Register the pattern to prevent the duplicate routing.
         if not force_action and route.pattern in self._sequence:
-            raise DuplicatedRouteError('')
+            raise DuplicatedRouteError('The route pattern is already registered.')
 
         if route.pattern not in self._sequence:
             self._sequence.append(route.pattern)
@@ -53,8 +53,31 @@ class RoutingMap(object):
 
         # Reset the final sequence.
         self._final_sequence = None
-        
+
+        # Register the route to the short ID map.
+        if not force_action and route.id and route.id in self._id_map:
+            raise DuplicatedRouteError('The route ID "{}" is already registered.'.format(route.id))
+
+        self._id_map[route.id] = route
+
         self._logger.debug('Added route for "{}"'.format(route.pattern))
+
+    def resolve(self, id, **params):
+        """ Resolve the path by ID
+
+            :param id str: the path ID
+            :param params: the variables used in the routing pattern
+        """
+
+        if id not in self._id_map:
+            raise KeyError('The route ID "{}" is not registered.'.format(id))
+
+        route = self._id_map[id]
+
+        if route.use_regexp:
+            raise RuntimeError('The route is defined with a regular expression. It cannot be resolved.')
+
+        return route.resolvable_pattern.format(**params)
 
     def find_by_pattern(self, routing_pattern):
         """ Get the route by *routing_pattern* where it is a string. """
@@ -124,18 +147,36 @@ class Route(object):
         self._source  = route_data
         self._class   = None
         self._pattern = Route.get_pattern(self._source)
+        self._resolvable_pattern = None
+        self._id      = self._source.attribute('id')
 
-        use_regexp = self._source.attribute('regexp')
+        self._use_regexp = self._source.attribute('regexp') or False
+
+        if self._use_regexp:
+            self._use_regexp = self._use_regexp.lower() == 'true'
 
         # If the given pattern is not a regular expression, rewrite the routing pattern.
-        if use_regexp and use_regexp.lower() != 'true':
+        if not self.use_regexp:
+            self._resolvable_pattern = self._pattern
             self._pattern = self._re_wildcard_recur.sub('(.+)', self._pattern)
             self._pattern = self._re_wildcard_non_recur.sub('([^/]+)', self._pattern)
             self._pattern = self._re_named_parameter.sub('(?P<\g<name>>.+)', self._pattern)
 
     @property
+    def id(self):
+        return self._id
+
+    @property
+    def use_regexp(self):
+        return self._use_regexp
+
+    @property
     def pattern(self):
         return self._pattern
+
+    @property
+    def resolvable_pattern(self):
+        return self._resolvable_pattern
 
     def type(self):
         """ Get the routing type.
@@ -198,7 +239,7 @@ class Route(object):
     def get_pattern(route_data):
         """ Get the routing pattern for a given *route*. """
         if not route_data.attribute('pattern'):
-            raise RoutingPatternNotFoundError('')
+            raise RoutingPatternNotFoundError('The pattern is not given.')
 
         return route_data.attribute('pattern')
 

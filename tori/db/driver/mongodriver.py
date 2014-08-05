@@ -157,8 +157,10 @@ class Driver(DriverInterface):
         if self.client:
             return
 
-        if isinstance(self.config, dict):
-            self.client = MongoClient(**self.config) # as a config map
+        config = self.config
+
+        if isinstance(config, dict):
+            self.client = MongoClient(**config) # as a config map
 
             return
 
@@ -170,6 +172,9 @@ class Driver(DriverInterface):
         self.client = None
 
     def db(self, name=None):
+        if not self.client:
+            self.connect()
+
         return self.client[name or self.database_name]
 
     def collections(self):

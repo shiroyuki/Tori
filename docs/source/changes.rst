@@ -33,6 +33,7 @@ Version 3.0
 - **Web Framework**: Without specifying the rendering path for each controller, the controller will be looking for
   templates from :file:`<app_base_path>/templates`.
 - **Web Framework**: Introduce the new-style configuration which is a JSON file. (The old style will be deprecated in 3.2.)
+- **Web Framework**
 - **Tests**: Reorganized the tests and refactored the ORM tests.
 
 New Style Configuration
@@ -44,12 +45,16 @@ configuration tree is:
 .. code-block:: javascript
 
     {
+        "session": {
+            "class": "tori.session.repository.memory.Memory"
+            "params": {}
+        }
         "db": {
             "managers": {}
         }
     }
 
-where ``db.managers`` is mapping a service ID of the manager to a corresponding DB URL.
+where ``db.managers`` is mapping a alias of the manager to a corresponding DB URL only referred by the database manager factory.
 
 For example, we have :file:`config.json`.
 
