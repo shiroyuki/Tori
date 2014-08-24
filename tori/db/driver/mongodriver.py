@@ -77,6 +77,10 @@ class Dialect(object):
             if alias not in alias_to_conditions_map:
                 alias_to_conditions_map[alias] = {}
 
+            # Replace the primary key
+            if property_path == 'id':
+                property_path = '_id'
+
             native_query = {
                 property_path: constrain_value
             }
