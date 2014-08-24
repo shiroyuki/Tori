@@ -6,7 +6,7 @@
     <routes>
         <controller class="dummy.dependency_injectable_controllers.PlainController" pattern="/plain"/>
         <controller class="dummy.dependency_injectable_controllers.ControllerWithRenderer" pattern="/ctrl-with-renderer"/>
-        <resource location="resources" pattern="/resources(/.*)" cache="true"/>
+        <resource location="resources" pattern="/resources(/.*)" cache="true" regexp="true"/>
         <redirection destination="http://shiroyuki.com" pattern="/about-shiroyuki"/>
     </routes>
     <services>

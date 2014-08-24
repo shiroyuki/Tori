@@ -7,5 +7,5 @@ class MainController(Controller):
     def get(self):
         try:
             self.render('index.html', title="Testing Ground", uri=self.request.uri)
-        except Exception, e:
+        except Exception as e:
             print e
