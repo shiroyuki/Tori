@@ -155,11 +155,6 @@ class Route(object):
         self._resolvable_pattern = None
         self._id      = self._source.attribute('id')
 
-        print('NEW ROUTE -----')
-
-        for n in self._source.attributes():
-            print('-', n, '=', self._source.attribute(n))
-
         self._use_regexp = self._source.attribute('regexp') or False
 
         if self._use_regexp:
@@ -167,7 +162,6 @@ class Route(object):
 
         # If the given pattern is not a regular expression, rewrite the routing pattern.
         if not self.use_regexp:
-            print(self._pattern)
             self._resolvable_pattern = self._pattern
             self._pattern = self._re_wildcard_recur.sub('(.+)', self._pattern)
             self._pattern = self._re_wildcard_non_recur.sub('([^/]+)', self._pattern)
