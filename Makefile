@@ -1,7 +1,14 @@
 TEST_FLAGS=""
 
 package:
+	# For development only
 	python setup.py sdist
+
+release:
+	python setup.py sdist upload
+
+wheel_release:
+	python setup.py sdist bdist_wheel upload --universal
 
 doc: clean
 	cd docs && make clean && make html
