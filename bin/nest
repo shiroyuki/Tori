@@ -1,346 +1,229 @@
 #!/usr/bin/env python
+""" Nest 1.0
 
-"""
-:Version: 0.3
-:Status: Experimental
-:Author: Juti Noppornpitak
-:OS Compatibility: Linux, FreeBSD, Mac OS X 10.7+
-
-This is the utility command line interface (CLI). At this stage, the command is
-to just prepare the development environment and create a skeleton application.
-
-To use this command, assuming that this file is in the your home path, you can
-just execute ``nest``.
-
-.. note::
-    Copyright (c) 2012 Juti Noppornpitak
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-    of the Software, and to permit persons to whom the Software is furnished to do
-    so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-    PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+    Controller CLI for Tori
 """
 
-import os, time
-from sys import argv
-from sys import exit
-from sys import version_info as version
-from subprocess import call
+import base64
+import zlib
 
-nest_meta = {
-    'version': 0.3,
-    'license': 'MIT',
-    'author':  'Juti Noppornpitak',
-    'email':   'juti_n@yahoo.co.jp'
-}
+resources = dict()
 
-flag_map = {
-    'help': False,
-    'dry-run': False,
-    'debug': False
-}
+resources['tori_Makefile'] = zlib.decompress(base64.b64decode('eNqVkFFrgzAUhZ+bX3EpggqrfReEltJuwgYyu0GfJMQrhqmR3Gjx3y/pWje2vixPuScfJ+fc7JQm/WRq1bF8//qe7vbF4Xn7mLB8l+dFtj0+JWS4kWJNgoj9Fp3GSqz40JiYLTYoagX+m5GNNBMclWpglBxe+Af68zNAa2cg1KMUGANwYeSIYOpZ/APbjyzojlBtLxsEGwUqrVpwSe/xRWNN4/s88K6EoS+5QTjX2AGHykGSrmp5c5yND0pDqzSC6o1UHT2AHjpYRmthB9XgMvIZmzu5xSw2XpCd0vBSCnXUT+AFP7ccMuZ6WZA4EaxW10SWui06jL1gvluCzGRjuk4aibC8OHw1/bY5cyPqf7l8Amggoxc='))
+resources['tori_service.xml'] = zlib.decompress(base64.b64decode('eNqzsa/IzVEoSy0qzszPs1Uy1DNQUkjNS85PycxLt1UqLUnTtVCyt+OyycxNTM/MSywBqgLy9FG4AAFmFn0='))
+resources['tori_config_dev.xml'] = zlib.decompress(base64.b64decode('eNpdUstOwzAQvOcrjI+VEsONg2MOgMQZvsB1Nq2RG0e7NiBV/Xc2cWhScrF3Zh+zE+unn1MQX4Dk49DKh+ZeChhc7PxwaGVOff0on0yl7TgG72ziLFMJ/jQBclkJZqCDfT6YhBm0KveVGyMmcz6L6RSXi1YzsPIEDiEZrZbLytzVtdCAGNGwhuYb9o2LQ8IYAmDzOhHP11irkinqelGptjJ1JhCErpUEKfGG1HxSHKRaaIw5Af0b/gK9zSGJj8TbO/EOFDM6oOuMUrrAwnfcfU6VIsTi2IqMNiVABlRB1G4nhbPuCK3sbSD40zI3XRed244Ye88BVwRL1Eo2dLAnYEO3nrzFE2wnHadY3WjtPIKblG3SpOiA2JRF8U2ZVltr5l/vHZjlbPgJFaMnsNLq5rFUv8NXvow='))
+resources['tori_controller.py'] = zlib.decompress(base64.b64decode('eNpFi0EKgzAQRfc5xd8lQskBCl114zVEJ1WYychkduLdq1TsW73/4BdTgastedTqpsxkWGRVc7zvEsLIQ2voVSj9c/cMOJio4EOeGnG50sk5s1GdyFKcj2eeXTg+UAchvBC37af7HrsvodIs6g=='))
+resources['tori_template_home.html'] = zlib.decompress(base64.b64decode('eNqVU01v2zAMvedXcL7sskhzdhkKx9hpwIAdC+xYKDZrK5FFT6SbGkX/e+nESfqFAtVBtKjHR+qRLr7UVMnYI7TShXJRnAy6Wk2H4qBqXWKUdTbI7fJnpm7xErB8eIDoOoTHR1hCJIGkQSOMKIU9IhYFV8n3ApyqdWat27p70xA1AV3v2VTUHXw2+A3b7f8B02hXJjf5fDCdj2bLWVnYI9Mbys7dV3U0GyJhSa6fDhPt2WF/mJX5brd8cb3HGnzcQZvw9jOkFb9mVU+mOoR1xjIG5BZRJsXsLOiG6lFN7e+gCo55nVUUxfmISWGg6/ldor0W+QIcltwt89UJ3OblX5SvDA2qJKTd2FPaQU0RjSbNZ1h/tNP612KEkQZwCcFHhQ4b+Qa9toQRGgK6wwTSot5UQ4danXiKfHVksjNVMYQLp6pXFm6WrxXp+cpaoeTNNBLKpVRsKDUWow1OkEU1joMLVusWH5sbFpcEazPNX1Zeayz8Tjpd03MK67RVmuPjhL5zjY+Haj/I+37CP5fYl9kKe3rocxEpgeMdvH3z3otgOgwLtz7ROOx8Vv46f0/kQBGuZ+ArUa32ujzui7Ppp20eHHv4P58AMvk3vg=='))
+resources['flask_server.py'] = zlib.decompress(base64.b64decode('eNplUMtqxDAMvPsrRC52liXteSHQU7+gd+ESuWsaP3BsKAT/exU1SwuVD5ZmpBkkV1IAt9rtE3zIqVR4PQrl/uGF4kIFK4W82kpgtxNSyuaM0QaCGfS+g6S9ayEYE0WD0oI4KvXC+FRSq2SGp2FUCznwLPVlxpsCjkK1lXjqGy3cdK9h1Vc4jR6eLOcdPMRhnmFADNZHxOFHLOXqU9x4Zpf6CH1PW9U3Tp4nefr6yy303j6YfCuN/sDHFY4R3lAO0rtwXcknK7VoLpfTb/wGV5Voqg=='))
+resources['tori_settings.json'] = zlib.decompress(base64.b64decode('eNpljkEOwyAMBO95BeJcwT1/6COchCZIGEeYHCrkvxdIpQrVl7Vmd2WXSdXR7Jg9RT2r0kGHawDminSm5M03YpI7iX1Fb4MOmzy76MeveUICbNUiHcrt6W0ZLyBE2F3igd5J94Ir5D+jm1cK7S2kuNO2zNYGWiEcxNmWoiKgUyJ66Mk0bjLJB3rkQJg='))
+resources['tori_server.py'] = zlib.decompress(base64.b64decode('eNpNykEKgCAQQNH9nGKghRVo2whadBSxlAF1xKbo+NEqt//9DvWo0fFOOSx4idfzVwB85YTClYwtJZKzQpyRUuEquP0JoPW1pV45zp7CtB+3eVJUQ/uaU2yVfoAXJYwstQ=='))
+resources['flask_template_index.html'] = zlib.decompress(base64.b64decode('eNqVkj1z2zAMhnf/ClRLl5iwnKWXkzVm6t6ZpmCJNkUoJJREl8t/LxTJ+Wi7lANxBF8+BF+w+tawk2kg6KQP9aa6BrKNhp7EgutsyiSHYpTT9kehafESqH55gWh7gtdX2EJkgaSHJphIKlwUmyq75AeBnNyhQLRn+2xa5jaQHXw2jvu3HAZ/zHh+GClNuDelKdeF6X0051zUFS6kv5C9fXZNNEdmyZLsMC9m7HsCb83e7PCcP1L/ogYfL9AlOv0P1OU/qZop1IdwKLJMgXJHJLNjuBp65GbS0PhHcMHmfCgcR7E+UlIZ6Pi8l/hJi/wiDtvcb8v9VdyV9U+S7xlaUktYu/HE6QINRzJ6abnKhiXO41dHESYewSYCH1U6HuUGBm1JJmgZ+JESSEe648aetDrxHPPdQsIVVY3hg6nu1ZVd7etEhjvEk1Z8MQM7ZsOpRaVl3Jlyhw+jd5csNgkW9f0sq9BqLxSy3nFlV6hvr5d58x6GeVqNxLf/+hu1OOXX'))
 
-app_name = None
 
-# General Dependencies
-dependencies = {
-    'mandatory': {
-        'tornado':     None,
-        'jinja2':      None,
-        'tori':        'git://github.com/shiroyuki/Tori.git',
-        'kotoba':      'git://github.com/shiroyuki/Kotoba.git',
-        'imagination': 'git://github.com/shiroyuki/Imagination.git'
-    },
-    'optional': {
-        'pymongo': None,
-        'redis': None,
-        'sqlalchemy': None
-    }
-}
+import argparse
+import sys
+from tori.cli.console import Console as BaseConsole
 
-initial_folders = ['config', 'resources', 'resources/js', 'resources/css', 'resources/image']
+class Console(BaseConsole):
+    def __init__(self):
+        self.namespace = 'Nest'
+        self._commands = {}
 
-initial_app_code = {
-    'controller.py': """# -*- coding: utf-8 -*-
-from tori.controller           import Controller
-from tori.decorator.controller import renderer
+    def enable(self, id, cls):
+        self._commands[id] = cls
 
-@renderer('%(app_name)s.view')
-class Home(Controller):
-    def get(self):
-        self.render('index.html')
-""",
-    'view/index.html': """<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <title>My first Tori app</title>
-    <style>
-        body {
-            font-family:'Helvetica Neue','Arial',sans-serif;
-        }
-    </style>
-</head>
-<body>
-    <h1>It just works!</h1>
-    <p>Powered by Tori Framework</p>
-</body>
-</html>
-"""
-}
+    def show_console_usage(self):
+        self.output('USAGE: {} <command>'.format(self.namespace or sys.argv[0]))
+        self.output('\nAvailable commands:')
 
-initial_static_data = {
-    'config/base.xml': """<?xml version="1.0" encoding="utf-8"?>
-<application>
-    <server>
-        <!-- Secret salt for secure-cookie feature -->
-        <secret></secret>
-        <!-- Uncomment below to enable custom error controller -->
-        <!-- <error>app.web.controller.ErrorController</error> -->
-    </server>
-    <routes>
-        <!-- Example for routing. See the documentation for more information. -->
-        <!--
-            <controller class="app.web.controller.Home"    pattern="/"/>
-            <controller class="app.web.controller.Session" pattern="/(login|logout|session)"/>
-            <controller class="app.web.interface.Entity"   pattern="/api/v1/entity/(\d+)/([^\s]+)/(\d*)"/>
-        -->
-        <controller class="%(app_name)s.controller.Home" pattern="/"/>
-    </routes>
-</application>
-""",
-    'config/app.xml': """<?xml version="1.0" encoding="utf-8"?>
-<application>
-    <include src="base.xml"/> <!-- include from other configuration files -->
-    <server>
-        <debug>true</debug>
-        <port>8000</port>
-    </server>
-    <routes>
-        <!-- VENDOR/BOOTSTRAP -->
-        <!-- VENDOR/FOUNDATION -->
-        <!-- VENDOR/FOUNDATION-ICON -->
-    </routes>
-    <service>service.xml</service>
-</application>
+        command_desc_map = {}
+        longest_cmd_length = 0
 
-""",
-    'config/service.xml': """<?xml version="1.0" encoding="utf-8"?>
-<imagination>
-    <!-- See the documentation of Imagination at http://shiroyuki.com/work/project-imagination. -->
-    <!--
-    <entity id="css-compressor"
-            class="tori.service.data.compressor.CSSCompressor"
-            tags="resource-service-plugin"
-    />
-    -->
-</imagination>
-""",
-    'server.py': """# -*- coding: utf-8 -*-
+        for id in self._commands:
+            if longest_cmd_length < len(id):
+                longest_cmd_length = len(id)
 
-from tori.application import Application
+            command_class = self._commands[id]
+            command_doc   = command_class.__doc__ or '(internal command)'
 
-application = Application('config/app.xml')
-application.start()
-"""
-}
+            command_desc_map[id] = command_doc.strip()
 
-def console(context, marker=None):
-    if not marker:
-        print('      %s' % context)
-        return
+        format_string = '  {:<%d}    {}' % (longest_cmd_length + 4)
 
-    print('%s ... %s' % (marker, context))
+        for id in command_desc_map:
+            self.output(format_string.format(id, command_desc_map[id]))
 
-def fwrite(location, data=''):
-    f = None
+    def run(self):
+        if len(sys.argv) == 1:
+            self.show_console_usage()
+            sys.exit(0)
 
-    if flag_map['dry-run']:
-        console('Supposed to write to {}'.format(location), 's')
-        return
+        command_id = sys.argv[1]
 
-    try:
-        f = open(location, 'w')
-        f.write(data)
-    finally:
-        if f: f.close()
+        if command_id not in self._commands:
+            self.show_console_usage()
+            sys.exit(1)
 
-def is_valid_answer(answer, expected_choices=[], default=None):
-    return (not answer and not default) or (expected_choices and answer.lower() not in expected_choices)
+        command  = self._commands[command_id]()
 
-def prompt(message, expected_choices=[], default=None):
-    threshold = 2
-    message   = '? ... %s' % message
+        parser         = argparse.ArgumentParser(description='Console')
+        subparsers     = parser.add_subparsers()
+        command_parser = subparsers.add_parser(command_id, description=command.__class__.__doc__.strip())
 
-    if expected_choices:
-        message = '%s (%s)' % (message, '|'.join(expected_choices))
+        command.define_arguments(command_parser)
+        command.execute(parser.parse_args())
 
-    if default:
-        message = '%s [%s]' % (message, default)
+# flask.app.create
+import os
+from tori.cli.command import Command
+from jinja2 import Template
 
-    message += ' '
+class FlaskCreateSkeletonApp(Command):
+    """ Create a skeleton app """
+    def define_arguments(self, argument_parser):
+        argument_parser.add_argument('name', help='The name of the app and the app module (e.g. piano_and_violin)')
+        argument_parser.add_argument('-p', '--port', type=int, help='the initial port number', default=8000)
+        argument_parser.add_argument('-f', '--force', action='store_true', help='force / override the existing files', default=8000)
+        argument_parser.add_argument('-o', '--output', help='the base output path (default: the current directory)', default='')
 
-    try:
-        response = raw_input(message) or default
+    def execute(self, args):
+        self.app_name   = args.name
+        self.force_mode = args.force
+        self.base_path  = args.output
+        self.init_port  = args.port
 
-        while is_valid_answer(response, expected_choices, default) and threshold > 0:
-            threshold -= 1
+        if self.base_path:
+            if not os.path.exists(self.base_path):
+                os.makedirs(self.base_path)
 
-            if threshold:
-                console('Please try again.')
-            else:
-                console('This is your last attempt.')
+            os.chdir(self.base_path)
 
-            response = raw_input(message) or default
-    except KeyboardInterrupt:
-        console('Cleanly exited', '\r\n!')
-        exit(0)
+        self._generate_directories([
+            'static/js',
+            'static/css',
+            'static/scss',
+            'static/image',
+            'templates'
+        ])
 
-    if is_valid_answer(response, expected_choices, default):
-        console('Your response is not valid.', 'E')
-        exit(1)
+        self._copy_resource('Makefile', 'tori_Makefile')
+        self._copy_resource('templates/index.html', 'flask_template_index.html')
+        self._write_resource('server.py', 'flask_server.py')
 
-    if not response and default:
-        return default
+    def _copy_resource(self, where, origin):
+        content = resources[origin]
 
-    return response
+        self._write(where, content)
 
-def detect_version():
-    if version < (2, 6, 6):
-        console('Tori requires at least Python 2.6.6.', 'X')
-        exit(1)
+    def _write_resource(self, where, template_name, **contexts):
+        template = Template(resources[template_name])
 
-    console('Using Python %s.%s.%s' % (version.major, version.minor, version.micro), 'O')
+        contexts.update({
+            'name': self.app_name,
+            'port': self.init_port
+        })
 
-def manage_dependencies():
-    for kind, table in dependencies.iteritems():
-        console('Looking for %s modules...' % kind, ':')
+        self._write(where, template.render(**contexts))
 
-        missing_dependencies = []
+    def _write(self, where, content):
+        if os.path.exists(where):
+            if not self.force_mode:
+                return
 
-        for name, url in table.iteritems():
-            output = 'Module "%s"'
+            os.unlink(where)
 
-            result = False
+        with open(where, 'w') as f:
+            f.write(content)
 
-            try:
-                __import__(name)
-                result = True
-            except:
-                missing_dependencies.append(name)
-
-            console(output % name, result and 'O' or 'X')
-
-        if missing_dependencies:
-            message = 'Ready to install %d %s dependenc%s (%s)?' % (
-                    len(missing_dependencies),
-                    kind,
-                    len(missing_dependencies) == 1 and 'y' or 'ies',
-                    ', '.join(missing_dependencies)
-                )
-
-            answer = prompt(message, ['y', 'n'], 'y').lower()
-
-            if answer == 'y':
-                command = 'sudo /usr/bin/env pip install {}'.format(' '.join(missing_dependencies))
-
-                console('Installing...')
-
-                if flag_map['dry-run']:
-                    console('Supposed to run {}'.format(command), 's')
-                else:
-                    call(command, shell=True)
-
-                console('Done')
-
-def create_app():
-    global app_name
-
-    prompt_message = 'What is the name of your application? For example, "webapp"'
-
-    while True:
-        try:
-            app_name = prompt(prompt_message, default='webapp')
-
-            if os.path.exists(app_name):
-                console('The folder is already existed.', '!')
-
-                response = prompt('Do you want to override?', ['y', 'n']).lower()
-
-                if response == 'y':
-                    call('rm -Rf %s' % app_name, shell=True)
-                    break
-
-                console('Please try again later. Exit amidst confusion.', '!')
-                exit(0)
-
-            try:
-                __import__(app_name)
-
-                console('"%s" conflicts with installed modules. Try again.' % app_name, '!')
-
+    def _generate_directories(self, directories):
+        for directory in directories:
+            if os.path.exists(directory):
                 continue
-            except ImportError:
-                break
-        except KeyboardInterrupt:
-            console('Cleanly exited', '\r\n!')
-            exit(0)
 
-    app_base_path = '%s/%s' % (app_name, app_name)
+            os.makedirs(directory)
 
-    os.mkdir(app_name)
-    os.mkdir(app_base_path)
-    os.mkdir('%s/view' % app_base_path)
+# tori.app.create
+import os
+from tori.cli.command import Command
+from jinja2 import Template
 
-    for folder_path in initial_folders:
-        os.mkdir('%s/%s' % (app_name, folder_path))
+class ToriCreateSkeletonApp(Command):
+    """ Create a skeleton app """
+    def define_arguments(self, argument_parser):
+        argument_parser.add_argument('name', help='The name of the app and the app module (e.g. piano_and_violin)')
+        argument_parser.add_argument('-p', '--port', type=int, help='the initial port number', default=8000)
+        argument_parser.add_argument('-f', '--force', action='store_true', help='force / override the existing files', default=8000)
+        argument_parser.add_argument('-o', '--output', help='the base output path (default: the current directory)', default='')
 
-    fwrite('%s/__init__.py' % app_base_path)
+    def execute(self, args):
+        self.app_name   = args.name
+        self.force_mode = args.force
+        self.base_path  = args.output
+        self.init_port  = args.port
 
-    for path, data in initial_static_data.iteritems():
-        fwrite('%s/%s' % (app_name, path), data % {'app_name':app_name})
+        if self.base_path:
+            if not os.path.exists(self.base_path):
+                os.makedirs(self.base_path)
 
-    for path, data in initial_app_code.iteritems():
-        fwrite('%s/%s' % (app_base_path, path), data % {'app_name':app_name})
+            os.chdir(self.base_path)
 
-print('Nest %(version)s by %(author)s <%(email)s>' % nest_meta)
-print("""
-Nest is a utility tool which allows you to quickly start the development by
-generating necessary files into the app container (CURRENT_DIR/APP_NAME) and
-installing any necessary dependencies and front-end libraries (e.g., Zurb's
-Foundayion. Please note that the generated files and folders are not really
-enforced by Tori Framework. This means you are free to do whatever you want
-as long as you know what you are doing.
+        self._generate_directories([
+            'config',
+            'static/js',
+            'static/css',
+            'static/scss',
+            'static/image',
+            'templates',
+            args.name
+        ])
 
-Nest CLI and Tori Framework are both open-source and under MIT license. The
-source code is available at https://github.com/shiroyuki/Tori.
-""")
+        self._copy_resource('Makefile', 'tori_Makefile')
+        self._copy_resource('server.py', 'tori_server.py')
+        self._copy_resource('config/service.xml', 'tori_service.xml')
+        self._copy_resource('templates/home.html', 'tori_template_home.html')
+        self._write_resource('config/dev.xml', 'tori_config_dev.xml')
+        self._write_resource('config/settings.json', 'tori_settings.json')
+        self._write_resource('{}/controller.py'.format(self.app_name), 'tori_controller.py')
+        self._write('{}/__init__.py'.format(self.app_name), '')
 
-if prompt('Now, are you ready?', ['y', 'n']).lower() == 'n':
-    console('Nice to meet you. I hope to see you soon.', '!')
-    exit(0)
+    def _copy_resource(self, where, origin):
+        content = resources[origin]
 
-for flag in flag_map:
-    flag_map[flag] = bool(
-        '--{}'.format(flag) in argv
-    )
+        self._write(where, content)
 
-detect_version()
-manage_dependencies()
-create_app()
+    def _write_resource(self, where, template_name, **contexts):
+        template = Template(resources[template_name])
 
-console('Now, may the force be with you.', '=')
-console('')
+        contexts.update({
+            'name': self.app_name,
+            'port': self.init_port
+        })
+
+        self._write(where, template.render(**contexts))
+
+    def _write(self, where, content):
+        if os.path.exists(where):
+            os.unlink(where)
+
+        with open(where, 'w') as f:
+            f.write(content)
+
+    def _generate_directories(self, directories):
+        for directory in directories:
+            if os.path.exists(directory):
+                continue
+
+            os.makedirs(directory)
+
+modules = dict()
+
+modules['tori.app.create'] = ToriCreateSkeletonApp
+modules['flask.app.create'] = FlaskCreateSkeletonApp
+
+if __name__ == '__main__':
+    console = Console()
+
+    for id in modules:
+        console.enable(id, modules[id])
+
+    console.run()
