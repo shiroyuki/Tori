@@ -1,6 +1,7 @@
 from tori.db.metadata.entity import EntityMetadata
 
 class EntityMetadataHelper(object):
+    """ Entity Metadata Helper """
     @staticmethod
     def imprint(cls, collection_name, indexes):
         """ Imprint the entity metadata to the class (type)
@@ -22,8 +23,20 @@ class EntityMetadataHelper(object):
 
     @staticmethod
     def extract(cls):
+        """ Extract the metadata of the given class
+
+            :param cls: the entity class
+            :type  cls: type
+            :rtype:     tori.db.metadata.entity.EntityMetadata
+        """
         return cls.__tdbm__
 
     @staticmethod
     def hasMetadata(cls):
+        """ Check if the given class *cls* has a metadata
+
+            :param cls: the entity class
+            :type  cls: type
+            :rtype:     bool
+        """
         return '__tdbm__' in dir(cls)

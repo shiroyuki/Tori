@@ -175,6 +175,7 @@ class Application(BaseApplication):
         ('routing_map', 'tori.navigation.RoutingMap', [], {}),
         ('db', 'tori.db.manager.ManagerFactory', [], {})
     ]
+
     _data_transformer         = ImaginationTransformer(ImaginationLocator())
 
     def __init__(self, configuration_location, **settings):
