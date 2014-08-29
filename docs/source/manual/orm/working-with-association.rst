@@ -337,7 +337,7 @@ where the stored data can be like the following example:
 Bidirectional
 ~~~~~~~~~~~~~
 
-Under development for Tori 2.1 (https://github.com/shiroyuki/Tori/issues/27).
+Implemented for Tori 2.1 (https://github.com/shiroyuki/Tori/issues/27).
 
 Options for Associations
 ========================
@@ -354,5 +354,19 @@ mapped_by   the name of property to be map
 read_only   the flag to disable property setters (only usable with :class:`tori.db.common.ProxyObject`.)
 target      the full name of class or the actual class
 =========== ======================================================================================================
+
+How to make a join query
+========================
+
+.. versionadded:: 3.0
+
+From the customer-reward example, if we want to find all rewards of a particular
+user, the query will be::
+
+    query = reward_repository.new_criteria('r')
+    query.join('r.customer', 'c')
+    query.expect('c.name = "Bob"')
+
+    rewards = reward_repository.find(query)
 
 .. seealso:: :doc:`../../api/db/index`

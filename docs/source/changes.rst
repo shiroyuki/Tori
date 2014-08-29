@@ -29,7 +29,9 @@ Version 3.0
   as **Criteria**. This change is to address the semantic / readability issue. (Hence, all references to Criteria objects
   are now referred to Query objects.)
 - **ORM/tori.db**: Removed unused / tedious code from the ORM.
+- **Web Framework**: (**BCB-2.1**) The **simple routing scheme** is now default instead of the **regular expression** originally used by Tornado. (The router class will take care of the translation.)
 - **Web Framework**: The first instance of :class:`tori.application.Application` is now self-referenced as ``tori.centre.core``.
+- **Web Framework**: Add a file-base session repository. This allows the app to store the session data as a json file.
 - **Web Framework**: Without specifying the rendering path for each controller, the controller will be looking for
   templates from :file:`<app_base_path>/templates`.
 - **Web Framework**: Introduce the new-style configuration which is a JSON file. (The old style will be deprecated in 3.2.)

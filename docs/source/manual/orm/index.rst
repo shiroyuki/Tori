@@ -4,6 +4,7 @@ Object-relational Mapping (ORM)
 Tori Framework introduces the object-relational mapping module for MongoDB 2.0 or newer.
 
 .. versionadded: 2.1
+.. versionchanged: 2.1
 
 .. toctree::
     :maxdepth: 3

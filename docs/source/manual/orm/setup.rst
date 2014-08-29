@@ -15,6 +15,12 @@ First, we define the entity (document) class.
     # Alternatively, @entity('name_of_collection') is to set the name of the collection.
     @entity
     class Character(object):
+        def __init__(self, name, team=None):
+            self.name = name
+            self.team = None
+
+    @entity
+    class Team(Object):
         def __init__(self, name):
             self.name = name
 
@@ -32,5 +38,7 @@ Then, define the entity manager.
 
     from tori.db.manager import ManagerFactory
 
-    em_factory = ManagerFactory()
-    em = em_factory.new('mongodb://db_host/db_name')
+    manager_factory = ManagerFactory()
+    manager_factory.set('ff_game', 'mongodb://db_host/db_name')
+
+    entity_manager = manager_factory.get('ff_game')

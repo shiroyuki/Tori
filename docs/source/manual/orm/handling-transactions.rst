@@ -36,15 +36,15 @@ that they can resume their normal task of representing database state.
 Supported Operations
 ====================
 
-=================== =================
+=================== =====================
 Supported Operation Supported Version
-=================== =================
+=================== =====================
 Persist             2.1
 Delete              2.1
 Refresh             2.1
-Merge               Planned for 2014
-Detach              Planned for 2014
-=================== =================
+Merge               No plan at the moment
+Detach              No plan at the moment
+=================== =====================
 
 Example
 =======
@@ -53,17 +53,12 @@ First, define the entity manager.
 
 .. code-block:: python
 
-    from pymongo             import Connection
-    from tori.db.orm.manager import Manager
-    
-    connection     = Connection()
-    entity_manager = Manager('default', connection)
+    from tori.db.manager import ManagerFactory
 
-.. tip::
+    manager_factory = ManagerFactory()
+    manager_factory.set('default', 'mongodb://db_host/db_name')
 
-    Alternatively, you can write just ``entity_manager = Manager('default')``
-    where the manager will use the default settings of ``Connection``, which
-    is for **localhost** on the default port.
+    entity_manager = manager_factory.get('default')
 
 Then, open a session::
 
@@ -71,7 +66,14 @@ Then, open a session::
 
 Then, try to query for "Bob" (``User``) with :class:`tori.db.orm.repository.Repository`::
 
-    bob = session.collection(User).filter_one({'name', 'Bob'})
+    repo = session.collection(User)
+
+    query = repo.new_criteria('c')
+    query.expect('c.name = :name')
+    query.define('name', 'Bob')
+
+    bob = repo.find(query)
+
     print(bob.address)
 
 The output should show::
@@ -94,7 +96,7 @@ Or, refresh ``bob``::
 Then, if ``bob`` is either **persisted** or **deleted**, to flush/commit the
 change, simply run::
 
-    session.flush(bob)
+    session.flush()
 
 Drawbacks Introduced by Either MongoDB or Tori
 ==============================================
