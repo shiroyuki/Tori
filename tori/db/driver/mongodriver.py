@@ -1,6 +1,6 @@
 import re
 from pymongo import MongoClient
-from tori.db.driver.interface import DriverInterface, QueryIteration, QuerySequence
+from tori.db.driver.interface import DriverInterface, QueryIteration, QuerySequence, DialectInterface
 from tori.db.entity import Index
 from tori.db.expression import Criteria, ExpressionOperand, ExpressionType, InvalidExpressionError as InvalidExpressionErrorBase
 from tori.db.metadata.helper import EntityMetadataHelper
@@ -15,7 +15,7 @@ class UnsupportedExpressionError(InvalidExpressionErrorBase):
         in unnecessary complex computation (e.g., e.mobile_phone = e.home_phone).
     """
 
-class Dialect(object):
+class Dialect(DialectInterface):
     _OP_IN = '$in'
     _operand_map = {}
 
@@ -41,82 +41,59 @@ class Dialect(object):
 
         return self._operand_map[generic_operand]
 
-    def get_alias_to_native_query_map(self, query):
-        expression_set = query.criteria.get_analyzed_version()
-        alias_to_conditions_map = {}
+    def process_non_join_conditions(self, alias_to_conditions_map, definition_map, left, right, operand):
+        if left.kind == right.kind:
+            raise UnsupportedExpressionError('The given criteria contains an expression whose both sides of expression are of the same type (e.g., property path, primitive value and parameter). Unfortunately, the expression is not supported by the backend datastore.')
 
-        # Process the non-join conditions
-        for expression in expression_set.expressions:
-            operand = self.get_native_operand(expression.operand)
-            left    = expression.left
-            right   = expression.right
+        # Re-reference the pointers (to improve the readability).
+        property_side  = None
+        constrain_side = None
 
-            if expression.left.kind == expression.right.kind:
-                raise UnsupportedExpressionError('The given criteria contains an expression whose both sides of expression are of the same type (e.g., property path, primitive value and parameter). Unfortunately, the expression is not supported by the backend datastore.')
+        if left.kind == ExpressionType.IS_PROPERTY_PATH:
+            property_side  = left
+            constrain_side = right
+        else:
+            property_side  = right
+            constrain_side = left
 
-            # Re-reference the pointers (to improve the readability).
-            property_side  = None
-            constrain_side = None
+        alias = property_side.alias
 
-            if expression.left.kind == ExpressionType.IS_PROPERTY_PATH:
-                property_side  = expression.left
-                constrain_side = expression.right
-            else:
-                property_side  = expression.right
-                constrain_side = expression.left
+        property_path   = ''.join(self._regex_ppath_delimiter.split(property_side.original)[1:])
+        constrain_value = constrain_side.value
 
-            alias = property_side.alias
+        if constrain_side.kind == ExpressionType.IS_PARAMETER:
+            parameter_name  = constrain_side.alias
+            constrain_value = definition_map[parameter_name]
 
-            property_path   = ''.join(self._regex_ppath_delimiter.split(property_side.original)[1:])
-            constrain_value = constrain_side.value
+        if alias not in alias_to_conditions_map:
+            alias_to_conditions_map[alias] = {}
 
-            if constrain_side.kind == ExpressionType.IS_PARAMETER:
-                parameter_name  = constrain_side.alias
-                constrain_value = query.definition_map[parameter_name]
+        # Replace the primary key
+        if property_path == 'id':
+            property_path = '_id'
 
-            if alias not in alias_to_conditions_map:
-                alias_to_conditions_map[alias] = {}
+        native_query = {
+            property_path: constrain_value
+        }
 
-            # Replace the primary key
-            if property_path == 'id':
-                property_path = '_id'
-
+        if operand:
             native_query = {
-                property_path: constrain_value
-            }
-
-            if operand:
-                native_query = {
-                    property_path: {
-                        operand: constrain_value
-                    }
+                property_path: {
+                    operand: constrain_value
                 }
-
-            alias_to_conditions_map[alias].update(native_query)
-
-        # Handling the join conditions
-        for alias in alias_to_conditions_map:
-            join_config = query.join_map[alias]
-
-            if not join_config['result_list']:
-                continue
-
-            parent_alias = join_config['parent_alias']
-
-            # "No parent alias" indicates that this is not a join query. Ignore the rest.
-            if not parent_alias:
-                continue
-
-            joined_keys = [document['_id'] for document in join_config['result_list']]
-
-            current_native_query = alias_to_conditions_map[alias]
-            parent_native_query  = alias_to_conditions_map[join_config['parent_alias']]
-
-            parent_native_query[join_config['property_path']] = {
-                self._OP_IN: joined_keys
             }
 
-        return alias_to_conditions_map
+        alias_to_conditions_map[alias].update(native_query)
+
+    def process_join_conditions(self, alias_to_conditions_map, alias, join_config, parent_alias):
+        joined_keys = [document['_id'] for document in join_config['result_list']]
+
+        current_native_query = alias_to_conditions_map[alias]
+        parent_native_query  = alias_to_conditions_map[join_config['parent_alias']]
+
+        parent_native_query[join_config['property_path']] = {
+            self._OP_IN: joined_keys
+        }
 
     def get_iterating_constrains(self, query):
         option_map = {}

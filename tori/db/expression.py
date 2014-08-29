@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import json
 import re
 
@@ -36,6 +35,12 @@ class ExpressionType(object):
     IS_DATA          = 'data'
 
 class Expression(DataObject):
+    """ Query Expression
+
+        :param tori.db.expression.ExpressionPart left:  the left part
+        :param tori.db.expression.ExpressionPart right: the right part
+        :param str operand: the generic operand
+    """
     def __init__(self, left, operand, right):
         self.left = left
         self.operand = operand
@@ -57,6 +62,13 @@ class Expression(DataObject):
         )
 
 class ExpressionPart(DataObject):
+    """ Query Expression
+
+        :param str original: the original query
+        :param str kind:     the type of the part
+        :param     value:    the parameter value only for a data part
+        :param str alias:    the entity alias for a property part or the name of the parameter of a parameter part
+    """
     def __init__(self, original, kind, value, alias):
         self.original = original
         self.kind     = kind
@@ -88,7 +100,7 @@ class ExpressionSet(DataObject):
         }
 
 class Criteria(object):
-    """ Criteria
+    """ Expression Criteria
 
         Support operands: =, <=, <, >, >=, in, like (SQL-like string pattern), rlike (Regular-expression pattern), indexed with (only for Riak)
     """

@@ -73,6 +73,7 @@ class Query(object):
 
     @property
     def criteria(self):
+        """ Expression Criteria """
         return self._criteria
 
     @criteria.setter
@@ -86,6 +87,7 @@ class Query(object):
 
     @property
     def join_map(self):
+        """ A join map """
         return self._join_map
 
     @join_map.setter
@@ -93,10 +95,13 @@ class Query(object):
         self._join_map = value
 
     def join(self, property_path, alias):
-        assert alias != self.alias and alias not in self._join_map, 'The alias of the joined entity must be unique.'
+        """ Define a join path """
+        if not (alias != self.alias and alias not in self._join_map):
+            raise KeyError('The alias of the joined entity must be unique.')
+
         self._join_map[alias] = {
-            'path': property_path,
-            'class': None,
+            'path':   property_path,
+            'class':  None,
             'mapper': None
         }
 
