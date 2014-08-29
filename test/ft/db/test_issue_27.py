@@ -37,12 +37,22 @@ class TestFunctional(DbTestCase):
         self._reset_db(self.__data_provider())
         self.__reset_associations()
 
+    def __find_one_by_name(self, cls, name):
+        repo = self.session.repository(cls)
+
+        query = repo.new_criteria('e')
+        query.expect('e.name = :name')
+        query.define('name', name)
+        query.limit(1)
+
+        return repo.find(query)
+
     def test_load(self):
         groups  = self.session.collection(Group)
         members = self.session.collection(Member)
 
-        group_a  = groups.filter_one({'name': 'group a'})
-        member_d = members.filter_one({'name': 'member d'})
+        group_a  = self.__find_one_by_name(Group, 'group a')
+        member_d = self.__find_one_by_name(Member, 'member d')
 
         self.assertTrue(group_a.members._loaded, 'The IDs should be loaded by UOW.')
         self.assertEqual(2, len(group_a.members))

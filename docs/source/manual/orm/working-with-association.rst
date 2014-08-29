@@ -369,4 +369,8 @@ user, the query will be::
 
     rewards = reward_repository.find(query)
 
+.. warning::
+
+    In Tori 3.0, we only test for one-to-one and many-to-one relationships.
+
 .. seealso:: :doc:`../../api/db/index`

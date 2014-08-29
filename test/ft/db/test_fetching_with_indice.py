@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+# Obsolete test as the support for indexing will be dropped in 3.1.
 from ft.db.dbtestcase import DbTestCase
 from tori.db.driver.mongodriver import Driver
 from tori.db.session import Session
