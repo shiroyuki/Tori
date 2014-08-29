@@ -35,7 +35,7 @@ class TestFunctional(DbTestCase):
         reference_map = self.__inject_data_with_cascading()
 
         collection = self.session.repository(TestNode)
-        doc        = collection.filter_one({'name': 'a'})
+        doc        = self._find_one_by_name(TestNode, 'a')
 
         self.assertEqual(len(reference_map), len(collection.filter()))
         self.assertEqual(reference_map['a'].id, doc.id)
@@ -44,15 +44,18 @@ class TestFunctional(DbTestCase):
         reference_map = self.__mock_data_without_cascading()
 
         developer_collection = self.session.repository(Developer)
-        computer_collection = self.session.repository(Computer)
+        computer_collection  = self.session.repository(Computer)
 
         self.session.persist(reference_map['d1'])
         self.session.flush()
 
-        self.assertEqual(1, len(developer_collection.filter()))
-        self.assertEqual(0, len(computer_collection.filter()))
+        developers = self._get_all(Developer)
+        computers  = self._get_all(Computer)
 
-        developer = developer_collection.filter_one({'name': 'Shiroyuki'})
+        self.assertEqual(1, len(developers))
+        self.assertEqual(0, len(computers))
+
+        developer = self._find_one_by_name(Developer, 'Shiroyuki')
 
         self.assertIsNone(developer.computer.id)
 

@@ -43,7 +43,7 @@ class TestFunctional(DbTestCase):
     def test_get(self):
         self._reset_db(self.__data_provider())
 
-        character = self.session.collection(Character).filter_one()
+        character = self._get_first(Character)
 
         self.assertEqual('Shiroyuki', character.name)
         self.assertIsInstance(character.job, ProxyObject) # Check the type of the proxy object

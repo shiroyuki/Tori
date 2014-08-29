@@ -30,10 +30,12 @@ class Destination(object):
         self.origin = origin
 
 class TestFunctional(DbTestCase):
-    def test_reverse_mapping_normal_path_call_get(self):
+    def setUp(self):
+        self._setUp()
         self._reset_db(self.__data_provider())
-
-        origin = self.session.collection(Origin).filter_one({'name': 'origin'})
+        
+    def test_reverse_mapping_normal_path_call_get(self):
+        origin = self._find_one_by_name(Origin, 'origin')
 
         self.assertIsNotNone(origin)
         self.assertEquals(2, len(origin.destinations))
@@ -41,11 +43,7 @@ class TestFunctional(DbTestCase):
         self.assertEquals('a', origin.destinations[0].name)
 
     def test_reverse_mapping_normal_path_call_put(self):
-        self._reset_db(self.__data_provider())
-
-        collection = self.session.collection(Origin)
-
-        origin = collection.filter_one({'name': 'origin'})
+        origin = self._find_one_by_name(Origin, 'origin')
 
         try:
             origin.destinations[0].name = 'Bangkok'

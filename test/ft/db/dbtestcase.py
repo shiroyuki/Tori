@@ -49,3 +49,25 @@ class DbTestCase(TestCase):
             if self.verify_data:
                 for fixture in self.driver.find(repo.name, {}):
                     print('{}: {}'.format(repo.name, fixture))
+
+    def _get_first(self, cls):
+        repo  = self.session.repository(cls)
+        query = repo.new_criteria('e')
+        query.limit(1)
+
+        return repo.find(query)
+    
+    def _get_all(self, cls):
+        repo  = self.session.repository(cls)
+        query = repo.new_criteria('e')
+
+        return repo.find(query)
+    
+    def _find_one_by_name(self, cls, name):
+        repo  = self.session.repository(cls)
+        query = repo.new_criteria('e')
+        query.expect('e.name = :name')
+        query.define('name', name)
+        query.limit(1)
+
+        return repo.find(query)
