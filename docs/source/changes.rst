@@ -12,12 +12,21 @@ Version 3.1
 
 :Release Date: TBA
 
-- Possibly removed ``tori.db.session.Session.register_class(...)``.
+- [Planned] Possibly removed ``tori.db.session.Session.register_class(...)``.
+- [Planned] Switch from **tori.db** to **Passerine ORM**.
 
 Version 3.0
 ===========
 
-:Release Date: 2014.08.16
+:Release Date: 2014.11.23
+
+.. note::
+
+    **tori.db** has been spinned off as project **Passerine ORM**
+    (https://github.com/shiroyuki/passerine). Tori 3.0 only contains
+    the testing version of **Passerine ORM**. The documentation for
+    **Passerine** (http://passerine-orm.readthedocs.org/) is compatible
+    with **tori.db**.
 
 - **ORM/tori.db**: Allow cross-collection (or cross-repository) queries within the same type of backend datastores.
 - **ORM/tori.db**: (**BCB-2.1**) Removed the silly preconditions of the setup of ORM.
@@ -34,45 +43,5 @@ Version 3.0
 - **Web Framework**: Add a file-base session repository. This allows the app to store the session data as a json file.
 - **Web Framework**: Without specifying the rendering path for each controller, the controller will be looking for
   templates from :file:`<app_base_path>/templates`.
-- **Web Framework**: Introduce the new-style configuration which is a JSON file. (The old style will be deprecated in 3.2.)
-- **Web Framework**
+- **Web Framework**: Introduce :doc:`/manual/configuration/predefined-config.rst`. (The old style will be deprecated in 3.2.)
 - **Tests**: Reorganized the tests and refactored the ORM tests.
-
-New Style Configuration
------------------------
-
-In 3.0, it is required to specify in the configuration in order to use the new style configuration where the default
-configuration tree is:
-
-.. code-block:: javascript
-
-    {
-        "session": {
-            "class": "tori.session.repository.memory.Memory"
-            "params": {}
-        }
-        "db": {
-            "managers": {}
-        }
-    }
-
-where ``db.managers`` is mapping a alias of the manager to a corresponding DB URL only referred by the database manager factory.
-
-For example, we have :file:`config.json`.
-
-.. code-block:: javascript
-
-    {
-        "db": {
-            "managers": {
-                "db.directory": "mongodb://localhost/directory"
-            }
-        }
-    }
-
-Add this line to the XML configuration file.
-
-.. code-block:: xml
-
-    <use src="config.json"/>
-

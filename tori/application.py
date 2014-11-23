@@ -234,11 +234,18 @@ class Application(BaseApplication):
     def _prepare_db_connections(self):
         db_config = self._settings['db']
         manager_config = db_config['managers']
+        db = AppServices.get('db')
 
         for alias in manager_config:
             url = manager_config[alias]['url']
 
-            AppServices.get('db').set(alias, url)
+            db.set(alias, url)
+
+            if do_connect_on_startup:
+                def callback():
+                    return db.get(alias)
+
+                AppServices.set('db.{}'.format(alias), callback)
 
     def _load_inclusion(self, inclusion):
         source_location = inclusion.attribute('src')

@@ -1,10 +1,9 @@
 import json
 import hashlib
 import urllib
-from tori.session.repository.base import Base as BaseSessionRepository
-from sso import common
+from tori.session.repository.base import Base
 
-class FileSessionRepository(BaseSessionRepository):
+class File(Base):
     """ In-memory Session AbstractRepository """
 
     def __init__(self, location):

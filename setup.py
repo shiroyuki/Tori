@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name         = 'tori',
-    version      = '3.0.0a2',
+    version      = '3.0.0',
     description  = 'A collection of libraries, a micro web framework based on Tornado framework, and the ORM for MongoDB',
     license      = 'MIT',
     author       = 'Juti Noppornpitak',
