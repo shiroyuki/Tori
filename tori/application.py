@@ -14,7 +14,7 @@ import os
 import sys
 
 # Third-party libraries
-from imagination.entity  import Entity as ImaginationEntity
+from imagination.entity  import Entity as ImaginationEntity, CallbackProxy
 from imagination.helper  import retrieve_module_path
 from imagination.loader  import Loader as ImaginationLoader
 from imagination.locator import Locator as ImaginationLocator
@@ -234,18 +234,19 @@ class Application(BaseApplication):
     def _prepare_db_connections(self):
         db_config = self._settings['db']
         manager_config = db_config['managers']
-        db = AppServices.get('db')
+        em_factory = AppServices.get('db')
 
         for alias in manager_config:
             url = manager_config[alias]['url']
 
-            db.set(alias, url)
+            em_factory.set(alias, url)
 
-            if do_connect_on_startup:
-                def callback():
-                    return db.get(alias)
+            def callback(em_factory, db_alias):
+                return em_factory.get(db_alias)
 
-                AppServices.set('db.{}'.format(alias), callback)
+            callback_proxy = CallbackProxy(callback, em_factory, alias)
+
+            AppServices.set('db.{}'.format(alias), callback_proxy)
 
     def _load_inclusion(self, inclusion):
         source_location = inclusion.attribute('src')

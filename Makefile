@@ -8,7 +8,7 @@ release:
 	python setup.py sdist upload
 
 wheel_release:
-	python setup.py sdist bdist_wheel upload --universal
+	python setup.py sdist bdist_wheel upload
 
 doc: clean
 	cd docs && make clean && make html
