@@ -14,7 +14,7 @@ Here is the sample of all available configuration.
 
     {
         "session": {
-            "class": "tori.session.InMemorySessionAdapter"
+            "class": "tori.session.repository.memory.Memory"
             "params": {}
         }
         "db": {
@@ -58,13 +58,13 @@ Session Configuration
 
 The following are usable session adapters.
 
-tori.session.InMemorySessionAdapter
------------------------------------
+tori.session.repository.memory.Memory
+-------------------------------------
 
 This is the default option. This uses the process memory as a storage. **No parameters.**
 
-tori.session.FileSessionAdapter
--------------------------------
+tori.session.repository.file.File
+---------------------------------
 
 This adapter uses a single JSON file to store session data. It writes to the file on every save.
 
@@ -74,8 +74,8 @@ Parameters:
                      relative path, the base path will be based from where the
                      main script is.
 
-tori.session.RedisSessionAdapter
---------------------------------
+tori.session.repository.xredis.Redis
+------------------------------------
 
 This adapter uses a single JSON file to store session data. It writes to the file on every save.
 
@@ -90,4 +90,4 @@ This adapter uses a single JSON file to store session data. It writes to the fil
 Your own adapter?
 -----------------
 
-Just extends your adapter from :class:`tori.session.BaseSessionAdapter`
+Just extends your adapter from :class:`tori.session.repository.base.Base`
