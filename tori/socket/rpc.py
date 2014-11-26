@@ -75,10 +75,11 @@ class Interface(WebSocket):
         """
 
         remote = Remote(**(json.loads(message)))
-        remote.service = self
 
         if remote.service:
             remote.service = self.component(remote.service)
+        else:
+            remote.service = self
 
         response = Response(remote.call(), remote.id)
 
