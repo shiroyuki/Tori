@@ -13,6 +13,8 @@ import time
 from tori.data.serializer   import ArraySerializer
 from tori.socket.websocket import WebSocket
 
+class UncallableException(RuntimeError): pass
+
 class Remote(object):
     """ RPC Request
 
@@ -37,6 +39,9 @@ class Remote(object):
         """
         remote_call = self.service.__getattribute__(self.method)
 
+        if not callable(remote_call):
+            raise UncallableException('The request method is not callable.')
+
         return remote_call(**self.data) if self.data else remote_call
 
 class Response(object):
@@ -48,6 +53,12 @@ class Response(object):
     def __init__(self, result, id):
         self.id     = id
         self.result = result
+
+class ErrorResponse(object):
+    def __init__(self, reason, description, feedback):
+        self.reason      = reason
+        self.description = description
+        self.feedback    = feedback
 
 class Interface(WebSocket):
     """ Remote Interface
@@ -74,14 +85,19 @@ class Interface(WebSocket):
 
         """
 
-        remote = Remote(**(json.loads(message)))
+        data     = json.loads(message)
+        remote   = Remote(**data)
+        response = None
 
         if remote.service:
             remote.service = self.component(remote.service)
         else:
             remote.service = self
 
-        response = Response(remote.call(), remote.id)
+        try:
+            response = Response(remote.call(), remote.id)
+        except AttributeError as e:
+            response = ErrorResponse('The method does not exist.', e.message, data)
 
         self.write_message(
             json.dumps(ArraySerializer.instance().encode(response))
