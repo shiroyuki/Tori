@@ -5,7 +5,7 @@ except:
 
 setup(
     name         = 'tori',
-    version      = '3.0.1',
+    version      = '3.0.2',
     description  = 'A collection of libraries, a micro web framework based on Tornado framework, and the ORM for MongoDB',
     license      = 'MIT',
     author       = 'Juti Noppornpitak',
