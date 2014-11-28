@@ -99,8 +99,6 @@ class Interface(WebSocket):
         except AttributeError as e:
             response = ErrorResponse('The method does not exist.', e.message, data)
 
-        print('RAW Response: {}'.format(response.result))
-
         simplified_response = ArraySerializer.instance().encode(response)
         simplified_response.update({
             'service': data['service'],
