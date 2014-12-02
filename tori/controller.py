@@ -323,13 +323,24 @@ class ResourceService(Controller):
         if isinstance(resource, str):
             self.set_header('Content-Type', 'image/vnd.microsoft.icon')
             return self.finish(resource)
-        elif resource.exists and resource.cacheable:
-            self._cache_objects[self.request.uri] = resource
-        elif not resource.exists:
-            # Return HTTP 404 if the content is not found.
-            self._logger.error('%s could not be found.' % resource.path)
 
-            raise HTTPError(404)
+        if isinstance(resource, bytes):
+            self.set_header('Content-Type', 'image/vnd.microsoft.icon')
+            return self.finish(resource)
+
+        if isinstance(resource, ResourceEntity):
+            if resource.exists and resource.cacheable:
+                self._cache_objects[self.request.uri] = resource
+
+            if not resource.exists:
+                # Return HTTP 404 if the content is not found.
+                self._logger.error('%s could not be found.' % resource.path)
+
+                raise HTTPError(404)
+
+        else:
+            self._logger.error('Unable to process resource {}'.format(resource))
+            raise HTTPError(403)
 
         # Get the content type.
         self.set_header("Content-Type", resource.kind or 'text/plain')
@@ -358,6 +369,8 @@ class ResourceService(Controller):
     def _retrieve_resource_entity(self):
         request_uri = self.request.uri
         path        = sub('\?.*$', '', request_uri)
+
+        self._logger.debug('Retrieving resource from {}'.format(path))
 
         if request_uri in self._cache_objects:
             return self._cache_objects[request_uri]
