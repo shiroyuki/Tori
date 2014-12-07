@@ -97,7 +97,7 @@ class Interface(WebSocket):
         try:
             response = Response(remote.call(), remote.id)
         except AttributeError as e:
-            response = ErrorResponse('The method does not exist.', e.message, data)
+            response = ErrorResponse('The method does not exist.', str(e), data)
 
         simplified_response = ArraySerializer.instance().encode(response)
         simplified_response.update({

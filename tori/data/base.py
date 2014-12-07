@@ -83,8 +83,12 @@ class ResourceEntity(object):
         if not self.exists:
             return None
 
-        with open(self.path) as f:
-            self._content = f.read()
+        try:
+            with open(self.path, 'r') as f:
+                self._content = f.read()
+        except UnicodeDecodeError as e:
+            with open(self.path, 'rb') as f:
+                self._content = f.read()
 
         f.close()
 
