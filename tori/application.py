@@ -169,11 +169,11 @@ class Application(BaseApplication):
 
     _registered_routing_types = ['controller', 'proxy', 'redirection', 'resource']
     _default_services         = [
-        ('finder', 'tori.common.Finder', [], {}),
-        ('renderer', 'tori.template.service.RenderingService', [], {}),
-        ('session', 'tori.session.repository.memory.Memory', [], {}),
-        ('routing_map', 'tori.navigation.RoutingMap', [], {}),
-        ('db', 'tori.db.manager.ManagerFactory', [], {})
+        ('finder',      'tori.common.Finder',                     [], {}),
+        ('renderer',    'tori.template.service.RenderingService', [], {}),
+        ('session',     'tori.session.repository.memory.Memory',  [], {}),
+        ('routing_map', 'tori.navigation.RoutingMap',             [], {}),
+        ('db',          'passerine.db.manager.ManagerFactory',    [], {})
     ]
 
     _data_transformer         = ImaginationTransformer(ImaginationLocator())

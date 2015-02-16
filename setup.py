@@ -5,8 +5,8 @@ except:
 
 setup(
     name         = 'tori',
-    version      = '3.0.4',
-    description  = 'A collection of libraries, a micro web framework based on Tornado framework, and the ORM for MongoDB',
+    version      = '3.1.0',
+    description  = 'A collection of libraries and a micro web framework based on Tornado framework',
     license      = 'MIT',
     author       = 'Juti Noppornpitak',
     author_email = 'juti_n@yahoo.co.jp',
@@ -15,9 +15,6 @@ setup(
         'tori',
         'tori.cli',
         'tori.data',
-        'tori.db',
-        'tori.db.driver',
-        'tori.db.metadata',
         'tori.decorator',
         'tori.session',
         'tori.session.entity',
@@ -38,5 +35,5 @@ setup(
         'Topic :: Software Development :: Libraries'
     ],
     scripts          = ['bin/nest'],
-    install_requires = ['imagination', 'kotoba', 'tornado', 'jinja2', 'pymongo']
+    install_requires = ['imagination', 'kotoba', 'tornado', 'jinja2']
 )
