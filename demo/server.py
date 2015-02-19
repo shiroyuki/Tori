@@ -13,5 +13,5 @@ from   tori.application import Application
 time_at_blank_state = time()
 application = Application('server.xml')
 time_at_prepared_state = time()
-print 'Time elapsed on setup: %s' % (time_at_prepared_state - time_at_blank_state)
+print('Time elapsed on setup: {}'.format(time_at_prepared_state - time_at_blank_state))
 application.start()

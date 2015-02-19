@@ -302,7 +302,7 @@ class ErrorController(Controller):
 class ResourceService(Controller):
     """ Resource service is to serve a static resource via HTTP/S protocol. """
 
-    _logger = get_logger('%s.ResourceService' % (__name__), logging.DEBUG)
+    _logger = get_logger('%s.ResourceService' % (__name__), logging.CRITICAL)
 
     _favicon_data = b64decode(''.join([
         'AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAA',

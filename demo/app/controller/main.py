@@ -8,4 +8,4 @@ class MainController(Controller):
         try:
             self.render('index.html', title="Testing Ground", uri=self.request.uri)
         except Exception as e:
-            print e
+            print(e)
