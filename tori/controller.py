@@ -91,6 +91,37 @@ class Controller(RequestHandler):
 
         return self._session
 
+    def resolve_route(self, route_id, params = {}, full_url = False):
+        """ Resolve the path by ID
+
+            :param id   str:      the path ID
+            :param dict params:   the variables used in the routing pattern
+            :param bool full_url: option to provide full URL to the server.
+
+            .. versionadded: 3.1
+        """
+        request_path = self.component('routing_map').resolve(route_id)
+
+        if full_url:
+            return '{protocol}://{hostname}{request_path}'.format(
+                protocol = self.request.protocol,
+                hostname = self.request.host,
+                request_path = request_path
+            )
+
+        return request_path
+
+    def redirect_to(self, route_id, params = {}, full_url = False):
+        """ Redirect to the path by ID
+
+            :param id   str:      the path ID
+            :param dict params:   the variables used in the routing pattern
+            :param bool full_url: option to provide full URL to the server.
+
+            .. versionadded: 3.1
+        """
+        self.redirect(route_id, params, full_url)
+
     def _can_use_secure_cookie(self):
         """
         Check if the secure cookie is enabled.
@@ -114,7 +145,7 @@ class Controller(RequestHandler):
             'settings': self.settings,
             'request': self.request,
             'session': self.session.get,
-            'path':    self.component('routing_map').resolve
+            'path':    self.resolve_route
         }
 
         output = self.template_engine.render(template_name, **contexts)
