@@ -120,7 +120,7 @@ class Controller(RequestHandler):
 
             .. versionadded: 3.1
         """
-        self.redirect(route_id, params, full_url)
+        self.redirect(self.resolve_route(route_id, params, full_url))
 
     def _can_use_secure_cookie(self):
         """
