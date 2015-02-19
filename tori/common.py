@@ -15,6 +15,8 @@ from .decorator.common import singleton
 class LoggerFactory(object):
     def __init__(self, default_level=None):
         self.__default_level = default_level or logging.WARNING
+        self.__handler       = None
+        self.__loggers       = {}
 
     def set_default_level(self, default_level):
         self.__default_level = default_level
@@ -24,18 +26,21 @@ class LoggerFactory(object):
     def make(self, name, level=None, show_time=True):
         level = level or self.__default_level
 
+        if name in self.__loggers:
+            return self.__loggers[name]
+
         logging_handler = logging.StreamHandler()
         logging_handler.setLevel(level)
         logging_handler.setFormatter(
             logging.Formatter(
-                '%(levelname)s %(asctime)s %(name)s: %(message)s'
-                if show_time
-                else '%(levelname)s %(name)s: %(message)s',
+                '%(levelname)s %(asctime)s %(name)s: %(message)s' if show_time else '%(levelname)s %(name)s: %(message)s',
                 datefmt='%Y.%m.%d %H:%M:%S %Z'
             )
         )
 
         logger = logging.getLogger(name)
+        logger.propagate = False
+
         logger.addHandler(logging_handler)
         logger.setLevel(level)
 

@@ -35,5 +35,5 @@ setup(
         'Topic :: Software Development :: Libraries'
     ],
     scripts          = ['bin/nest'],
-    install_requires = ['imagination', 'kotoba', 'tornado', 'jinja2']
+    install_requires = ['passerine', 'imagination', 'kotoba', 'tornado', 'jinja2']
 )
