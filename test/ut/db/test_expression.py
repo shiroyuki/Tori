@@ -7,7 +7,7 @@ try:
 except ImportError as exception:
     from mock import Mock, MagicMock, patch # Python 2.7
 
-from tori.db.expression import Criteria, ExpressionPart, InvalidExpressionError
+from passerine.db.expression import Criteria, ExpressionPart, InvalidExpressionError
 
 class TestUnit(TestCase):
     def setUp(self):

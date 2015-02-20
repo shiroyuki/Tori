@@ -1,11 +1,11 @@
 from ft.db.dbtestcase import DbTestCase
-from tori.db.session import Session
-from tori.db.common import ProxyObject
-from tori.db.uow import Record
-from tori.db.entity import entity
-from tori.db.manager import Manager
-from tori.db.mapper import link, CascadingType, AssociationType
-from tori.db.metadata.helper import EntityMetadataHelper
+from passerine.db.session import Session
+from passerine.db.common import ProxyObject
+from passerine.db.uow import Record
+from passerine.db.entity import entity
+from passerine.db.manager import Manager
+from passerine.db.mapper import link, CascadingType, AssociationType
+from passerine.db.metadata.helper import EntityMetadataHelper
 
 @link(
     mapped_by='groups',

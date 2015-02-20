@@ -1,6 +1,6 @@
 import unittest
 from sqlalchemy import Column, Integer, String
-from tori.db.wrapper import Entity, Repository
+from passerine.db.wrapper import Entity, Repository
 
 class Dummy(Entity):
     __tablename__ = 'dummy'

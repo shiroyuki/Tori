@@ -1,9 +1,9 @@
 from ft.db.dbtestcase import DbTestCase
-from tori.db.session import Session
-from tori.db.entity import entity
-from tori.db.manager import Manager
-from tori.db.exception import UOWRepeatedRegistrationError, UOWUnknownRecordError
-from tori.db.uow import Record
+from passerine.db.session import Session
+from passerine.db.entity import entity
+from passerine.db.manager import Manager
+from passerine.db.exception import UOWRepeatedRegistrationError, UOWUnknownRecordError
+from passerine.db.uow import Record
 
 @entity
 class TestClass(object):

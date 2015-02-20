@@ -1,7 +1,7 @@
 from unittest import TestCase, skip
 from pymongo import Connection
-from tori.db.driver.mongodriver import Driver
-from tori.db.session import Session
+from passerine.db.driver.mongodriver import Driver
+from passerine.db.session import Session
 
 class DbTestCase(TestCase):
     verify_data = False

@@ -6,11 +6,11 @@ except ImportError as exception:
     from mock import Mock, MagicMock, patch # Python 2.7
 
 from bson import ObjectId
-from tori.db.common import PseudoObjectId
-from tori.db.entity import entity
-from tori.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
-from tori.db.repository import Repository
-from tori.db.session import Session
+from passerine.db.common import PseudoObjectId
+from passerine.db.entity import entity
+from passerine.db.exception import MissingObjectIdException, EntityAlreadyRecognized, EntityNotRecognized
+from passerine.db.repository import Repository
+from passerine.db.session import Session
 
 @entity('test_tori_db_repository_data')
 class Data(object): pass
@@ -19,7 +19,7 @@ class TestUnit(TestCase):
     def setUp(self):
         pass
 
-    @patch('tori.db.session.Session')
+    @patch('passerine.db.session.Session')
     def test_positive_post(self, session):
         repository = Repository(session, Data)
 
@@ -31,7 +31,7 @@ class TestUnit(TestCase):
         session.persist.assert_called_with(data)
         session.flush.assert_called_with()
 
-    @patch('tori.db.session.Session')
+    @patch('passerine.db.session.Session')
     def test_negative_post(self, session):
         repository = Repository(session, Data)
 
@@ -41,7 +41,7 @@ class TestUnit(TestCase):
         with self.assertRaises(EntityAlreadyRecognized):
             repository.post(data)
 
-    @patch('tori.db.session.Session')
+    @patch('passerine.db.session.Session')
     def test_positive_put(self, session):
         repository = Repository(session, Data)
 
@@ -54,7 +54,7 @@ class TestUnit(TestCase):
         session.persist.assert_called_with(a)
         session.flush.assert_called_with()
 
-    @patch('tori.db.session.Session')
+    @patch('passerine.db.session.Session')
     def test_negative_put_without_session(self, session):
         repository = Repository(session, Data)
 
@@ -64,7 +64,7 @@ class TestUnit(TestCase):
         with self.assertRaises(EntityNotRecognized):
             repository.put(a)
 
-    @patch('tori.db.session.Session')
+    @patch('passerine.db.session.Session')
     def test_negative_put_without_id(self, session):
         repository = Repository(session, Data)
 
@@ -74,7 +74,7 @@ class TestUnit(TestCase):
         with self.assertRaises(EntityNotRecognized):
             repository.put(a)
 
-    @patch('tori.db.session.Session')
+    @patch('passerine.db.session.Session')
     def test_negative_put_with_pseudo_id(self, session):
         repository = Repository(session, Data)
 
@@ -85,7 +85,7 @@ class TestUnit(TestCase):
         with self.assertRaises(EntityNotRecognized):
             repository.put(a)
 
-    @patch('tori.db.session.Session')
+    @patch('passerine.db.session.Session')
     def test_positive_delete(self, session):
         repository = Repository(session, Data)
 
@@ -98,7 +98,7 @@ class TestUnit(TestCase):
         session.delete.assert_called_with(a)
         session.flush.assert_called_with()
 
-    @patch('tori.db.session.Session')
+    @patch('passerine.db.session.Session')
     def test_negative_delete_random(self, session):
         repository = Repository(session, Data)
 

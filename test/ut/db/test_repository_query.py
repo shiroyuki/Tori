@@ -6,9 +6,9 @@ except ImportError as exception:
     from mock import Mock, MagicMock, patch # Python 2.7
 
 from bson import ObjectId
-from tori.db.entity import entity
-from tori.db.repository import Repository
-from tori.db.mapper import link, CascadingType, AssociationType
+from passerine.db.entity import entity
+from passerine.db.repository import Repository
+from passerine.db.mapper import link, CascadingType, AssociationType
 
 @link(
     mapped_by='groups',
@@ -38,7 +38,7 @@ class TestUnit(TestCase):
     def setUp(self):
         pass
 
-    @patch('tori.db.session.Session')
+    @patch('passerine.db.session.Session')
     def test_positive_post(self, session):
         repository = Repository(session, Member)
         query      = repository.new_criteria()

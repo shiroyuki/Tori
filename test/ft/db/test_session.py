@@ -1,8 +1,8 @@
 from ft.db.dbtestcase import DbTestCase
-from tori.db.common import ProxyObject
-from tori.db.uow import Record
-from tori.db.entity import entity
-from tori.db.mapper import link, CascadingType, AssociationType
+from passerine.db.common import ProxyObject
+from passerine.db.uow import Record
+from passerine.db.entity import entity
+from passerine.db.mapper import link, CascadingType, AssociationType
 
 @link('left', association=AssociationType.ONE_TO_ONE, cascading=[CascadingType.PERSIST, CascadingType.DELETE])
 @link('right', association=AssociationType.ONE_TO_ONE, cascading=[CascadingType.PERSIST, CascadingType.DELETE])

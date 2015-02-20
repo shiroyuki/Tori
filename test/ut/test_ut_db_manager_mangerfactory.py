@@ -5,8 +5,8 @@ try:
 except ImportError as exception:
     from mock import Mock, MagicMock, patch # Python 2.7
 
-from tori.db.manager import ManagerFactory
-from tori.db.exception import InvalidUrlError
+from passerine.db.manager import ManagerFactory
+from passerine.db.exception import InvalidUrlError
 
 class TestUnit(TestCase):
     def setUp(self):

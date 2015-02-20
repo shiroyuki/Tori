@@ -1,10 +1,10 @@
 from ft.db.dbtestcase import DbTestCase
-from tori.db.session import Session
-from tori.db.repository import Repository
-from tori.db.common import ProxyObject
-from tori.db.entity   import entity
-from tori.db.manager    import Manager
-from tori.db.mapper     import AssociationType, link
+from passerine.db.session import Session
+from passerine.db.repository import Repository
+from passerine.db.common import ProxyObject
+from passerine.db.entity   import entity
+from passerine.db.manager    import Manager
+from passerine.db.mapper     import AssociationType, link
 
 @entity('s')
 class Skill(object):
