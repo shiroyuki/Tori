@@ -26,9 +26,7 @@ test_py3: cache_clean# reset_mongodb
 
 test_ci: cache_clean install_test_package reset_mongodb
 	nosetests -c nose.cfg ut
-	nosetests -c nose.cfg ut/db
 	nosetests -c nose.cfg ft
-	nosetests -c nose.cfg ft/db
 	#nosetests -c nose.cfg
 
 install_test_package:
