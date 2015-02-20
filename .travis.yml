@@ -7,6 +7,6 @@ services:
   - mongodb
   - redis
 install:
-  - "pip install --ignore-installed -r requirements.txt"
-  - "pip install --ignore-installed passerine"
+  - "pip install --ignore-installed --upgrade --force-reinstall -r requirements.txt"
+  - "pip install --ignore-installed --upgrade --force-reinstall passerine"
 script: "export PYTHON_PATH=test; make test_ci"
