@@ -44,6 +44,8 @@ class LoggerFactory(object):
         logger.addHandler(logging_handler)
         logger.setLevel(level)
 
+        self.__loggers[name] = logger
+
         return logger
 
 def get_logger(name, level=None, show_time=True):

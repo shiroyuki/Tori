@@ -1,5 +1,5 @@
 from tori.session.entity.base import Base
-from tori.db.entity         import entity
+from passerine.db.entity         import entity
 
 @entity
 class Document(Base):

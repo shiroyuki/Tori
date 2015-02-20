@@ -10,7 +10,7 @@ class Collection(Base):
     """
     Session Controller using MongoDB
 
-    :param `collection`: :class:`tori.db.odm.collection.Repository`
+    :param `collection`: :class:`passerine.db.repository.Repository`
 
     .. note::
 

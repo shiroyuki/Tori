@@ -34,7 +34,6 @@ from tori.centre     import settings as AppSettings
 from tori.centre     import services as AppServices
 from tori.common     import get_logger
 from tori.data.base  import resolve_file_path
-from tori.db.manager import ManagerFactory
 from tori.exception  import *
 from tori.navigation import *
 
@@ -361,7 +360,15 @@ class Application(BaseApplication):
 
     def _register_default_services(self):
         for id, package_path, args, kwargs in self._default_services:
-            self._set_service_entity(id, package_path, *args, **kwargs)
+            try:
+                self._set_service_entity(id, package_path, *args, **kwargs)
+            except ImportError as exception:
+                if id == "db":
+                    self._logger.info('Ignored {} as package "passerine" is neither available or loadable (containing errors).'.format(package_path))
+
+                    continue
+
+                raise ImportError('Failed to register {} ({})'.format(id, package_path))
 
     def _register_imagination_services(self, configuration, base_path):
         """ Register services. """

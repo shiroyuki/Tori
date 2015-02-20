@@ -1,7 +1,8 @@
+# Deprecated
 from sqlalchemy       import Column
 from sqlalchemy.types import Integer, PickleType, String
 
-from tori.db.wrapper           import Entity
+from passerine.db.wrapper           import Entity
 from tori.session.entity.base import Base
 
 class Database(Base, Entity):
