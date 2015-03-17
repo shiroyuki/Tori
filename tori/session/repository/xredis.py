@@ -1,9 +1,15 @@
+__MODULE_ENABLED = True
+
 try:
     import cPickle as pickle
 except:
     import pickle
 
-import redis
+try:
+    import redis
+except ImportError as exception:
+    __MODULE_ENABLED = False
+
 from time import time
 
 from tori.exception               import *
@@ -11,6 +17,9 @@ from tori.session.repository.base import Base
 
 class Redis(Base):
     def __init__(self, prefix='tori/session', redis_client=None, use_localhost_as_fallback=True):
+        if not __MODULE_ENABLED:
+            raise ImportError('Failed to enable Redis session storage.')
+
         Base.__init__(self)
 
         self._redis = redis_client
