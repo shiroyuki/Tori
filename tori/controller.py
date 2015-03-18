@@ -216,6 +216,7 @@ class SimpleController(Controller):
     def get(self, *args):
         path = args[0] if args else 'index'
 
+        # Prevent probing on unintended content
         if '..' in path:
             raise HTTPError(403)
 
@@ -302,7 +303,7 @@ class ErrorController(Controller):
 class ResourceService(Controller):
     """ Resource service is to serve a static resource via HTTP/S protocol. """
 
-    _logger = get_logger('%s.ResourceService' % (__name__), logging.CRITICAL)
+    _logger = get_logger('%s.ResourceService' % (__name__), logging.WARN)
 
     _favicon_data = b64decode(''.join([
         'AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAA',
@@ -333,12 +334,14 @@ class ResourceService(Controller):
 
         :param enable_cache: a flag to indicate whether any loaded resources need to be cached on the first request.
         """
-        ResourceService._logger.debug('add URL pattern "%s" for "%s"' % (pattern, base_path))
         ResourceService._patterns[pattern] = {
             'base_path': resolve_file_path(base_path),
             'cacheable': enable_cache
         }
+
         ResourceService._pattern_order.append(pattern)
+
+        ResourceService._logger.debug('Added URL pattern "{}" for "{}".'.format(pattern, base_path))
 
     def get(self, path=None):
         """
@@ -365,7 +368,7 @@ class ResourceService(Controller):
 
             if not resource.exists:
                 # Return HTTP 404 if the content is not found.
-                self._logger.error('%s could not be found.' % resource.path)
+                self._logger.error('{} could not be found.'.format(resource.path))
 
                 raise HTTPError(404)
 
@@ -389,7 +392,12 @@ class ResourceService(Controller):
             # End the iteration
 
         if resource.is_originally_dir:
-            return self.redirect('{}/{}'.format(path, ResourceEntity.DEFAULT_INDEX_FILE))
+            alternative_destination = path[:-1] if path[-1] == '/' else path
+            alternative_destination = '/{}/{}'.format(alternative_destination, ResourceEntity.DEFAULT_INDEX_FILE)
+
+            self._logger.error('Assuming "{}" is {}.'.format(path, alternative_destination))
+
+            return self.redirect(alternative_destination)
 
         # Return the content.
         try:
@@ -428,7 +436,7 @@ class ResourceService(Controller):
             base_path = pattern_info['base_path']
             cachable  = pattern_info['cacheable']
 
-            self._logger.debug('Comparing Pattern: %s' % pattern)
+            self._logger.debug('Comparing Pattern: {}'.format(pattern))
 
             matches = match(pattern, request_uri)
 
@@ -440,7 +448,7 @@ class ResourceService(Controller):
                 matches.groups()[0]
             ))
 
-            self._logger.info('Real path: %s' % real_path)
+            self._logger.info('Real path: {}'.format(real_path))
 
             return self._create_resource_entity(real_path, cachable)
 
