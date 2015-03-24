@@ -100,7 +100,7 @@ class Controller(RequestHandler):
 
             .. versionadded: 3.1
         """
-        request_path = self.component('routing_map').resolve(route_id)
+        request_path = self.component('routing_map').resolve(route_id, **params)
 
         if full_url:
             return '{protocol}://{hostname}{request_path}'.format(
