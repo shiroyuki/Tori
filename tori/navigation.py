@@ -28,7 +28,12 @@ from tori.exception import *
 class RoutingMap(object):
     """ Routing Map """
 
+    _GUID = 0
+
     def __init__(self):
+        RoutingMap._GUID += 1
+
+        self._guid           = RoutingMap._GUID
         self._logger         = get_logger('{}.{}'.format(__name__, self.__class__.__name__))
         self._sequence       = []
         self._raw_map        = {}
@@ -45,8 +50,13 @@ class RoutingMap(object):
         if not force_action and route.pattern in self._sequence:
             raise DuplicatedRouteError('The route pattern is already registered.')
 
-        if route.pattern not in self._sequence:
-            self._sequence.append(route.pattern)
+        self._logger.debug('RM-{}: Registering {}...'.format(self._guid, route.pattern))
+
+        if route.pattern in self._sequence:
+            self._logger.debug('RM-{}: {} already registered'.format(self._guid, route.pattern))
+            return
+
+        self._sequence.append(route.pattern)
 
         # Register the route to the map.
         self._raw_map[route.pattern] = route
@@ -102,19 +112,32 @@ class RoutingMap(object):
 
             self._final_sequence = []
 
+            self._logger.debug('RM-{}: Exporting the routing table to Tornado Application...'.format(self._guid))
+
             for routing_pattern in self._sequence:
+                self._logger.debug('RM-{}: Exporting the route "{}"...'.format(self._guid, routing_pattern))
+
                 if routing_pattern == '/favicon.ico':
                     has_favicon = True
 
                 self._final_sequence.append(self.find_by_pattern(routing_pattern).to_tuple())
 
             if not has_favicon:
+                self._logger.debug('RM-{}: Exporting the route for /favicon.ico...'.format(self._guid))
                 self._final_sequence.append(('/favicon.ico', StaticRoute._default_service))
+
+                self._logger.debug('RM-{}: Exported all routes.'.format(self._guid))
 
         return self._final_sequence
 
     def update(self, other):
-        for route in other._raw_map.values():
+        self._logger.debug('RM-{}: Updating'.format(self._guid))
+
+        other_map = other._raw_map
+
+        for rk in other._sequence:
+            route = other_map[rk]
+
             self.register(route, True)
 
     @staticmethod

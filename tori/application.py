@@ -395,6 +395,8 @@ class Application(BaseApplication):
         """
         routing_sequences = configuration.children('routes')
 
+        self._logger.debug('Registering the routes from the configuration...')
+
         if not routing_sequences:
             return
 
@@ -403,6 +405,8 @@ class Application(BaseApplication):
             new_routing_map = RoutingMap.make(routing_sequence, self._base_path)
 
             self._routing_map.update(new_routing_map)
+
+        self._logger.debug('Registered the routes from the configuration.')
 
     def _make_service_entity(self, id, package_path, *args, **kwargs):
         """
