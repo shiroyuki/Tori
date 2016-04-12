@@ -9,6 +9,15 @@ Just run ``sudo pip install tori``
 Hello, world... again?
 ======================
 
+Set up for Python 3.3+
+---------------------
+
+Please install Tori with **Python 2.7** and use ``nest`` to create the skeleton
+app for now as the command due a known compatibility issue.
+
+Set up for Python 2.7
+---------------------
+
 After the installation, you can begin creating a app with the supplied ``nest``
 command. In this example, we create an app called "konota web".
 
