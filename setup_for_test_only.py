@@ -28,5 +28,5 @@ setup(
         'demo.resources'
     ],
     scripts          = ['bin/nest'],
-    install_requires = ['passerine', 'imagination', 'kotoba', 'tornado', 'jinja2']
+    install_requires = ['passerine', 'imagination>=1.30,<2', 'kotoba', 'tornado', 'jinja2']
 )
