@@ -1,12 +1,8 @@
 language: python
 python:
+  - "3.6"
+  - "3.5"
   - "3.4"
-  - "3.3"
-  - "2.7"
-services:
-  - mongodb
-  - redis
 install:
   - "pip install --ignore-installed --upgrade --force-reinstall -r requirements.txt"
-  - "pip install --ignore-installed --upgrade --force-reinstall passerine"
-script: "export PYTHON_PATH=test; make test_ci"
+script: "echo 'Tests disabled'"
