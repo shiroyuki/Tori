@@ -3,10 +3,15 @@ try:
 except:
     from distutils.core import setup
 
+if sys.version_info < _minimum_version:
+    raise RuntimeError('Required Python {}'.format(
+        '.'.join([str(i) for i in _minimum_version])
+    ))
+
 setup(
     name         = 'tori',
-    version      = '3.1.2',
-    description  = 'A collection of libraries and a micro web framework based on Tornado framework',
+    version      = '4.0.0a1',
+    description  = 'A micro web framework based on Tornado and Flask framework',
     license      = 'MIT',
     author       = 'Juti Noppornpitak',
     author_email = 'juti_n@yahoo.co.jp',
@@ -14,13 +19,6 @@ setup(
     packages     = [
         'tori',
         'tori.cli',
-        'tori.data',
-        'tori.decorator',
-        'tori.session',
-        'tori.session.entity',
-        'tori.session.repository',
-        'tori.socket',
-        'tori.template'
     ],
     classifiers   = [
         'Development Status :: 5 - Production/Stable',
@@ -29,11 +27,10 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries'
     ],
-    scripts          = ['bin/nest'],
-    install_requires = ['passerine', 'imagination', 'kotoba', 'tornado', 'jinja2']
+    scripts          = ['bin/tori'],
+    install_requires = ['flask', 'imagination', 'kotoba', 'tornado', 'jinja2', 'pyyaml']
 )

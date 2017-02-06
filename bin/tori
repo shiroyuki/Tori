@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+import sys
+from gallium.starter import main
+
+_minimum_version = (3, 4)
+
+if __name__ == '__main__':
+    if sys.version_info < _minimum_version:
+        raise RuntimeError('Required Python {}'.format(
+            '.'.join([str(i) for i in _minimum_version])
+        ))
+
+    main(
+        default_file_name = 'tori',
+        default_commands = [
+            'gallium.cli.imagination',
+            'tori.cli.ws',
+        ]
+    )
