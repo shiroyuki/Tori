@@ -12,6 +12,9 @@ if __name__ == '__main__':
 
     main(
         default_file_name = 'tori',
+        default_extensions = [
+            'tori.extension.Extension',
+        ],
         default_commands = [
             'gallium.cli.imagination',
             'tori.cli.ws',

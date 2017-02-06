@@ -1,3 +1,6 @@
+import json
+import yaml
+
 from gallium.interface import ICommand, alias
 
 
@@ -15,6 +18,7 @@ class WebServiceStartCommand(ICommand):
             action   = 'store_true',
             required = False,
         )
+
         parser.add_argument(
             '--bind-address',
             '-b',
@@ -22,6 +26,7 @@ class WebServiceStartCommand(ICommand):
             required = False,
             default  = '0.0.0.0',
         )
+
         parser.add_argument(
             '--port',
             '-p',
@@ -32,4 +37,11 @@ class WebServiceStartCommand(ICommand):
         )
 
     def execute(self, args):
-        print(args)
+        app = self.core.get('app')
+        app.bind(args.bind_address)
+        app.listen(args.port)
+
+        if args.debug:
+            app.enable_debug_mode()
+
+        app.run()
